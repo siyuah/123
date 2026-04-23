@@ -1,0 +1,34 @@
+domain,current_state,trigger,next_state,actor,guard,source_section
+run,requested,request_accepted,validating,scheduler,spec valid,6.1/6.5
+run,validating,validation_passed,planning,worker_or_scheduler,budget available,6.5
+run,validating,validation_failed,failed,worker_or_scheduler,fatal input error,6.5
+run,planning,approval_required,waiting_approval,planner_or_finalizer,gate typed,6.5
+run,planning,execution_starts,executing,execution_writer,approval not required,6.5
+run,executing,manual_gate_triggered,waiting_input,worker_or_finalizer,manual gate typed and resources still attached,6.5/15.4
+run,waiting_input,operator_sla_timeout,parked_manual,finalizer_or_operator,truth obligation preserved and rehydrate token issued,15.5
+run,parked_manual,rehydrate_approved,executing,scheduler_or_operator,rehydration requirements satisfied and new attempt launched,15.5/16.1
+run,executing,takeover_starts,finalizing,finalizer,closure claim granted,6.5
+run,finalizing,closure_success,completed,closure_writer,no unresolved high-risk effect,6.5
+run,finalizing,closure_failed,failed,closure_writer,cleanup incomplete or fatal error,6.5
+run,finalizing,cancel_wins,cancelled,closure_writer_or_operator,policy allows and safe,6.5
+attempt,created,sandbox_allocated,booting,execution_writer,lease granted,6.2/6.6
+attempt,booting,first_checkpoint,active,execution_writer,init ok,6.6
+attempt,active,override_or_recon_request,frozen,operator_or_finalizer,current step frozen,6.6
+attempt,active,manual_gate_triggered,frozen,worker_or_finalizer,execution paused pending manual resolution,15.4
+attempt,frozen,recon_required,recon_pending,recon,lane != same_attempt_retry,6.6
+attempt,recon_pending,recon_starts,recon_running,recon,budget reserved,6.6
+attempt,recon_running,recon_passes,resume_ready,recon_or_finalizer,lane gate satisfied,6.6
+attempt,handoff_pending,closure_claim_success,finalizer_owned,finalizer,fencing advanced,6.6
+attempt,resume_ready,new_attempt_launched,superseded,scheduler,previous attempt superseded,6.6
+attempt,finalizer_owned,closure_done,succeeded_failed_or_cancelled,finalizer,outcome determined,6.6
+artifact,tentative,certification_requirements_satisfied,certified,certifier_service,seal+scan complete and no unresolved high-risk unknown,6.5/9.6
+artifact,certified,post_scan_high_risk_conflict,reopened,certifier_service,new contradictory evidence,6.5/9.9
+artifact,tentative,post_scan_high_risk_conflict,reopened,certifier_service,new contradictory evidence,6.5/9.9
+artifact,reopened,re_adjudication_passes,certified,certifier_service,new adjudication closed cleanly,6.5
+artifact,reopened,re_adjudication_fails,revoked,certifier_service,artifact no longer trustworthy,6.5
+dependency,clean,upstream_is_tentative,tentative_upstream,lineage_service,consumer linked to tentative artifact under allowed policy,9.8
+dependency,tentative_upstream,artifact_becomes_certified,clean,lineage_service,upstream certification sealed and no waiver needed,9.8
+dependency,tentative_upstream,artifact_becomes_reopened,reopened_upstream,lineage_service,upstream contradicted after tentative consumption,9.7/9.9
+dependency,clean,upstream_becomes_reopened,reopened_upstream,lineage_service,consumer linked to artifact,6.6/9.7
+dependency,clean,upstream_becomes_revoked,revoked_upstream,lineage_service,consumer linked to artifact,6.6/9.7
+dependency,reopened_upstream,manual_waiver_approved,manually_waived,approver_service,scope matched and waiver valid,27.6

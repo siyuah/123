@@ -1,0 +1,116 @@
+protocolReleaseTag: v2.9-companion-bound-r1
+normativeVersion: "2.9"
+companionAppendixVersion: "2.9-companion.1"
+implPackVersion: "2.9-impl.1"
+enums:
+  artifactCertificationState:
+    - tentative
+    - certified
+    - reopened
+    - revoked
+    - quarantined
+    - superseded
+  inputDependencyState:
+    - clean
+    - tentative_upstream
+    - reopened_upstream
+    - revoked_upstream
+    - manually_waived
+  dependencyConsumptionPolicy:
+    - certified_only
+    - tentative_allowed_internal
+    - tentative_allowed_with_waiver
+  profileConformanceStatus:
+    - conformant
+    - exceeded_declared
+    - broker_bypass_attempted
+    - unverifiable
+  capsuleHealth:
+    - healthy
+    - preflight_red
+    - poisoned
+  manualGateType:
+    - manual_approval_required
+    - manual_evidence_access_required
+    - manual_adjudication_required
+    - manual_risk_acceptance_required
+    - manual_recovery_required
+    - manual_external_followup_required
+  runState:
+    - requested
+    - validating
+    - planning
+    - executing
+    - waiting_input
+    - waiting_approval
+    - parked_manual
+    - blocked
+    - finalizing
+    - completed
+    - failed
+    - cancelled
+  executionSuspensionState:
+    - none
+    - frozen
+    - parked_manual
+    - quarantined_input
+  reasonCode:
+    - approval_required
+    - execution_starts
+    - manual_gate_triggered
+    - operator_sla_timeout
+    - rehydrate_approved
+    - runtime_audit_coverage_insufficient
+    - capability_observation_exceeded_declared
+    - broker_bypass_attempted_detected
+    - revoked_upstream_waiver_cannot_allow_primary_write
+    - capsule_poisoned_retry_blocked
+    - schema_write_fence_violation
+  parkReasonCode:
+    - operator_sla_timeout
+  errorCode:
+    - invalid_protocol_release_tag
+    - run_not_found
+    - attempt_not_parkable
+    - rehydration_requirements_not_met
+    - manual_gate_not_satisfied
+    - waiver_scope_invalid
+    - waiver_fanout_exceeded
+    - artifact_not_consumable
+    - capsule_preflight_failed
+    - capsule_poisoned_retry_blocked
+    - profile_conformance_unverifiable
+    - schema_write_fence_rejected
+  eventCanonicalName:
+    - run.lifecycle.changed
+    - capability.observed
+    - artifact.certification.changed
+    - lineage.invalidation.started
+    - lineage.invalidation.propagated
+    - capsule.preflight.failed
+    - manual_gate.parked
+    - manual_gate.rehydrated
+    - schema.write_fence.rejected
+  blockedBy:
+    - lineage_reopen
+    - lineage_revocation
+    - capability_boundary_breached
+    - profile_conformance_violation
+    - context_poisoned
+    - schema_write_fence
+  divergenceOutcome:
+    - pass
+    - decision_diverged
+    - deadline_crossed
+    - timing_only
+  capability:
+    - fs_read_workspace
+    - fs_write_workspace
+    - fs_read_restricted_ref_via_gateway
+    - process_spawn_local
+    - network_read_allowlist
+    - network_write_brokered_only
+    - secret_read_named
+    - external_api_via_adapter_only
+    - package_install_mirror_only
+    - ipc_local_only

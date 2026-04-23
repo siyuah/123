@@ -1,0 +1,14 @@
+object,kind,storage_pattern,consistency,primary_key,secondary_indexes,retention_class,archive_policy
+journal_events,truth,append-only log,strong/CAS,eventId,"runId,attemptId,effectId,traceId",hot+archive365d,searchable archive required
+run_projection,projection,materialized view,async from journal,runId,"state,manualGateType,executionSuspensionState,updatedAt",hot,rebuildable
+artifact_certification,truth,row per artifact,strong,artifactId,"producerRunId,artifactCertificationState,revocationEpoch,protocolReleaseTag",hot+archive365d,reopen/revoke must be versioned
+lineage_edges,truth-backed index,edge table,strong write + async query index,edgeId,"parentArtifactId,consumerRunId,inputDependencyState,dependencyConsumptionPolicy",hot+archive365d,cascade query must meet lag SLO
+mailbox_entries,evidence store,append-only + dedupe,at-least-once + verified authenticity,mailboxEntryId,"attemptId,capturedAt,evidenceDigest,traceId",warm+archive,TTL 到期只可归档
+runtime_audit,truth-backed audit,append-only,strong per session,auditEventId,"executorSessionId,profileConformanceStatus,traceId",warm+archive,used for observedCapabilitySet fold
+callback_events,evidence/projection,append-only,verified ingest,callbackEventId,"providerCorrelationKey,runId,protocolReleaseTag",warm,projection rebuildable
+config_registry,truth,versioned kv,strong,"configVersion,key","scope,owner",hot,requires audit
+waiver_records,truth,row per waiver,strong,waiverId,"artifactId,consumerScope,expiresAt,traceId",hot+archive,must be immutable once approved
+park_records,truth,row per parked run,strong,parkRecordId,"runId,attemptId,manualGateType,rehydrateTokenRef",hot+archive365d,resource release evidence and truth obligation refs must be preserved
+rehydration_tokens,truth,row per token,strong,rehydrateTokenRef,"runId,parkRecordId,status,expiresAt",hot+archive365d,single successful consumption and all retries auditable
+manual_gate_definitions,registry,bound config snapshot,strong,manualGateType,"ownerRole,defaultSlaSec,parkResourcesAfterSec",hot,changes require release review
+archive_catalog,truth-backed index,catalog table,strong,archiveRecordId,"objectType,objectId,holdRef",hot,points to cold object storage

@@ -1,0 +1,33 @@
+test_case_id,source_file,source_anchor,obligation_type,covered_asset,golden_timeline,release_blocking
+TC-V29-contract-001,paperclip_darkfactory_v2_9_test_asset_spec.md,contract consistency,literal-consistency,paperclip_darkfactory_v2_9_core_enums.yaml,,true
+TC-V29-contract-002,paperclip_darkfactory_v2_9_test_asset_spec.md,contract consistency,event-name-consistency,paperclip_darkfactory_v2_9_event_contracts.yaml,golden_timelines/*.jsonl,true
+TC-V29-contract-003,paperclip_darkfactory_v2_9_test_asset_spec.md,contract consistency,header-propagation,paperclip_darkfactory_v2_9_external_runs.openapi.yaml,,true
+TC-V29-contract-004,paperclip_darkfactory_v2_9_test_asset_spec.md,contract consistency,response-release-tag,paperclip_darkfactory_v2_9_external_runs.openapi.yaml,,true
+TC-V29-contract-005,paperclip_darkfactory_v2_9_test_asset_spec.md,contract consistency,golden-timeline-protocol-release-tag,golden_timelines/*.jsonl,golden_timelines/*.jsonl,true
+TC-V29-contract-006,paperclip_darkfactory_v2_9_test_asset_spec.md,contract consistency,golden-timeline-event-version,paperclip_darkfactory_v2_9_event_contracts.yaml,golden_timelines/*.jsonl,true
+TC-V29-manual-001,paperclip_darkfactory_v2_9_test_asset_spec.md,manual / parked mode,park-truth-obligation,paperclip_darkfactory_v2_9_core_objects.schema.json,golden_timelines/GL-V29-manual-park-rehydrate.jsonl,true
+TC-V29-manual-002,paperclip_darkfactory_v2_9_test_asset_spec.md,manual / parked mode,rehydrate-trace-closure,paperclip_darkfactory_v2_9_core_objects.schema.json,golden_timelines/GL-V29-manual-park-rehydrate.jsonl,true
+TC-V29-manual-003,paperclip_darkfactory_v2_9_test_asset_spec.md,manual / parked mode,parked-manual-safety,paperclip_darkfactory_v2_9_state_transition_matrix.csv,golden_timelines/GL-V29-manual-park-rehydrate.jsonl,true
+TC-V29-manual-004,paperclip_darkfactory_v2_9_test_asset_spec.md,manual / parked mode,manual-gate-literal-consistency,paperclip_darkfactory_v2_9_core_enums.yaml,golden_timelines/GL-V29-manual-park-rehydrate.jsonl,true
+TC-V29-manual-005,paperclip_darkfactory_v2_9_test_asset_spec.md,manual / parked mode,rehydration-token-single-use,paperclip_darkfactory_v2_9_core_objects.schema.json,golden_timelines/GL-V29-manual-park-rehydrate.jsonl,true
+TC-V29-lineage-001,paperclip_darkfactory_v2_9_test_asset_spec.md,lineage / certification,tentative-to-certified-transition,paperclip_darkfactory_v2_9_event_contracts.yaml,golden_timelines/GL-V29-lineage-certified-clean.jsonl,true
+TC-V29-lineage-002,paperclip_darkfactory_v2_9_test_asset_spec.md,lineage / certification,reopen-blocks-high-risk-write,paperclip_darkfactory_v2_9_state_transition_matrix.csv,golden_timelines/GL-V29-lineage-reopen-propagation.jsonl,true
+TC-V29-lineage-003,paperclip_darkfactory_v2_9_test_asset_spec.md,lineage / certification,waiver-scoped-consumer-only,paperclip_darkfactory_v2_9_core_objects.schema.json,golden_timelines/GL-V29-lineage-waiver-scoped-consumer-only.jsonl,true
+TC-V29-lineage-004,paperclip_darkfactory_v2_9_test_asset_spec.md,lineage / certification,revoked-upstream-waiver-cannot-allow-write,paperclip_darkfactory_v2_9_invariants.md,golden_timelines/GL-V29-lineage-revoked-waiver-does-not-allow-write.jsonl,true
+TC-V29-lineage-005,paperclip_darkfactory_v2_9_test_asset_spec.md,lineage / certification,tentative-to-clean-closure,paperclip_darkfactory_v2_9_state_transition_matrix.csv,golden_timelines/GL-V29-lineage-certified-clean.jsonl,true
+TC-V29-capability-001,paperclip_darkfactory_v2_9_test_asset_spec.md,capability / opaque executor,observed-capability-exceeds-declared,paperclip_darkfactory_v2_9_event_contracts.yaml,golden_timelines/GL-V29-capability-exceeded-declared.jsonl,true
+TC-V29-capability-002,paperclip_darkfactory_v2_9_test_asset_spec.md,capability / opaque executor,direct-public-egress-broker-bypass,paperclip_darkfactory_v2_9_event_contracts.yaml,golden_timelines/GL-V29-capability-broker-bypass-attempted.jsonl,true
+TC-V29-capability-003,paperclip_darkfactory_v2_9_test_asset_spec.md,capability / opaque executor,audit-coverage-insufficient-unverifiable,paperclip_darkfactory_v2_9_runtime_config_registry.yaml,golden_timelines/GL-V29-capability-unverifiable-blocked.jsonl,true
+TC-V29-capsule-001,paperclip_darkfactory_v2_9_test_asset_spec.md,capsule / provider hard limit,preflight-red-on-provider-limit,paperclip_darkfactory_v2_9_event_contracts.yaml,golden_timelines/GL-V29-capsule-preflight-poisoned.jsonl,true
+TC-V29-capsule-002,paperclip_darkfactory_v2_9_test_asset_spec.md,capsule / provider hard limit,poisoned-retry-blocked-same-capsule-hash,paperclip_darkfactory_v2_9_core_enums.yaml,golden_timelines/GL-V29-capsule-poisoned-retry-blocked.jsonl,true
+TC-V29-capsule-003,paperclip_darkfactory_v2_9_test_asset_spec.md,capsule / provider hard limit,provider-400-enters-poisoned-breaker,paperclip_darkfactory_v2_9_state_transition_matrix.csv,golden_timelines/GL-V29-capsule-preflight-poisoned.jsonl,true
+TC-V29-schema-001,paperclip_darkfactory_v2_9_test_asset_spec.md,schema / mixed deployment,write-fence-rejects-legacy-writer,paperclip_darkfactory_v2_9_event_contracts.yaml,golden_timelines/GL-V29-schema-write-fence-reject.jsonl,true
+TC-V29-schema-002,paperclip_darkfactory_v2_9_test_asset_spec.md,schema / mixed deployment,unknown-field-round-trip-preserved,paperclip_darkfactory_v2_9_core_objects.schema.json,,true
+TC-V29-schema-003,paperclip_darkfactory_v2_9_test_asset_spec.md,schema / mixed deployment,legacy-reader-conservative-interpretation,paperclip_darkfactory_v2_9_invariants.md,,true
+TC-V29-schema-004,paperclip_darkfactory_v2_9_test_asset_spec.md,schema / mixed deployment,protocol-release-tag-on-new-objects,paperclip_darkfactory_v2_9_core_objects.schema.json,,true
+TC-V29-archive-001,paperclip_darkfactory_v2_9_test_asset_spec.md,archive / restore,ttl-expiry-archives-not-silent-delete,paperclip_darkfactory_v2_9_storage_mapping.csv,,true
+TC-V29-archive-002,paperclip_darkfactory_v2_9_test_asset_spec.md,archive / restore,restore-path-meets-sla,paperclip_darkfactory_v2_9_storage_mapping.csv,,true
+TC-V29-archive-003,paperclip_darkfactory_v2_9_test_asset_spec.md,archive / restore,hold-record-prevents-purge,paperclip_darkfactory_v2_9_storage_mapping.csv,,true
+TC-V29-shadow-001,paperclip_darkfactory_v2_9_test_asset_spec.md,measurement / release gate,deadline-crossed-cannot-pass,paperclip_darkfactory_v2_9_impl_pack.md,,true
+TC-V29-shadow-002,paperclip_darkfactory_v2_9_test_asset_spec.md,measurement / release gate,weighted-high-risk-decision-divergence-formula,paperclip_darkfactory_v2_9_impl_pack.md,,true
+TC-V29-shadow-003,paperclip_darkfactory_v2_9_test_asset_spec.md,measurement / release gate,timing-only-shift-penalty-025,paperclip_darkfactory_v2_9_impl_pack.md,,true
