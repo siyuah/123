@@ -1,0 +1,15 @@
+domain,authoritative_owner,write_service,review_owner,release_gate_owner,operator_surface,notes,source
+protocol_literals,platform-architecture,protocol package generator,architecture review,release-governor,docs/CI reports,core_enums/schema/event contracts are canonical machine-readable source,README-3
+run_lifecycle,control-plane,run orchestrator / closure writer,SRE + architecture,release-governor,external runs API / operator UI,single closure authority owns terminal transitions,core-spec-6
+attempt_execution,execution-plane,execution writer / finalizer,SRE,release-governor,attempt detail view,capability lease required before execution,core-spec-4.1
+capability_broker,execution-plane,capability broker,security,release-governor,capability audit view,broker bypass is invariant violation,core-spec-4.1
+artifact_certification,artifact-service,certifier service,data governance,release-governor,artifact view,certification state gates consumption,core-spec-8.4
+lineage_invalidation,lineage-service,lineage service,data governance,release-governor,lineage impact view,projection cannot upgrade dependency state,core-spec-8.4
+waiver_governance,governance,approver service,risk/compliance,release-governor,waiver approval UI,waiver scope/fanout/expiry must be enforced,core-spec-8.5
+manual_gate,manual-gate-service,manual gate service,operations,release-governor,operator runbook/UI,park releases resources but keeps truth obligation,core-spec-8.3
+routing,routing-plane,router engine,platform ML/SRE,release-governor,route decisions view,fault class maps to one recovery lane,runtime-design-10.1
+provider_failure,routing-plane,provider fault classifier,platform ML/SRE,release-governor,provider failure view,raw provider errors are not protocol truth until classified,runtime-design-10.1
+memory,memory-plane,memory extractor/sync/context assembler,privacy/governance,release-governor,memory API,out-of-scope artifacts must not be injected,runtime-design-10.1
+repair,remediation-plane,repair lane service,security + operations,release-governor,repair attempts view,repair cannot bypass capability/schema/lineage/manual gates,runtime-design-10.1
+archive_restore,platform-storage,archive/restore service,SRE + compliance,release-governor,archive API,restore truth-backed data only,impl-pack-archive
+scenario_gate,release-governor,scenario acceptance runner,architecture + QA,release-governor,CI gate reports,release blockers must pass before RC,assembly-pack-scenarios

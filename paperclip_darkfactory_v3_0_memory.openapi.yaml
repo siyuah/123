@@ -1,0 +1,94 @@
+protocolReleaseTag: v3.0-agent-control-r1
+normativeVersion: "3.0"
+companionAppendixVersion: "3.0-companion.1"
+implPackVersion: "3.0-impl.1"
+agentAssemblyPackVersion: "3.0-assembly.1"
+scenarioPackVersion: "3.0-scenarios.1"
+openapi: 3.1.0
+info:
+  title: Paperclip Dark Factory V3.0 Memory API
+  version: 3.0.0
+  description: Memory artifact, correction, search and injection receipt facade for v3.0-agent-control-r1.
+servers:
+  - url: /api
+components:
+  parameters:
+    ProtocolReleaseTagHeader:
+      name: X-Protocol-Release-Tag
+      in: header
+      required: true
+      schema: { type: string, const: v3.0-agent-control-r1 }
+  schemas:
+    ErrorResponse:
+      type: object
+      required: [protocolReleaseTag, errorCode, message, traceId]
+      properties:
+        protocolReleaseTag: { type: string, const: v3.0-agent-control-r1 }
+        errorCode: { type: string }
+        message: { type: string }
+        traceId: { type: string }
+    MemoryArtifactView:
+      type: object
+      required: [protocolReleaseTag, memoryArtifactId, memoryArtifactType, subjectRef, confidence, consentScope, currentState, sourceTraceId, retentionExpiresAt]
+      properties:
+        protocolReleaseTag: { type: string, const: v3.0-agent-control-r1 }
+        memoryArtifactId: { type: string }
+        memoryArtifactType: { type: string, enum: [memory_fact, session_memory_snapshot, knowledge_edge, diary_entry] }
+        subjectRef: { type: string }
+        confidence: { type: number }
+        consentScope: { type: string }
+        currentState: { type: string, enum: [active, corrected, revoked, expired] }
+        sourceTraceId: { type: string }
+        sourceRunId: { type: string }
+        retentionExpiresAt: { type: string, format: date-time }
+    MemorySearchRequest:
+      type: object
+      required: [protocolReleaseTag, subjectRef, relevancePolicyRef]
+      properties:
+        protocolReleaseTag: { type: string, const: v3.0-agent-control-r1 }
+        subjectRef: { type: string }
+        relevancePolicyRef: { type: string }
+        maxArtifacts: { type: integer }
+    CorrectMemoryArtifactRequest:
+      type: object
+      required: [protocolReleaseTag, correctedToState, correctionReason]
+      properties:
+        protocolReleaseTag: { type: string, const: v3.0-agent-control-r1 }
+        correctedToState: { type: string, enum: [corrected, revoked, expired] }
+        correctionReason: { type: string }
+    PromptInjectionReceiptView:
+      type: object
+      required: [protocolReleaseTag, receiptId, runId, selectedMemoryArtifactIds, injectionBudgetTokens, relevancePolicyRef, deniedArtifactIds]
+      properties:
+        protocolReleaseTag: { type: string, const: v3.0-agent-control-r1 }
+        receiptId: { type: string }
+        runId: { type: string }
+        selectedMemoryArtifactIds: { type: array, items: { type: string } }
+        deniedArtifactIds: { type: array, items: { type: string } }
+        injectionBudgetTokens: { type: integer }
+        relevancePolicyRef: { type: string }
+paths:
+  /memory/artifacts/{memoryArtifactId}:
+    get:
+      operationId: getMemoryArtifact
+      parameters: [{ name: memoryArtifactId, in: path, required: true, schema: { type: string } }]
+      responses:
+        '200': { description: memory artifact, content: { application/json: { schema: { $ref: '#/components/schemas/MemoryArtifactView' } } } }
+        default: { description: error, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
+  /memory/artifacts:search:
+    post:
+      operationId: searchMemoryArtifacts
+      parameters: [{ $ref: '#/components/parameters/ProtocolReleaseTagHeader' }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/MemorySearchRequest' } } } }
+      responses: { '200': { description: memory artifacts, content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/MemoryArtifactView' } } } } } }
+  /memory/artifacts/{memoryArtifactId}:correct:
+    post:
+      operationId: correctMemoryArtifact
+      parameters: [{ name: memoryArtifactId, in: path, required: true, schema: { type: string } }, { $ref: '#/components/parameters/ProtocolReleaseTagHeader' }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/CorrectMemoryArtifactRequest' } } } }
+      responses: { '200': { description: corrected, content: { application/json: { schema: { $ref: '#/components/schemas/MemoryArtifactView' } } } } }
+  /external-runs/{runId}/memory-injections:
+    get:
+      operationId: listMemoryInjections
+      parameters: [{ name: runId, in: path, required: true, schema: { type: string } }]
+      responses: { '200': { description: injection receipts, content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/PromptInjectionReceiptView' } } } } } }

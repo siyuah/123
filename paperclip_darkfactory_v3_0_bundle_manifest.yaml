@@ -1,0 +1,98 @@
+protocolReleaseTag: v3.0-agent-control-r1
+normativeVersion: '3.0'
+companionAppendixVersion: 3.0-companion.1
+implPackVersion: 3.0-impl.1
+agentAssemblyPackVersion: 3.0-assembly.1
+scenarioPackVersion: 3.0-scenarios.1
+status: delivery-candidate
+generatedAt: '2026-04-24T00:00:00Z'
+conflictPriority:
+- paperclip_darkfactory_v3_0_invariants.md
+- paperclip_darkfactory_v3_0_core_spec.md
+- machine-readable assets
+- implementation and assembly packs
+- test and governance assets
+releaseGateChecks:
+- protocolReleaseTag propagation closure
+- enum and event parity across machine-readable assets
+- state transition values are declared in core enums
+- OpenAPI request/response/error protocol tag coverage
+- scenario release blockers pass
+- manifest path existence and sha256 equality
+files:
+- path: README.md
+  sha256: 78c1423d64c2d4184b1abe003114d8d493744c1cb7baccbad4861c1720279da8
+  bytes: 6638
+  normativity: binding
+- path: DARK_FACTORY_V3_0_开工文档.md
+  sha256: 243bc11a94646718e4ac7a0a8f78531d6c4bad32cc4996a60506e989fdd5aedf
+  bytes: 31198
+  normativity: informative
+- path: paperclip_darkfactory_v3_0_invariants.md
+  sha256: 6c229057b50605f9a88a36199c28ce9b9f5a26adb0063d81d1076fc0a63ed4d9
+  bytes: 5018
+  normativity: normative
+- path: paperclip_darkfactory_v3_0_core_spec.md
+  sha256: c058effff38fadefe268b8f375607bb2c9ec1fbcf02ad9fc95768cbd73258ab2
+  bytes: 8473
+  normativity: normative
+- path: paperclip_darkfactory_v3_0_core_enums.yaml
+  sha256: bc57c970923fef7b879940922857c84abd848aa79a68254f5bde6bc5056d80b5
+  bytes: 4585
+  normativity: binding
+- path: paperclip_darkfactory_v3_0_core_objects.schema.json
+  sha256: a45ba1a1b78297f62c744f75b776f0587e5958a63f8077149e3ee04173df0137
+  bytes: 16429
+  normativity: binding
+- path: paperclip_darkfactory_v3_0_event_contracts.yaml
+  sha256: 4b8769d6d7ea6356323d7b61ba01a3fd4c69b732b8953234bb875986fde3fa22
+  bytes: 7721
+  normativity: binding
+- path: paperclip_darkfactory_v3_0_state_transition_matrix.csv
+  sha256: 2ff614e07d573ba5097862025e23bebb8cb5a59ea46a887bd6b963770a1e2eec
+  bytes: 4076
+  normativity: binding
+- path: paperclip_darkfactory_v3_0_runtime_config_registry.yaml
+  sha256: 69599af6a628b50b677b07734d992f0f78ef4a325e3c4bc4bcea30ecca2159a6
+  bytes: 11335
+  normativity: binding
+- path: paperclip_darkfactory_v3_0_impl_pack.md
+  sha256: 03b472ec321e3b90d3ba4691c33ebd1c3e025f81de538fda473e983f0f62aac7
+  bytes: 7814
+  normativity: informative
+- path: paperclip_darkfactory_v3_0_agent_assembly_pack.md
+  sha256: ae6828bda26f405e69c4736b691c4f629c65709ed900884fa409bacc27b2810d
+  bytes: 5526
+  normativity: informative
+- path: paperclip_darkfactory_v3_0_external_runs.openapi.yaml
+  sha256: 3bcdac80ae2e6b28ae7169249eef09ce7aecf3dc63438848d9d0c76c4c3d6711
+  bytes: 10013
+  normativity: binding
+- path: paperclip_darkfactory_v3_0_memory.openapi.yaml
+  sha256: c011050b43721404a6e678a9264d3ed7e015ed77effb4deda8471faae2ca4d11
+  bytes: 4893
+  normativity: binding
+- path: paperclip_darkfactory_v3_0_storage_mapping.csv
+  sha256: c921a558611146b49ac0ebb3f32df6a6abe8664cf04e07a22179ac30e64294b0
+  bytes: 3050
+  normativity: binding
+- path: paperclip_darkfactory_v3_0_responsibility_matrix.csv
+  sha256: d12b7a2dc3fc37b424f5bfea6e4fbe20e06694f5e4d1146c327794465edb82a7
+  bytes: 2483
+  normativity: binding
+- path: paperclip_darkfactory_v3_0_test_asset_spec.md
+  sha256: f7a252854c2fcde0f9344f22579bd6fa0cb240787f6a69a1b421193a1bf3d0b4
+  bytes: 6475
+  normativity: binding-on-covered-obligations
+- path: paperclip_darkfactory_v3_0_scenario_acceptance_matrix.csv
+  sha256: 10733f8dbe52079f10c6b091e2e0924786c2e4e32c080aa0d42acfcd70ab70ff
+  bytes: 2389
+  normativity: binding
+- path: paperclip_darkfactory_v3_0_test_traceability.csv
+  sha256: 1bfcd245f92065a141ad9ef51b3cc63de8bf0a48a8ba0ca1551cd75cf9fa5e92
+  bytes: 2128
+  normativity: binding-on-covered-obligations
+- path: paperclip_darkfactory_v3_0_consistency_report.md
+  sha256: 79c18f9f48def2eccc169da1fdaefd88a0a6e804f70667336f3c67ccc9e714c8
+  bytes: 124
+  normativity: release-gate-report

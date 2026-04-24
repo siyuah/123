@@ -1,0 +1,194 @@
+protocolReleaseTag: v3.0-agent-control-r1
+normativeVersion: "3.0"
+companionAppendixVersion: "3.0-companion.1"
+implPackVersion: "3.0-impl.1"
+agentAssemblyPackVersion: "3.0-assembly.1"
+enums:
+  artifactCertificationState:
+    - tentative
+    - certified
+    - reopened
+    - revoked
+    - quarantined
+    - superseded
+  inputDependencyState:
+    - clean
+    - tentative_upstream
+    - reopened_upstream
+    - revoked_upstream
+    - manually_waived
+  dependencyConsumptionPolicy:
+    - certified_only
+    - tentative_allowed_internal
+    - tentative_allowed_with_waiver
+  profileConformanceStatus:
+    - conformant
+    - exceeded_declared
+    - broker_bypass_attempted
+    - unverifiable
+  capsuleHealth:
+    - healthy
+    - preflight_red
+    - poisoned
+  manualGateType:
+    - manual_approval_required
+    - manual_evidence_access_required
+    - manual_adjudication_required
+    - manual_risk_acceptance_required
+    - manual_recovery_required
+    - manual_external_followup_required
+  executionSuspensionState:
+    - none
+    - frozen
+    - parked_manual
+    - quarantined_input
+  blockedBy:
+    - lineage_reopen
+    - lineage_revocation
+    - capability_boundary_breached
+    - profile_conformance_violation
+    - context_poisoned
+    - schema_write_fence
+    - route_unverifiable
+    - memory_scope_violation
+    - repair_policy_block
+  divergenceOutcome:
+    - pass
+    - decision_diverged
+    - deadline_crossed
+    - timing_only
+    - route_diverged
+    - recovery_lane_diverged
+    - memory_injection_diverged
+    - repair_outcome_diverged
+  capability:
+    - fs_read_workspace
+    - fs_write_workspace
+    - fs_read_restricted_ref_via_gateway
+    - process_spawn_local
+    - network_read_allowlist
+    - network_write_brokered_only
+    - secret_read_named
+    - external_api_via_adapter_only
+    - package_install_mirror_only
+    - ipc_local_only
+  workloadClass:
+    - chat
+    - code
+    - reasoning
+    - vision
+    - memory_maintenance
+    - repair
+    - operator_adjudication
+  providerFaultClass:
+    - transient_timeout
+    - transient_5xx
+    - rate_limited
+    - quota_exhausted
+    - auth_invalid
+    - capability_unsupported
+    - context_length_exceeded
+    - response_contract_invalid
+    - provider_unreachable
+  recoveryLane:
+    - retry_same_route
+    - cutover_fallback_route
+    - degrade_low_risk_only
+    - enter_repair_lane
+    - park_manual
+    - fail_terminal
+  memoryArtifactType:
+    - memory_fact
+    - session_memory_snapshot
+    - knowledge_edge
+    - diary_entry
+  memoryArtifactState:
+    - active
+    - corrected
+    - revoked
+    - expired
+  repairOutcome:
+    - repair_succeeded
+    - repair_failed
+    - repair_rejected
+    - repair_needs_manual
+  routeDecisionState:
+    - selected_primary
+    - selected_fallback
+    - cutover_performed
+    - degraded
+    - aborted
+  runState:
+    - requested
+    - validating
+    - planning
+    - executing
+    - waiting_approval
+    - waiting_input
+    - parked_manual
+    - rehydrating
+    - finalizing
+    - completed
+    - failed
+    - cancelled
+  attemptState:
+    - created
+    - booting
+    - active
+    - frozen
+    - handoff_pending
+    - parked_manual
+    - rehydrate_pending
+    - superseded
+    - finalizer_owned
+    - succeeded
+    - failed
+    - cancelled
+  blastRadiusClass:
+    - low
+    - medium
+    - high
+    - irreversible
+  timingBucketShift:
+    - "0"
+    - "1"
+    - "2plus"
+  eventCanonicalName:
+    - run.lifecycle.changed
+    - capability.observed
+    - artifact.certification.changed
+    - lineage.invalidation.started
+    - lineage.invalidation.propagated
+    - capsule.preflight.failed
+    - manual_gate.parked
+    - manual_gate.rehydrated
+    - schema.write_fence.rejected
+    - route.decision.recorded
+    - provider.failure.recorded
+    - route.cutover.performed
+    - memory.artifact.created
+    - memory.artifact.corrected
+    - memory.injection.recorded
+    - repair.attempt.started
+    - repair.attempt.completed
+    - antibody.pattern.learned
+  errorCode:
+    - invalid_protocol_release_tag
+    - run_not_found
+    - attempt_not_parkable
+    - rehydration_requirements_not_met
+    - manual_gate_not_satisfied
+    - waiver_scope_invalid
+    - waiver_fanout_exceeded
+    - artifact_not_consumable
+    - capsule_preflight_failed
+    - capsule_poisoned_retry_blocked
+    - provider_fault_cutover_exhausted
+    - route_policy_not_found
+    - memory_injection_scope_invalid
+    - memory_artifact_revoked
+    - memory_retention_expired
+    - repair_attempt_blocked
+    - repair_requires_operator_approval
+    - profile_conformance_unverifiable
+    - schema_write_fence_rejected

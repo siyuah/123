@@ -1,0 +1,483 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/v3.0-agent-control-r1/core_objects.schema.json",
+  "title": "Paperclip × Dark Factory V3.0 Core Objects",
+  "type": "object",
+  "oneOf": [
+    { "$ref": "#/$defs/ExecutionCapabilityLease" },
+    { "$ref": "#/$defs/ArtifactCertification" },
+    { "$ref": "#/$defs/LineageEdge" },
+    { "$ref": "#/$defs/ConsumptionWaiver" },
+    { "$ref": "#/$defs/ShadowCompareRecord" },
+    { "$ref": "#/$defs/RouteDecision" },
+    { "$ref": "#/$defs/ProviderFailureRecord" },
+    { "$ref": "#/$defs/ParkRecord" },
+    { "$ref": "#/$defs/RehydrationToken" },
+    { "$ref": "#/$defs/MemoryArtifact" },
+    { "$ref": "#/$defs/PromptInjectionReceipt" },
+    { "$ref": "#/$defs/RepairAttempt" }
+  ],
+  "$defs": {
+    "IsoDateTime": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "StringArray": {
+      "type": "array",
+      "items": { "type": "string" },
+      "uniqueItems": true
+    },
+    "Capability": {
+      "type": "string",
+      "enum": [
+        "fs_read_workspace",
+        "fs_write_workspace",
+        "fs_read_restricted_ref_via_gateway",
+        "process_spawn_local",
+        "network_read_allowlist",
+        "network_write_brokered_only",
+        "secret_read_named",
+        "external_api_via_adapter_only",
+        "package_install_mirror_only",
+        "ipc_local_only"
+      ]
+    },
+    "ArtifactCertificationState": {
+      "type": "string",
+      "enum": ["tentative", "certified", "reopened", "revoked", "quarantined", "superseded"]
+    },
+    "InputDependencyState": {
+      "type": "string",
+      "enum": ["clean", "tentative_upstream", "reopened_upstream", "revoked_upstream", "manually_waived"]
+    },
+    "DependencyConsumptionPolicy": {
+      "type": "string",
+      "enum": ["certified_only", "tentative_allowed_internal", "tentative_allowed_with_waiver"]
+    },
+    "ProfileConformanceStatus": {
+      "type": "string",
+      "enum": ["conformant", "exceeded_declared", "broker_bypass_attempted", "unverifiable"]
+    },
+    "CapsuleHealth": {
+      "type": "string",
+      "enum": ["healthy", "preflight_red", "poisoned"]
+    },
+    "ManualGateType": {
+      "type": "string",
+      "enum": [
+        "manual_approval_required",
+        "manual_evidence_access_required",
+        "manual_adjudication_required",
+        "manual_risk_acceptance_required",
+        "manual_recovery_required",
+        "manual_external_followup_required"
+      ]
+    },
+    "ExecutionSuspensionState": {
+      "type": "string",
+      "enum": ["none", "frozen", "parked_manual", "quarantined_input"]
+    },
+    "WorkloadClass": {
+      "type": "string",
+      "enum": ["chat", "code", "reasoning", "vision", "memory_maintenance", "repair", "operator_adjudication"]
+    },
+    "ProviderFaultClass": {
+      "type": "string",
+      "enum": [
+        "transient_timeout",
+        "transient_5xx",
+        "rate_limited",
+        "quota_exhausted",
+        "auth_invalid",
+        "capability_unsupported",
+        "context_length_exceeded",
+        "response_contract_invalid",
+        "provider_unreachable"
+      ]
+    },
+    "RecoveryLane": {
+      "type": "string",
+      "enum": ["retry_same_route", "cutover_fallback_route", "degrade_low_risk_only", "enter_repair_lane", "park_manual", "fail_terminal"]
+    },
+    "MemoryArtifactType": {
+      "type": "string",
+      "enum": ["memory_fact", "session_memory_snapshot", "knowledge_edge", "diary_entry"]
+    },
+    "MemoryArtifactState": {
+      "type": "string",
+      "enum": ["active", "corrected", "revoked", "expired"]
+    },
+    "RepairOutcome": {
+      "type": "string",
+      "enum": ["repair_succeeded", "repair_failed", "repair_rejected", "repair_needs_manual"]
+    },
+    "RouteDecisionState": {
+      "type": "string",
+      "enum": ["selected_primary", "selected_fallback", "cutover_performed", "degraded", "aborted"]
+    },
+    "BlastRadiusClass": {
+      "type": "string",
+      "enum": ["low", "medium", "high", "irreversible"]
+    },
+    "TimingBucketShift": {
+      "type": "string",
+      "enum": ["0", "1", "2plus"]
+    },
+    "ExecutionCapabilityLease": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "protocolReleaseTag",
+        "executorSessionId",
+        "executionCapabilityLeaseId",
+        "declaredCapabilitySet",
+        "grantedCapabilitySet",
+        "observedCapabilitySet",
+        "capabilityLeaseIssuedAt",
+        "capabilityLeaseExpiresAt",
+        "profileConformanceStatus",
+        "runtimeAuditRef"
+      ],
+      "properties": {
+        "protocolReleaseTag": { "const": "v3.0-agent-control-r1" },
+        "executorSessionId": { "type": "string" },
+        "executionCapabilityLeaseId": { "type": "string" },
+        "declaredCapabilitySet": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/Capability" },
+          "uniqueItems": true
+        },
+        "grantedCapabilitySet": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/Capability" },
+          "uniqueItems": true
+        },
+        "observedCapabilitySet": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/Capability" },
+          "uniqueItems": true
+        },
+        "sandboxBoundaryProfile": { "type": "string" },
+        "networkPolicyProfile": { "type": "string" },
+        "secretAccessProfile": { "type": "string" },
+        "egressBrokerMode": { "type": "string" },
+        "capabilityLeaseIssuedAt": { "$ref": "#/$defs/IsoDateTime" },
+        "capabilityLeaseExpiresAt": { "$ref": "#/$defs/IsoDateTime" },
+        "profileConformanceStatus": { "$ref": "#/$defs/ProfileConformanceStatus" },
+        "runtimeAuditRef": { "type": "string" }
+      }
+    },
+    "ArtifactCertification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "protocolReleaseTag",
+        "artifactId",
+        "producerRunId",
+        "producerAttemptId",
+        "artifactDigest",
+        "artifactCertificationState",
+        "lineageParentArtifactIds",
+        "revocationEpoch",
+        "downstreamConsumptionClass",
+        "traceId"
+      ],
+      "properties": {
+        "protocolReleaseTag": { "const": "v3.0-agent-control-r1" },
+        "artifactId": { "type": "string" },
+        "producerRunId": { "type": "string" },
+        "producerAttemptId": { "type": "string" },
+        "artifactDigest": { "type": "string" },
+        "artifactCertificationState": { "$ref": "#/$defs/ArtifactCertificationState" },
+        "lineageParentArtifactIds": { "$ref": "#/$defs/StringArray" },
+        "revocationEpoch": { "type": "integer", "minimum": 0 },
+        "downstreamConsumptionClass": { "type": "string" },
+        "traceId": { "type": "string" }
+      }
+    },
+    "LineageEdge": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "protocolReleaseTag",
+        "edgeId",
+        "parentArtifactId",
+        "consumerRunId",
+        "consumedArtifactIds",
+        "dependencyConsumptionPolicy",
+        "inputDependencyState"
+      ],
+      "properties": {
+        "protocolReleaseTag": { "const": "v3.0-agent-control-r1" },
+        "edgeId": { "type": "string" },
+        "parentArtifactId": { "type": "string" },
+        "consumerRunId": { "type": "string" },
+        "consumedArtifactIds": { "$ref": "#/$defs/StringArray" },
+        "dependencyConsumptionPolicy": { "$ref": "#/$defs/DependencyConsumptionPolicy" },
+        "inputDependencyState": { "$ref": "#/$defs/InputDependencyState" },
+        "consumptionWaiverRef": { "type": "string" }
+      }
+    },
+    "ConsumptionWaiver": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "protocolReleaseTag",
+        "waiverId",
+        "artifactId",
+        "approvedBy",
+        "approvedAt",
+        "expiresAt",
+        "allowedConsumerScope",
+        "allowedConsumptionPolicy",
+        "allowedEffectSafetyCeiling",
+        "maxFanOut",
+        "reasonCode"
+      ],
+      "properties": {
+        "protocolReleaseTag": { "const": "v3.0-agent-control-r1" },
+        "waiverId": { "type": "string" },
+        "artifactId": { "type": "string" },
+        "approvedBy": { "type": "string" },
+        "approvedAt": { "$ref": "#/$defs/IsoDateTime" },
+        "expiresAt": { "$ref": "#/$defs/IsoDateTime" },
+        "allowedConsumerScope": { "type": "string" },
+        "allowedConsumptionPolicy": {
+          "type": "string",
+          "enum": ["tentative_allowed_with_waiver", "tentative_allowed_internal"]
+        },
+        "allowedEffectSafetyCeiling": { "type": "string" },
+        "maxFanOut": { "type": "integer", "minimum": 1 },
+        "reasonCode": { "type": "string" }
+      }
+    },
+    "ShadowCompareRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "protocolReleaseTag",
+        "sampleRunId",
+        "blastRadiusClass",
+        "protectedFlow",
+        "structuredDecisionDiverged",
+        "deadlineCrossed",
+        "timingBucketShift",
+        "divergenceOutcome"
+      ],
+      "properties": {
+        "protocolReleaseTag": { "const": "v3.0-agent-control-r1" },
+        "sampleRunId": { "type": "string" },
+        "blastRadiusClass": { "$ref": "#/$defs/BlastRadiusClass" },
+        "protectedFlow": { "type": "boolean" },
+        "structuredDecisionDiverged": { "type": "boolean" },
+        "deadlineCrossed": { "type": "boolean" },
+        "timingBucketShift": { "$ref": "#/$defs/TimingBucketShift" },
+        "divergenceOutcome": {
+          "type": "string",
+          "enum": [
+            "pass",
+            "decision_diverged",
+            "deadline_crossed",
+            "timing_only",
+            "route_diverged",
+            "recovery_lane_diverged",
+            "memory_injection_diverged",
+            "repair_outcome_diverged"
+          ]
+        }
+      }
+    },
+    "RouteDecision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "protocolReleaseTag",
+        "routeDecisionId",
+        "runId",
+        "attemptId",
+        "workloadClass",
+        "routePolicyRef",
+        "selectedExecutorClass",
+        "fallbackDepth",
+        "decisionReason",
+        "routeDecisionState",
+        "recordedAt"
+      ],
+      "properties": {
+        "protocolReleaseTag": { "const": "v3.0-agent-control-r1" },
+        "routeDecisionId": { "type": "string" },
+        "runId": { "type": "string" },
+        "attemptId": { "type": "string" },
+        "workloadClass": { "$ref": "#/$defs/WorkloadClass" },
+        "routePolicyRef": { "type": "string" },
+        "selectedExecutorClass": { "type": "string" },
+        "fallbackDepth": { "type": "integer", "minimum": 0 },
+        "decisionReason": { "type": "string" },
+        "routeDecisionState": { "$ref": "#/$defs/RouteDecisionState" },
+        "recordedAt": { "$ref": "#/$defs/IsoDateTime" }
+      }
+    },
+    "ProviderFailureRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "protocolReleaseTag",
+        "failureId",
+        "runId",
+        "attemptId",
+        "providerFaultClass",
+        "providerRef",
+        "routeDecisionId",
+        "recoveryLane",
+        "cutoverPerformed",
+        "evidenceRef",
+        "recordedAt"
+      ],
+      "properties": {
+        "protocolReleaseTag": { "const": "v3.0-agent-control-r1" },
+        "failureId": { "type": "string" },
+        "runId": { "type": "string" },
+        "attemptId": { "type": "string" },
+        "providerFaultClass": { "$ref": "#/$defs/ProviderFaultClass" },
+        "providerRef": { "type": "string" },
+        "routeDecisionId": { "type": "string" },
+        "recoveryLane": { "$ref": "#/$defs/RecoveryLane" },
+        "cutoverPerformed": { "type": "boolean" },
+        "evidenceRef": { "type": "string" },
+        "recordedAt": { "$ref": "#/$defs/IsoDateTime" }
+      }
+    },
+    "ParkRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "protocolReleaseTag",
+        "parkId",
+        "runId",
+        "attemptId",
+        "manualGateType",
+        "executionSuspensionState",
+        "rehydrationRequirements",
+        "resourceReleaseEvidenceRef",
+        "parkedAt"
+      ],
+      "properties": {
+        "protocolReleaseTag": { "const": "v3.0-agent-control-r1" },
+        "parkId": { "type": "string" },
+        "runId": { "type": "string" },
+        "attemptId": { "type": "string" },
+        "manualGateType": { "$ref": "#/$defs/ManualGateType" },
+        "executionSuspensionState": { "$ref": "#/$defs/ExecutionSuspensionState" },
+        "rehydrationRequirements": { "$ref": "#/$defs/StringArray" },
+        "resourceReleaseEvidenceRef": { "type": "string" },
+        "parkedAt": { "$ref": "#/$defs/IsoDateTime" }
+      }
+    },
+    "RehydrationToken": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "protocolReleaseTag",
+        "rehydrationTokenId",
+        "runId",
+        "previousAttemptId",
+        "requirementsDigest",
+        "issuedAt",
+        "expiresAt",
+        "issuer"
+      ],
+      "properties": {
+        "protocolReleaseTag": { "const": "v3.0-agent-control-r1" },
+        "rehydrationTokenId": { "type": "string" },
+        "runId": { "type": "string" },
+        "previousAttemptId": { "type": "string" },
+        "requirementsDigest": { "type": "string" },
+        "issuedAt": { "$ref": "#/$defs/IsoDateTime" },
+        "expiresAt": { "$ref": "#/$defs/IsoDateTime" },
+        "consumedAt": { "$ref": "#/$defs/IsoDateTime" },
+        "issuer": { "type": "string" }
+      }
+    },
+    "MemoryArtifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "protocolReleaseTag",
+        "memoryArtifactId",
+        "memoryArtifactType",
+        "subjectRef",
+        "sourceTraceId",
+        "sourceRunId",
+        "confidence",
+        "consentScope",
+        "retentionPolicyRef",
+        "currentState"
+      ],
+      "properties": {
+        "protocolReleaseTag": { "const": "v3.0-agent-control-r1" },
+        "memoryArtifactId": { "type": "string" },
+        "memoryArtifactType": { "$ref": "#/$defs/MemoryArtifactType" },
+        "subjectRef": { "type": "string" },
+        "sourceTraceId": { "type": "string" },
+        "sourceRunId": { "type": "string" },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+        "consentScope": { "type": "string" },
+        "retentionPolicyRef": { "type": "string" },
+        "currentState": { "$ref": "#/$defs/MemoryArtifactState" },
+        "expiresAt": { "$ref": "#/$defs/IsoDateTime" }
+      }
+    },
+    "PromptInjectionReceipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "protocolReleaseTag",
+        "receiptId",
+        "runId",
+        "attemptId",
+        "selectedMemoryArtifactIds",
+        "injectionBudgetTokens",
+        "relevancePolicyRef",
+        "injectedAt"
+      ],
+      "properties": {
+        "protocolReleaseTag": { "const": "v3.0-agent-control-r1" },
+        "receiptId": { "type": "string" },
+        "runId": { "type": "string" },
+        "attemptId": { "type": "string" },
+        "selectedMemoryArtifactIds": { "$ref": "#/$defs/StringArray" },
+        "injectionBudgetTokens": { "type": "integer", "minimum": 0 },
+        "relevancePolicyRef": { "type": "string" },
+        "injectedAt": { "$ref": "#/$defs/IsoDateTime" }
+      }
+    },
+    "RepairAttempt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "protocolReleaseTag",
+        "repairAttemptId",
+        "runId",
+        "attemptId",
+        "triggeredBy",
+        "triggerFaultClass",
+        "repairPlanRef",
+        "outcome",
+        "operatorApprovalRequired"
+      ],
+      "properties": {
+        "protocolReleaseTag": { "const": "v3.0-agent-control-r1" },
+        "repairAttemptId": { "type": "string" },
+        "runId": { "type": "string" },
+        "attemptId": { "type": "string" },
+        "triggeredBy": { "type": "string" },
+        "triggerFaultClass": { "$ref": "#/$defs/ProviderFaultClass" },
+        "repairPlanRef": { "type": "string" },
+        "outcome": { "$ref": "#/$defs/RepairOutcome" },
+        "antibodyPatternRef": { "type": "string" },
+        "operatorApprovalRequired": { "type": "boolean" },
+        "completedAt": { "$ref": "#/$defs/IsoDateTime" }
+      }
+    }
+  }
+}

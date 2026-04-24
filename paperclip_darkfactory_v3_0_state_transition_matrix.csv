@@ -1,0 +1,38 @@
+domain,current_state,trigger,next_state,actor,guard,source_section
+run,requested,request_accepted,validating,scheduler,spec valid,core-spec-6
+run,validating,validation_passed,planning,worker_or_scheduler,budget available,core-spec-6
+run,validating,validation_failed,failed,worker_or_scheduler,fatal input error,core-spec-6
+run,planning,approval_required,waiting_approval,planner_or_finalizer,gate typed,core-spec-6
+run,planning,execution_starts,executing,execution_writer,approval not required,core-spec-6
+run,executing,human_input_required,waiting_input,worker_or_finalizer,gate typed,core-spec-6
+run,executing,manual_park_requested,parked_manual,manual_gate_service,park record persisted and resources released,core-spec-8.3
+run,parked_manual,rehydration_requested,rehydrating,manual_gate_service,rehydration token validated and requirements met,core-spec-8.3
+run,rehydrating,rehydration_completed,planning,scheduler,new attempt created and route decision re-evaluated,core-spec-8.3
+run,executing,takeover_starts,finalizing,finalizer,closure claim granted,core-spec-6
+run,finalizing,closure_success,completed,closure_writer,no unresolved high-risk effect,core-spec-6
+run,finalizing,closure_failed,failed,closure_writer,cleanup incomplete or fatal error,core-spec-6
+run,finalizing,cancel_wins,cancelled,closure_writer_or_operator,policy allows and safe,core-spec-6
+attempt,created,sandbox_allocated,booting,execution_writer,lease granted,core-spec-6
+attempt,booting,first_checkpoint,active,execution_writer,init ok,core-spec-6
+attempt,active,override_or_recon_request,frozen,operator_or_finalizer,current step frozen,core-spec-6
+attempt,active,lease_lost_or_worker_crash,handoff_pending,reaper_or_finalizer,execution lease lost,core-spec-6
+attempt,active,manual_park_requested,parked_manual,manual_gate_service,park record persisted,core-spec-8.3
+attempt,frozen,recon_required,rehydrate_pending,recon,lane requires new attempt,core-spec-8.3
+attempt,parked_manual,rehydration_requested,rehydrate_pending,manual_gate_service,rehydration token validated,core-spec-8.3
+attempt,rehydrate_pending,new_attempt_launched,superseded,scheduler,previous attempt superseded,core-spec-8.3
+attempt,handoff_pending,closure_claim_success,finalizer_owned,finalizer,fencing advanced,core-spec-6
+attempt,finalizer_owned,closure_succeeded,succeeded,finalizer,outcome determined success,core-spec-6
+attempt,finalizer_owned,closure_failed,failed,finalizer,outcome determined failed,core-spec-6
+attempt,finalizer_owned,closure_cancelled,cancelled,finalizer,outcome determined cancelled,core-spec-6
+artifact,tentative,certification_requirements_satisfied,certified,certifier_service,seal and scan complete and no unresolved high-risk unknown,core-spec-6
+artifact,certified,post_scan_high_risk_conflict,reopened,certifier_service,new contradictory evidence,core-spec-6
+artifact,tentative,post_scan_high_risk_conflict,reopened,certifier_service,new contradictory evidence,core-spec-6
+artifact,reopened,re_adjudication_passes,certified,certifier_service,new adjudication closed cleanly,core-spec-6
+artifact,reopened,re_adjudication_fails,revoked,certifier_service,artifact no longer trustworthy,core-spec-6
+dependency,clean,upstream_becomes_tentative,tentative_upstream,lineage_service,consumer linked to tentative artifact,core-spec-8.4
+dependency,tentative_upstream,upstream_recovers_certified,clean,lineage_service,upstream artifact returned to certified,core-spec-8.4
+dependency,tentative_upstream,manual_waiver_approved,manually_waived,approver_service,scope matched and waiver valid,core-spec-8.4
+dependency,tentative_upstream,upstream_becomes_reopened,reopened_upstream,lineage_service,contradictory evidence surfaced,core-spec-8.4
+dependency,tentative_upstream,upstream_becomes_revoked,revoked_upstream,lineage_service,artifact revoked upstream,core-spec-8.4
+dependency,clean,upstream_becomes_reopened,reopened_upstream,lineage_service,consumer linked to artifact,core-spec-8.4
+dependency,clean,upstream_becomes_revoked,revoked_upstream,lineage_service,consumer linked to artifact,core-spec-8.4

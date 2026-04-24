@@ -1,0 +1,16 @@
+object_or_view,store_class,truth_source,primary_key,important_indexes,retention_or_archive_policy,owner,source
+JournalEvent,journal_store,self,eventId,"traceId,runId,attemptId,artifactId,memoryArtifactId,repairAttemptId",immutable; archive after hot retention; never silent delete,control-plane,impl-pack-storage
+ExecutionCapabilityLease,journal_store,capability.observed,executionCapabilityLeaseId,"executorSessionId,runId,attemptId",retain with attempt audit evidence,execution-plane,core-spec-4.1
+ArtifactCertification,journal_store,artifact.certification.changed,artifactId,"producerRunId,traceId,artifactCertificationState",retain while any downstream lineage exists; archive truth-backed only,artifact-service,core-spec-8.4
+LineageEdge,journal_store,lineage events,edgeId,"parentArtifactId,consumerRunId,inputDependencyState",retain with consumer run; archive preserves invalidation evidence,lineage-service,core-spec-8.4
+ConsumptionWaiver,journal_store,waiver approval,waiverId,"artifactId,approvedBy,expiresAt",expire by expiresAt but keep audit record,governance,core-spec-8.5
+ParkRecord,journal_store,manual_gate.parked,parkId,"runId,rehydrationTokenId,manualGateType",retain until terminal run plus audit retention,manual-gate-service,core-spec-8.3
+RehydrationToken,journal_store,manual_gate.parked/manual_gate.rehydrated,rehydrationTokenId,"runId,previousAttemptId,newAttemptId",single successful consumption; retain consumption proof,manual-gate-service,core-spec-8.3
+RouteDecision,journal_store,route.decision.recorded,routeDecisionId,"runId,attemptId,workloadClass",retain with run; archive truth-backed only,routing-plane,runtime-design-10.1
+ProviderFailureRecord,journal_store,provider.failure.recorded,failureId,"runId,providerRef,providerFaultClass,recoveryLane",retain with route decision and incident evidence,routing-plane,runtime-design-10.1
+MemoryArtifact,journal_store,memory.artifact.created/corrected,memoryArtifactId,"subjectRef,currentState,consentScope,retentionExpiresAt",respect retention TTL; correction/revocation retained as audit fact,memory-plane,runtime-design-10.1
+PromptInjectionReceipt,journal_store,memory.injection.recorded,receiptId,"runId,selectedMemoryArtifactIds",retain with run prompt audit,memory-plane,runtime-design-10.1
+RepairAttempt,journal_store,repair.attempt.started/completed,repairAttemptId,"runId,triggerFaultClass,outcome",retain verification evidence and approval trail,remediation-plane,runtime-design-10.1
+RunView,projection_store,JournalEvent replay,runId,"runState,traceId,blockedBy",rebuildable; never authoritative,control-plane,impl-pack-storage
+ArtifactView,projection_store,ArtifactCertification + LineageEdge,artifactId,"artifactCertificationState,revocationEpoch",rebuildable; archive catalog points to truth source,artifact-service,impl-pack-storage
+ArchiveCatalog,archive_store,truth-backed archived objects,archiveObjectId,"objectType,objectId,archivedAt,holdRecordId",catalog only; restore must cite source archive object,platform-storage,impl-pack-archive

@@ -1,0 +1,384 @@
+protocolReleaseTag: v3.0-agent-control-r1
+normativeVersion: "3.0"
+companionAppendixVersion: "3.0-companion.1"
+implPackVersion: "3.0-impl.1"
+agentAssemblyPackVersion: "3.0-assembly.1"
+registry:
+  - key: lineage.protectedFlow.defaultConsumptionPolicy
+    type: enum(certified_only|tentative_allowed_internal|tentative_allowed_with_waiver)
+    default: certified_only
+    scope: workflow
+    reload: hot
+    owner: control-plane
+    metric_dependency: protected_flow_bypass_rate
+    source: core-spec-8.4
+  - key: lineage.propagation.maxLagSec
+    type: integer
+    default: 60
+    scope: env_or_workflow_tier
+    reload: hot
+    owner: control-plane
+    metric_dependency: lineage_invalidation_propagation_lag_p95
+    source: core-spec-8.4
+  - key: lineage.waiver.defaultMaxFanOut
+    type: integer
+    default: 1
+    scope: workflow
+    reload: cold
+    owner: governance
+    metric_dependency: waiver_fanout_count
+    source: core-spec-8.5
+  - key: broker.capabilityLease.defaultTtlSec
+    type: integer
+    default: 60
+    scope: executor_profile
+    reload: hot
+    owner: execution-plane
+    metric_dependency: capability_lease_expiry_interruptions
+    source: core-spec-4.1
+  - key: broker.runtimeAudit.minRequiredCoverage
+    type: float
+    default: 0.95
+    scope: env
+    reload: hot
+    owner: execution-plane
+    metric_dependency: runtime_audit_coverage
+    source: core-spec-4.1
+  - key: broker.unverifiable.highRiskMode
+    type: enum(manual_hold|local_sandbox_only)
+    default: manual_hold
+    scope: env
+    reload: hot
+    owner: execution-plane
+    metric_dependency: unverifiable_executor_sessions
+    source: core-spec-4.1
+  - key: tokenPreflight.defaultSafetyMarginRatio
+    type: float
+    default: 0.90
+    scope: provider_model
+    reload: hot
+    owner: model-runtime
+    metric_dependency: context_preflight_near_limit_rate
+    source: core-spec-4.1
+  - key: tokenPreflight.hardStop.enabled
+    type: boolean
+    default: true
+    scope: provider_model
+    reload: hot
+    owner: model-runtime
+    metric_dependency: context_length_hard_stop_count
+    source: core-spec-4.1
+  - key: tokenPreflight.poisonedRetryPolicy
+    type: enum(block_same_capsule_hash|manual_only)
+    default: block_same_capsule_hash
+    scope: env
+    reload: hot
+    owner: model-runtime
+    metric_dependency: poisoned_capsule_retry_blocked
+    source: core-spec-4.1
+  - key: shadow.weightedHighRiskDecisionDivergence.cutoverThreshold
+    type: float
+    default: 0.0
+    scope: env
+    reload: hot
+    owner: release-governor
+    metric_dependency: weighted_high_risk_decision_divergence
+    source: impl-pack-shadow
+  - key: shadow.deadlineCrossing.protectedFlowThreshold
+    type: float
+    default: 0.0
+    scope: env
+    reload: hot
+    owner: release-governor
+    metric_dependency: protected_flow_deadline_crossing_divergence
+    source: impl-pack-shadow
+  - key: archive.restore.defaultTargetSec
+    type: integer
+    default: 300
+    scope: storage_tier
+    reload: cold
+    owner: platform-storage
+    metric_dependency: archive_restore_latency_p95
+    source: impl-pack-archive
+  - key: schema.minWriterVersion.v3_0_objects
+    type: string
+    default: "3.0.0"
+    scope: env
+    reload: cold
+    owner: platform-architecture
+    metric_dependency: write_fence_rejections
+    source: core-spec-8.2
+  - key: routing.classifier.defaultPolicyRef
+    type: string
+    default: default-agent-routing
+    scope: env
+    reload: hot
+    owner: routing-plane
+    metric_dependency: routing_policy_resolution_failures
+    source: runtime-design-10.1
+  - key: routing.workload.chat.fallbackChain
+    type: json-array
+    default:
+      - primary-chat
+      - fallback-chat-lite
+    scope: deployment_profile
+    reload: hot
+    owner: routing-plane
+    metric_dependency: routing_fallback_invocations_chat
+    source: runtime-design-10.1
+  - key: routing.workload.code.fallbackChain
+    type: json-array
+    default:
+      - primary-code
+      - fallback-code-safe
+    scope: deployment_profile
+    reload: hot
+    owner: routing-plane
+    metric_dependency: routing_fallback_invocations_code
+    source: runtime-design-10.1
+  - key: routing.workload.reasoning.fallbackChain
+    type: json-array
+    default:
+      - primary-reasoning
+      - fallback-reasoning-budget
+    scope: deployment_profile
+    reload: hot
+    owner: routing-plane
+    metric_dependency: routing_fallback_invocations_reasoning
+    source: runtime-design-10.1
+  - key: routing.workload.vision.fallbackChain
+    type: json-array
+    default:
+      - primary-vision
+      - fallback-vision-general
+    scope: deployment_profile
+    reload: hot
+    owner: routing-plane
+    metric_dependency: routing_fallback_invocations_vision
+    source: runtime-design-10.1
+  - key: routing.retry.maxAttempts.transient_timeout
+    type: integer
+    default: 1
+    scope: deployment_profile
+    reload: hot
+    owner: routing-plane
+    metric_dependency: provider_retry_attempts_timeout
+    source: runtime-design-10.1
+  - key: routing.retry.maxAttempts.transient_5xx
+    type: integer
+    default: 1
+    scope: deployment_profile
+    reload: hot
+    owner: routing-plane
+    metric_dependency: provider_retry_attempts_5xx
+    source: runtime-design-10.1
+  - key: routing.cutover.enabled.quota_exhausted
+    type: boolean
+    default: true
+    scope: deployment_profile
+    reload: hot
+    owner: routing-plane
+    metric_dependency: route_cutover_count_quota_exhausted
+    source: runtime-design-10.1
+  - key: routing.cutover.enabled.auth_invalid
+    type: boolean
+    default: false
+    scope: deployment_profile
+    reload: hot
+    owner: routing-plane
+    metric_dependency: route_cutover_count_auth_invalid
+    source: runtime-design-10.1
+  - key: routing.degrade.lowRiskOnlyOnUnverifiable
+    type: boolean
+    default: true
+    scope: env
+    reload: hot
+    owner: routing-plane
+    metric_dependency: unverifiable_degrade_low_risk_only_invocations
+    source: runtime-design-10.1
+  - key: memory.extractor.minConfidence
+    type: float
+    default: 0.70
+    scope: deployment_profile
+    reload: hot
+    owner: memory-plane
+    metric_dependency: memory_extraction_acceptance_rate
+    source: runtime-design-10.1
+  - key: memory.extractor.maxArtifactsPerTurn
+    type: integer
+    default: 5
+    scope: deployment_profile
+    reload: hot
+    owner: memory-plane
+    metric_dependency: memory_artifacts_emitted_per_turn
+    source: runtime-design-10.1
+  - key: memory.sync.enableDiary
+    type: boolean
+    default: true
+    scope: deployment_profile
+    reload: hot
+    owner: memory-plane
+    metric_dependency: diary_sync_jobs
+    source: runtime-design-10.1
+  - key: memory.sync.enableKnowledgeGraph
+    type: boolean
+    default: true
+    scope: deployment_profile
+    reload: hot
+    owner: memory-plane
+    metric_dependency: knowledge_graph_projection_updates
+    source: runtime-design-10.1
+  - key: memory.retention.defaultTtlDays
+    type: integer
+    default: 90
+    scope: deployment_profile
+    reload: cold
+    owner: governance
+    metric_dependency: memory_expiration_events
+    source: runtime-design-10.1
+  - key: memory.injection.maxTokenBudget
+    type: integer
+    default: 1200
+    scope: deployment_profile
+    reload: hot
+    owner: memory-plane
+    metric_dependency: memory_injection_budget_utilization
+    source: runtime-design-10.1
+  - key: memory.injection.maxArtifactsPerRun
+    type: integer
+    default: 8
+    scope: deployment_profile
+    reload: hot
+    owner: memory-plane
+    metric_dependency: memory_injection_artifact_count
+    source: runtime-design-10.1
+  - key: memory.injection.allowedScopes
+    type: json-array
+    default:
+      - same_session
+      - same_subject_with_consent
+    scope: deployment_profile
+    reload: hot
+    owner: governance
+    metric_dependency: memory_scope_denials
+    source: runtime-design-10.1
+  - key: memory.injection.requireConsentForCrossSession
+    type: boolean
+    default: true
+    scope: deployment_profile
+    reload: hot
+    owner: governance
+    metric_dependency: cross_session_memory_consent_missing
+    source: runtime-design-10.1
+  - key: memory.recover.bootstrapMaxArtifacts
+    type: integer
+    default: 6
+    scope: deployment_profile
+    reload: hot
+    owner: memory-plane
+    metric_dependency: recovery_bootstrap_artifacts_loaded
+    source: runtime-design-10.1
+  - key: repair.auto.enabled
+    type: boolean
+    default: false
+    scope: deployment_profile
+    reload: hot
+    owner: remediation-plane
+    metric_dependency: repair_auto_runs
+    source: runtime-design-10.1
+  - key: repair.auto.maxAttemptsPerRun
+    type: integer
+    default: 2
+    scope: deployment_profile
+    reload: hot
+    owner: remediation-plane
+    metric_dependency: repair_attempts_per_run
+    source: runtime-design-10.1
+  - key: repair.auto.allowCodePatch
+    type: boolean
+    default: false
+    scope: deployment_profile
+    reload: hot
+    owner: remediation-plane
+    metric_dependency: repair_code_patch_attempts
+    source: runtime-design-10.1
+  - key: repair.auto.requireSandboxVerification
+    type: boolean
+    default: true
+    scope: deployment_profile
+    reload: hot
+    owner: remediation-plane
+    metric_dependency: repair_verification_failures
+    source: runtime-design-10.1
+  - key: repair.auto.requireOperatorApproval.highRisk
+    type: boolean
+    default: true
+    scope: deployment_profile
+    reload: hot
+    owner: remediation-plane
+    metric_dependency: repair_operator_approval_waits
+    source: runtime-design-10.1
+  - key: repair.antibody.matchThreshold
+    type: float
+    default: 0.85
+    scope: deployment_profile
+    reload: hot
+    owner: remediation-plane
+    metric_dependency: antibody_reuse_match_rate
+    source: runtime-design-10.1
+  - key: repair.antibody.maxReuseAgeDays
+    type: integer
+    default: 30
+    scope: deployment_profile
+    reload: cold
+    owner: remediation-plane
+    metric_dependency: antibody_reuse_age_distribution
+    source: runtime-design-10.1
+  - key: scenario.acceptance.requiredPackVersion
+    type: string
+    default: "3.0-scenarios.1"
+    scope: env
+    reload: cold
+    owner: release-governor
+    metric_dependency: scenario_pack_version_mismatch
+    source: runtime-design-10.1
+  - key: scenario.acceptance.maxDecisionDivergence
+    type: float
+    default: 0.0
+    scope: env
+    reload: hot
+    owner: release-governor
+    metric_dependency: scenario_decision_divergence
+    source: runtime-design-10.1
+  - key: scenario.acceptance.maxFallbackRate
+    type: float
+    default: 0.15
+    scope: env
+    reload: hot
+    owner: release-governor
+    metric_dependency: scenario_fallback_rate
+    source: runtime-design-10.1
+  - key: scenario.acceptance.maxMemoryInjectionMissRate
+    type: float
+    default: 0.05
+    scope: env
+    reload: hot
+    owner: release-governor
+    metric_dependency: scenario_memory_injection_miss_rate
+    source: runtime-design-10.1
+  - key: scenario.acceptance.maxRepairRegressionRate
+    type: float
+    default: 0.02
+    scope: env
+    reload: hot
+    owner: release-governor
+    metric_dependency: scenario_repair_regression_rate
+    source: runtime-design-10.1
+  - key: release.blockOnScenarioGateFailure
+    type: boolean
+    default: true
+    scope: env
+    reload: hot
+    owner: release-governor
+    metric_dependency: release_gate_blocks
+    source: runtime-design-10.1

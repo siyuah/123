@@ -1,0 +1,287 @@
+protocolReleaseTag: v3.0-agent-control-r1
+normativeVersion: "3.0"
+companionAppendixVersion: "3.0-companion.1"
+implPackVersion: "3.0-impl.1"
+agentAssemblyPackVersion: "3.0-assembly.1"
+envelope:
+  required:
+    - eventName
+    - eventVersion
+    - eventId
+    - emittedAt
+    - protocolReleaseTag
+    - traceId
+    - producer
+    - causationId
+    - correlationId
+    - sequenceNo
+    - isReplay
+  properties:
+    eventName: string
+    eventVersion: string
+    eventId: string
+    emittedAt: date-time
+    protocolReleaseTag: string
+    traceId: string
+    producer: string
+    causationId: string
+    correlationId: string
+    sequenceNo: integer
+    isReplay: boolean
+    partitionKey: string
+    orderingScope: string
+    idempotencyKey: string
+    runId: string
+    attemptId: string
+    artifactId: string
+    memoryArtifactId: string
+    repairAttemptId: string
+events:
+  - name: run.lifecycle.changed
+    version: v3
+    canonicalName: run.lifecycle.changed
+    fullName: run.lifecycle.changed.v3
+    replaySafe: true
+    partitionKey: runId
+    orderingScope: run
+    idempotencyKey: eventId
+    requiredPayload:
+      - runState
+      - actor
+      - reasonCode
+  - name: capability.observed
+    version: v1
+    canonicalName: capability.observed
+    fullName: capability.observed.v1
+    replaySafe: true
+    partitionKey: runId
+    orderingScope: attempt
+    idempotencyKey: executionCapabilityLeaseId
+    requiredPayload:
+      - executorSessionId
+      - executionCapabilityLeaseId
+      - declaredCapabilitySet
+      - grantedCapabilitySet
+      - observedCapabilitySet
+      - profileConformanceStatus
+  - name: artifact.certification.changed
+    version: v1
+    canonicalName: artifact.certification.changed
+    fullName: artifact.certification.changed.v1
+    replaySafe: true
+    partitionKey: artifactId
+    orderingScope: artifact
+    idempotencyKey: eventId
+    requiredPayload:
+      - artifactId
+      - oldState
+      - newState
+      - revocationEpoch
+      - triggeringEvidenceRef
+  - name: lineage.invalidation.started
+    version: v1
+    canonicalName: lineage.invalidation.started
+    fullName: lineage.invalidation.started.v1
+    replaySafe: true
+    partitionKey: artifactId
+    orderingScope: artifact
+    idempotencyKey: eventId
+    requiredPayload:
+      - artifactId
+      - oldCertificationState
+      - newCertificationState
+      - impactedConsumerCount
+  - name: lineage.invalidation.propagated
+    version: v1
+    canonicalName: lineage.invalidation.propagated
+    fullName: lineage.invalidation.propagated.v1
+    replaySafe: true
+    partitionKey: artifactId
+    orderingScope: consumerRun
+    idempotencyKey: eventId
+    requiredPayload:
+      - artifactId
+      - consumerRunId
+      - inputDependencyState
+      - blockNewHighRiskWrites
+  - name: capsule.preflight.failed
+    version: v1
+    canonicalName: capsule.preflight.failed
+    fullName: capsule.preflight.failed.v1
+    replaySafe: true
+    partitionKey: runId
+    orderingScope: attempt
+    idempotencyKey: capsuleHash
+    requiredPayload:
+      - runId
+      - capsuleHash
+      - providerModelId
+      - failureReason
+      - capsuleHealth
+  - name: manual_gate.parked
+    version: v1
+    canonicalName: manual_gate.parked
+    fullName: manual_gate.parked.v1
+    replaySafe: true
+    partitionKey: runId
+    orderingScope: run
+    idempotencyKey: parkId
+    requiredPayload:
+      - runId
+      - parkId
+      - manualGateType
+      - executionSuspensionState
+      - parkedAt
+      - rehydrationTokenId
+  - name: manual_gate.rehydrated
+    version: v1
+    canonicalName: manual_gate.rehydrated
+    fullName: manual_gate.rehydrated.v1
+    replaySafe: true
+    partitionKey: runId
+    orderingScope: run
+    idempotencyKey: rehydrationTokenId
+    requiredPayload:
+      - runId
+      - rehydrationTokenId
+      - rehydratedAt
+      - previousAttemptId
+      - newAttemptId
+  - name: schema.write_fence.rejected
+    version: v1
+    canonicalName: schema.write_fence.rejected
+    fullName: schema.write_fence.rejected.v1
+    replaySafe: true
+    partitionKey: objectId
+    orderingScope: object
+    idempotencyKey: eventId
+    requiredPayload:
+      - objectType
+      - objectId
+      - writerSchemaVersion
+      - minWriterSchemaVersion
+      - rejectedBy
+  - name: route.decision.recorded
+    version: v1
+    canonicalName: route.decision.recorded
+    fullName: route.decision.recorded.v1
+    replaySafe: true
+    partitionKey: runId
+    orderingScope: attempt
+    idempotencyKey: routeDecisionId
+    requiredPayload:
+      - routeDecisionId
+      - workloadClass
+      - routePolicyRef
+      - selectedExecutorClass
+      - fallbackDepth
+      - decisionReason
+  - name: provider.failure.recorded
+    version: v1
+    canonicalName: provider.failure.recorded
+    fullName: provider.failure.recorded.v1
+    replaySafe: true
+    partitionKey: runId
+    orderingScope: attempt
+    idempotencyKey: failureId
+    requiredPayload:
+      - failureId
+      - providerFaultClass
+      - providerRef
+      - routeDecisionId
+      - recoveryLane
+      - cutoverPerformed
+  - name: route.cutover.performed
+    version: v1
+    canonicalName: route.cutover.performed
+    fullName: route.cutover.performed.v1
+    replaySafe: true
+    partitionKey: runId
+    orderingScope: attempt
+    idempotencyKey: routeDecisionId
+    requiredPayload:
+      - routeDecisionId
+      - oldExecutorClass
+      - newExecutorClass
+      - cutoverReason
+      - fallbackDepth
+  - name: memory.artifact.created
+    version: v1
+    canonicalName: memory.artifact.created
+    fullName: memory.artifact.created.v1
+    replaySafe: true
+    partitionKey: memoryArtifactId
+    orderingScope: memoryArtifact
+    idempotencyKey: memoryArtifactId
+    requiredPayload:
+      - memoryArtifactId
+      - memoryArtifactType
+      - subjectRef
+      - confidence
+      - consentScope
+      - currentState
+  - name: memory.artifact.corrected
+    version: v1
+    canonicalName: memory.artifact.corrected
+    fullName: memory.artifact.corrected.v1
+    replaySafe: true
+    partitionKey: memoryArtifactId
+    orderingScope: memoryArtifact
+    idempotencyKey: memoryArtifactId
+    requiredPayload:
+      - memoryArtifactId
+      - correctedFromState
+      - correctedToState
+      - correctionReason
+  - name: memory.injection.recorded
+    version: v1
+    canonicalName: memory.injection.recorded
+    fullName: memory.injection.recorded.v1
+    replaySafe: true
+    partitionKey: runId
+    orderingScope: attempt
+    idempotencyKey: receiptId
+    requiredPayload:
+      - receiptId
+      - selectedMemoryArtifactIds
+      - injectionBudgetTokens
+      - relevancePolicyRef
+  - name: repair.attempt.started
+    version: v1
+    canonicalName: repair.attempt.started
+    fullName: repair.attempt.started.v1
+    replaySafe: true
+    partitionKey: runId
+    orderingScope: attempt
+    idempotencyKey: repairAttemptId
+    requiredPayload:
+      - repairAttemptId
+      - triggeredBy
+      - triggerFaultClass
+      - repairPlanRef
+  - name: repair.attempt.completed
+    version: v1
+    canonicalName: repair.attempt.completed
+    fullName: repair.attempt.completed.v1
+    replaySafe: true
+    partitionKey: runId
+    orderingScope: attempt
+    idempotencyKey: repairAttemptId
+    requiredPayload:
+      - repairAttemptId
+      - outcome
+      - operatorApprovalRequired
+      - antibodyPatternRef
+  - name: antibody.pattern.learned
+    version: v1
+    canonicalName: antibody.pattern.learned
+    fullName: antibody.pattern.learned.v1
+    replaySafe: true
+    partitionKey: repairAttemptId
+    orderingScope: repairAttempt
+    idempotencyKey: antibodyPatternRef
+    requiredPayload:
+      - repairAttemptId
+      - antibodyPatternRef
+      - triggerFaultClass
+      - matchThreshold

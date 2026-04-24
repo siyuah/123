@@ -1,0 +1,190 @@
+protocolReleaseTag: v3.0-agent-control-r1
+normativeVersion: "3.0"
+companionAppendixVersion: "3.0-companion.1"
+implPackVersion: "3.0-impl.1"
+agentAssemblyPackVersion: "3.0-assembly.1"
+scenarioPackVersion: "3.0-scenarios.1"
+openapi: 3.1.0
+info:
+  title: Paperclip Dark Factory V3.0 External Runs API
+  version: 3.0.0
+  description: External runs, artifact, lineage, repair and archive facade for v3.0-agent-control-r1.
+servers:
+  - url: /api
+components:
+  parameters:
+    ProtocolReleaseTagHeader:
+      name: X-Protocol-Release-Tag
+      in: header
+      required: true
+      schema:
+        type: string
+        const: v3.0-agent-control-r1
+  schemas:
+    ErrorResponse:
+      type: object
+      required: [protocolReleaseTag, errorCode, message, traceId]
+      properties:
+        protocolReleaseTag: { type: string, const: v3.0-agent-control-r1 }
+        errorCode: { type: string }
+        message: { type: string }
+        traceId: { type: string }
+        retryable: { type: boolean }
+    CreateExternalRunRequest:
+      type: object
+      required: [protocolReleaseTag, requestedBy, workloadClass, inputRef, traceId]
+      properties:
+        protocolReleaseTag: { type: string, const: v3.0-agent-control-r1 }
+        requestedBy: { type: string }
+        workloadClass: { type: string, enum: [chat, code, reasoning, vision, memory_maintenance, repair, operator_adjudication] }
+        inputRef: { type: string }
+        traceId: { type: string }
+        routePolicyRef: { type: string }
+    RunView:
+      type: object
+      required: [protocolReleaseTag, runId, runState, traceId, activeAttemptId, blockedBy]
+      properties:
+        protocolReleaseTag: { type: string, const: v3.0-agent-control-r1 }
+        runId: { type: string }
+        runState: { type: string, enum: [requested, validating, planning, executing, waiting_approval, waiting_input, parked_manual, rehydrating, finalizing, completed, failed, cancelled] }
+        traceId: { type: string }
+        activeAttemptId: { type: string }
+        blockedBy: { type: array, items: { type: string } }
+        currentManualGateType: { type: string }
+        currentExecutionSuspensionState: { type: string }
+        routeDecisionId: { type: string }
+    ParkRunRequest:
+      type: object
+      required: [protocolReleaseTag, manualGateType, parkReasonCode]
+      properties:
+        protocolReleaseTag: { type: string, const: v3.0-agent-control-r1 }
+        manualGateType: { type: string, enum: [manual_approval_required, manual_evidence_access_required, manual_adjudication_required, manual_risk_acceptance_required, manual_recovery_required, manual_external_followup_required] }
+        parkReasonCode: { type: string }
+    RehydrateRunRequest:
+      type: object
+      required: [protocolReleaseTag, rehydrationTokenId]
+      properties:
+        protocolReleaseTag: { type: string, const: v3.0-agent-control-r1 }
+        rehydrationTokenId: { type: string }
+    RepairRunRequest:
+      type: object
+      required: [protocolReleaseTag, triggeredBy, triggerFaultClass, repairPlanRef]
+      properties:
+        protocolReleaseTag: { type: string, const: v3.0-agent-control-r1 }
+        triggeredBy: { type: string }
+        triggerFaultClass: { type: string }
+        repairPlanRef: { type: string }
+    RouteDecisionView:
+      type: object
+      required: [protocolReleaseTag, routeDecisionId, runId, workloadClass, selectedExecutorClass, fallbackDepth, decisionReason, routeDecisionState]
+      properties:
+        protocolReleaseTag: { type: string, const: v3.0-agent-control-r1 }
+        routeDecisionId: { type: string }
+        runId: { type: string }
+        workloadClass: { type: string }
+        selectedExecutorClass: { type: string }
+        fallbackDepth: { type: integer }
+        decisionReason: { type: string }
+        routeDecisionState: { type: string }
+    ProviderFailureView:
+      type: object
+      required: [protocolReleaseTag, failureId, runId, providerFaultClass, recoveryLane]
+      properties:
+        protocolReleaseTag: { type: string, const: v3.0-agent-control-r1 }
+        failureId: { type: string }
+        runId: { type: string }
+        providerFaultClass: { type: string }
+        recoveryLane: { type: string }
+        cutoverPerformed: { type: boolean }
+    RepairAttemptView:
+      type: object
+      required: [protocolReleaseTag, repairAttemptId, runId, outcome, verificationEvidenceRef]
+      properties:
+        protocolReleaseTag: { type: string, const: v3.0-agent-control-r1 }
+        repairAttemptId: { type: string }
+        runId: { type: string }
+        outcome: { type: string }
+        verificationEvidenceRef: { type: string }
+        operatorApprovalRequired: { type: boolean }
+    ArchiveSearchResult:
+      type: object
+      required: [protocolReleaseTag, objectId, objectType, archivedAt, truthBacked]
+      properties:
+        protocolReleaseTag: { type: string, const: v3.0-agent-control-r1 }
+        objectId: { type: string }
+        objectType: { type: string }
+        archivedAt: { type: string, format: date-time }
+        truthBacked: { type: boolean }
+    ArchiveRestoreRequest:
+      type: object
+      required: [protocolReleaseTag, objectId, restoreReason]
+      properties:
+        protocolReleaseTag: { type: string, const: v3.0-agent-control-r1 }
+        objectId: { type: string }
+        restoreReason: { type: string }
+paths:
+  /external-runs:
+    post:
+      operationId: createExternalRun
+      parameters: [{ $ref: '#/components/parameters/ProtocolReleaseTagHeader' }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/CreateExternalRunRequest' } } }
+      responses:
+        '201': { description: created, content: { application/json: { schema: { $ref: '#/components/schemas/RunView' } } } }
+        default: { description: error, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
+  /external-runs/{runId}:
+    get:
+      operationId: getExternalRun
+      parameters: [{ name: runId, in: path, required: true, schema: { type: string } }]
+      responses:
+        '200': { description: run, content: { application/json: { schema: { $ref: '#/components/schemas/RunView' } } } }
+        default: { description: error, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
+  /external-runs/{runId}:park:
+    post:
+      operationId: parkExternalRun
+      parameters: [{ name: runId, in: path, required: true, schema: { type: string } }, { $ref: '#/components/parameters/ProtocolReleaseTagHeader' }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/ParkRunRequest' } } } }
+      responses:
+        '200': { description: parked, content: { application/json: { schema: { $ref: '#/components/schemas/RunView' } } } }
+        default: { description: error, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
+  /external-runs/{runId}:rehydrate:
+    post:
+      operationId: rehydrateExternalRun
+      parameters: [{ name: runId, in: path, required: true, schema: { type: string } }, { $ref: '#/components/parameters/ProtocolReleaseTagHeader' }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/RehydrateRunRequest' } } } }
+      responses:
+        '200': { description: rehydrated, content: { application/json: { schema: { $ref: '#/components/schemas/RunView' } } } }
+        default: { description: error, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
+  /external-runs/{runId}/route-decisions:
+    get:
+      operationId: listRouteDecisions
+      parameters: [{ name: runId, in: path, required: true, schema: { type: string } }]
+      responses: { '200': { description: route decisions, content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/RouteDecisionView' } } } } } }
+  /external-runs/{runId}/provider-failures:
+    get:
+      operationId: listProviderFailures
+      parameters: [{ name: runId, in: path, required: true, schema: { type: string } }]
+      responses: { '200': { description: provider failures, content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/ProviderFailureView' } } } } } }
+  /external-runs/{runId}/repair-attempts:
+    get:
+      operationId: listRepairAttempts
+      parameters: [{ name: runId, in: path, required: true, schema: { type: string } }]
+      responses: { '200': { description: repair attempts, content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/RepairAttemptView' } } } } } }
+  /external-runs/{runId}:repair:
+    post:
+      operationId: startRepairAttempt
+      parameters: [{ name: runId, in: path, required: true, schema: { type: string } }, { $ref: '#/components/parameters/ProtocolReleaseTagHeader' }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/RepairRunRequest' } } } }
+      responses: { '202': { description: accepted, content: { application/json: { schema: { $ref: '#/components/schemas/RepairAttemptView' } } } } }
+  /archive/search:
+    get:
+      operationId: searchArchive
+      parameters: [{ name: q, in: query, required: false, schema: { type: string } }]
+      responses: { '200': { description: archive search, content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/ArchiveSearchResult' } } } } } }
+  /archive/restore:
+    post:
+      operationId: restoreArchiveObject
+      parameters: [{ $ref: '#/components/parameters/ProtocolReleaseTagHeader' }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/ArchiveRestoreRequest' } } } }
+      responses: { '202': { description: restore accepted, content: { application/json: { schema: { $ref: '#/components/schemas/ArchiveSearchResult' } } } } }

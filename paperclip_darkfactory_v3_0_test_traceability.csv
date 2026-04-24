@@ -1,0 +1,16 @@
+obligation_id,domain,requirement,source,test_case_id,scenario_id,golden_timeline,release_blocker
+OB-V30-capability-001,capability,observed capability beyond grant triggers audit and block/degrade/manual intervention,invariants-4,TC-V30-capability-001,,,true
+OB-V30-capability-002,capability,unverifiable profile cannot enter new high-risk write path,invariants-4,TC-V30-capability-003,,,true
+OB-V30-lineage-001,lineage,reopened/revoked upstream propagates to affected consumers,invariants-6,TC-V30-lineage-002,SC-V30-lineage-001,,true
+OB-V30-lineage-002,lineage,revoked_upstream cannot be waived into high-risk primary write,invariants-6,TC-V30-lineage-004,,,true
+OB-V30-manual-001,manual,"park creates ParkRecord, releases resources and preserves truth obligation",invariants-7,TC-V30-manual-001,SC-V30-manual-001,,true
+OB-V30-manual-002,manual,rehydration token is single-use and creates new attempt,invariants-7,TC-V30-manual-002,SC-V30-manual-001,,true
+OB-V30-routing-001,routing,provider fault class maps to unique recovery lane,invariants-8,TC-V30-routing-002,SC-V30-routing-fallback-001,,true
+OB-V30-routing-002,routing,cutover leaves truth record,invariants-8,TC-V30-routing-003,SC-V30-routing-quota-001,,true
+OB-V30-memory-001,memory,out-of-scope memory artifacts are not injected,invariants-9,TC-V30-memory-003,SC-V30-memory-001,,true
+OB-V30-memory-002,memory,prompt injection emits receipt,invariants-9,TC-V30-memory-004,SC-V30-memory-001,,true
+OB-V30-repair-001,repair,repair success requires verification and main state adjudication,invariants-10,TC-V30-repair-002,SC-V30-repair-001,,true
+OB-V30-repair-002,repair,repair lane cannot bypass capability/schema/lineage/manual gates,invariants-10,TC-V30-repair-004,SC-V30-repair-002,,true
+OB-V30-schema-001,schema,old writer below minimum schema version is rejected,invariants-5,TC-V30-schema-001,,,true
+OB-V30-release-001,release,release blocker scenarios must pass before release candidate,invariants-11,TC-V30-scenario-001,,,true
+OB-V30-release-002,release,manifest paths and hashes match actual bundle files,invariants-11,TC-V30-scenario-003,,,true
