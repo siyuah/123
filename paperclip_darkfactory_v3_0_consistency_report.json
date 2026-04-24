@@ -1,0 +1,116 @@
+{
+  "checkedAt": "2026-04-24T19:37:54Z",
+  "checks": [
+    {
+      "details": {
+        "checkedFiles": 33,
+        "missingPaths": []
+      },
+      "id": "manifest-path-exists",
+      "message": "all manifest paths exist",
+      "status": "pass"
+    },
+    {
+      "details": {
+        "duplicatePaths": []
+      },
+      "id": "manifest-unique-paths",
+      "message": "manifest paths are unique",
+      "status": "pass"
+    },
+    {
+      "details": {
+        "mismatches": []
+      },
+      "id": "manifest-sha256-match",
+      "message": "manifest sha256 values match disk",
+      "status": "pass"
+    },
+    {
+      "details": {
+        "unclassifiedPaths": []
+      },
+      "id": "tracked-files-classified-by-manifest",
+      "message": "tracked files are listed or explicitly excluded",
+      "status": "pass"
+    },
+    {
+      "details": {
+        "contractOnly": [],
+        "enumOnly": []
+      },
+      "id": "event-enum-contract-parity",
+      "message": "event canonical names match between enum and event contracts",
+      "status": "pass"
+    },
+    {
+      "details": {
+        "undeclaredStates": []
+      },
+      "id": "state-matrix-enum-parity",
+      "message": "state transition matrix values are declared in core enums",
+      "status": "pass"
+    },
+    {
+      "details": {
+        "missingScenarioIds": []
+      },
+      "id": "release-blocker-scenario-traceability",
+      "message": "every release-blocker scenario is mapped in traceability",
+      "status": "pass"
+    },
+    {
+      "details": {
+        "goldenTimelineRefs": [
+          "tests/golden_timelines/v3_0/GL-V30-lineage-reopen-blocks-consumer.jsonl",
+          "tests/golden_timelines/v3_0/GL-V30-manual-park-rehydrate.jsonl",
+          "tests/golden_timelines/v3_0/GL-V30-memory-injection-denied.jsonl",
+          "tests/golden_timelines/v3_0/GL-V30-repair-verified-success.jsonl",
+          "tests/golden_timelines/v3_0/GL-V30-routing-chat.jsonl",
+          "tests/golden_timelines/v3_0/GL-V30-routing-code.jsonl",
+          "tests/golden_timelines/v3_0/GL-V30-routing-vision.jsonl"
+        ],
+        "missingGoldenTimelineRefs": []
+      },
+      "id": "golden-timeline-exists",
+      "message": "all referenced golden timelines exist",
+      "status": "pass"
+    },
+    {
+      "details": {
+        "errors": []
+      },
+      "id": "golden-timeline-event-contract-parity",
+      "message": "golden timelines use canonical event names, event versions, and protocol tags",
+      "status": "pass"
+    },
+    {
+      "details": {
+        "protocolReleaseTagOccurrences": 14
+      },
+      "id": "openapi-parse-and-protocol-tag:paperclip_darkfactory_v3_0_external_runs.openapi.yaml",
+      "message": "OpenAPI parses and contains protocol release tag",
+      "status": "pass"
+    },
+    {
+      "details": {
+        "protocolReleaseTagOccurrences": 8
+      },
+      "id": "openapi-parse-and-protocol-tag:paperclip_darkfactory_v3_0_memory.openapi.yaml",
+      "message": "OpenAPI parses and contains protocol release tag",
+      "status": "pass"
+    },
+    {
+      "id": "json-schema-parse",
+      "message": "core object JSON Schema parses",
+      "status": "pass"
+    }
+  ],
+  "protocolReleaseTag": "v3.0-agent-control-r1",
+  "status": "pass",
+  "summary": {
+    "checks": 12,
+    "errors": 0,
+    "warnings": 0
+  }
+}
