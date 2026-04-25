@@ -98,7 +98,7 @@ files:
   normativity: release-gate-report
 - path: paperclip_darkfactory_v3_0_bundle_manifest.yaml
   sha256: SELF_HASH_EXCLUDED
-  bytes: 8524
+  bytes: 8525
   normativity: release-gate-input
 - path: paperclip_darkfactory_v3_0_consistency_report.json
   sha256: SELF_HASH_EXCLUDED
@@ -113,8 +113,8 @@ files:
   bytes: 1643
   normativity: release-gate-tool
 - path: Makefile
-  sha256: a93dd122b83a6c08212dda6beb9df07ab462644b898c63402fffbf06707cc9cc
-  bytes: 718
+  sha256: 6454fcfac98c85eb17cefc556ec70641a18a2659b287dc83e8792ad49c40139e
+  bytes: 752
   normativity: release-gate-tool
 - path: .github/workflows/v3-bundle-validate.yml
   sha256: 1713723b9a78b03bc58cb3d180998cf18909d59049f0920a463e26bc44181a07
@@ -161,8 +161,8 @@ files:
   bytes: 10733
   normativity: informative
 - path: tests/test_v3_runtime.py
-  sha256: 20facb658d10fd3f996960f571a5174a8d5d8d0309235fce2ae8fcf1cf1c8230
-  bytes: 55492
+  sha256: 7b32332f98ebbbc0a7fd50e85dbe17db3d827e3a0f3f9f2da70a098a77327737
+  bytes: 56132
   normativity: release-gate-test
 - path: tests/test_v3_journal_verification.py
   role: journal verification unit tests

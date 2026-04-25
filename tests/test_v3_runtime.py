@@ -822,8 +822,11 @@ class V3RuntimeContractTests(unittest.TestCase):
                 stderr=subprocess.PIPE,
                 check=True,
             )
-            smoke_payload = json.loads(smoke.stdout)
+            smoke_payload = json.loads(smoke.stdout[smoke.stdout.index("{"):])
+            self.assertEqual(smoke.returncode, 0)
+            self.assertTrue(smoke.stdout.strip())
             self.assertEqual(smoke_payload["ok"], True)
+            self.assertEqual(smoke_payload["verifyJournal"]["ok"], True)
             self.assertTrue(journal.exists())
 
             verify = subprocess.run(
@@ -835,8 +838,16 @@ class V3RuntimeContractTests(unittest.TestCase):
                 check=True,
             )
             verify_payload = json.loads(verify.stdout[verify.stdout.index("{"):])
+            self.assertEqual(verify.returncode, 0)
+            self.assertTrue(verify.stdout.strip())
             self.assertEqual(verify_payload["ok"], True)
             self.assertEqual(Path(verify_payload["journal"]), journal)
+            self.assertTrue(all(isinstance(check, dict) for check in verify_payload["checks"]))
+            self.assertTrue(verify_payload["checks"])
+            for check in verify_payload["checks"]:
+                self.assertIn("id", check)
+                self.assertIn("status", check)
+                self.assertIn("message", check)
 
     def test_makefile_verify_journal_target_requires_journal(self):
         result = subprocess.run(

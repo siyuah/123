@@ -1,4 +1,5 @@
 .PHONY: validate-v3 test-v3-contracts manifest-v3 smoke-v3-control-plane verify-v3-journal
+MAKEFLAGS += --no-print-directory
 
 validate-v3:
 	python3 tools/validate_v3_bundle.py --write-report
