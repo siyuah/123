@@ -510,6 +510,75 @@ class V3RuntimeContractTests(unittest.TestCase):
             check=check,
         )
 
+    def run_smoke(self, *args, check=False):
+        return subprocess.run(
+            [sys.executable, str(ROOT / "tools/v3_control_plane_smoke.py"), *args],
+            cwd=ROOT,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=check,
+        )
+
+    def test_control_plane_cli_version_outputs_stable_contract_summary(self):
+        result = self.run_cli("version", check=True)
+
+        payload = json.loads(result.stdout)
+        expected_commands = [
+            "request-run",
+            "transition-run",
+            "transition-attempt",
+            "record-route-decision",
+            "park-manual",
+            "rehydrate-manual",
+            "projection",
+            "version",
+        ]
+        self.assertEqual(payload["ok"], True)
+        self.assertEqual(payload["protocolReleaseTag"], PROTOCOL_RELEASE_TAG)
+        self.assertEqual(payload["commands"], expected_commands)
+        self.assertEqual(payload["eventContract"]["eventVersion"], "v1")
+        self.assertEqual(payload["eventContract"]["producer"], "dark-factory-control-plane")
+
+    def test_control_plane_smoke_script_runs_complete_timeline_and_projects_expected_state(self):
+        result = self.run_smoke(check=True)
+
+        payload = json.loads(result.stdout)
+        projection = payload["projection"]
+        self.assertEqual(payload["ok"], True)
+        self.assertEqual(payload["events"], 8)
+        self.assertTrue(payload["journal"].endswith("v3_control_plane_smoke.jsonl"))
+        self.assertEqual(projection["runs"]["run-smoke-001"]["currentState"], "planning")
+        self.assertEqual(projection["attempts"]["attempt-smoke-001"]["currentState"], "superseded")
+        self.assertEqual(projection["attempts"]["attempt-smoke-002"]["currentState"], "created")
+        self.assertIn("rd-smoke-001", projection["routeDecisions"])
+        self.assertEqual(payload["sequenceNos"], list(range(1, 9)))
+
+    def test_control_plane_smoke_script_keeps_user_supplied_journal_path(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            journal = Path(tmpdir) / "kept-smoke.jsonl"
+            result = self.run_smoke("--journal", str(journal), check=True)
+
+            payload = json.loads(result.stdout)
+            self.assertEqual(payload["ok"], True)
+            self.assertEqual(Path(payload["journal"]), journal)
+            self.assertTrue(journal.exists())
+            self.assertEqual(len(journal.read_text(encoding="utf-8").splitlines()), 8)
+
+    def test_control_plane_smoke_script_illegal_transition_outputs_json_error_without_polluting_journal(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            journal = Path(tmpdir) / "bad-smoke.jsonl"
+            result = self.run_smoke("--journal", str(journal), "--inject-illegal-transition", check=False)
+
+            error = json.loads(result.stderr)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertEqual(result.stdout, "")
+            self.assertEqual(error["ok"], False)
+            self.assertEqual(error["error"]["type"], "SmokeAssertionError")
+            self.assertIn("illegal run transition", error["error"]["message"])
+            self.assertTrue(journal.exists())
+            self.assertEqual(len(journal.read_text(encoding="utf-8").splitlines()), 4)
+
     def test_cli_projection_outputs_stable_json_summary(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             path = Path(tmpdir) / "journal.jsonl"

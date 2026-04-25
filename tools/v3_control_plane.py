@@ -14,6 +14,19 @@ if str(ROOT) not in sys.path:
 
 from dark_factory_v3.control_plane import ControlPlane, ControlPlaneError  # noqa: E402
 from dark_factory_v3.projection import ProjectionState  # noqa: E402
+from dark_factory_v3.protocol import PROTOCOL_RELEASE_TAG, load_event_contracts  # noqa: E402
+
+SUPPORTED_COMMANDS = [
+    "request-run",
+    "transition-run",
+    "transition-attempt",
+    "record-route-decision",
+    "park-manual",
+    "rehydrate-manual",
+    "projection",
+    "version",
+]
+DEFAULT_PRODUCER = "dark-factory-control-plane"
 
 
 def _stable_projection_value(value: Any) -> Any:
@@ -162,6 +175,34 @@ def cmd_projection(args: argparse.Namespace) -> int:
     return emit({"ok": True, "projection": projection_to_dict(plane.projection())})
 
 
+def cmd_version(args: argparse.Namespace) -> int:
+    contracts = load_event_contracts(ROOT)
+    supported_event_names = [
+        "run.lifecycle.transitioned",
+        "attempt.lifecycle.transitioned",
+        "route.decision.recorded",
+        "manual_gate.parked",
+        "manual_gate.rehydrated",
+    ]
+    event_versions = {
+        name: str(contracts[name]["version"]) if name in contracts else "v1"
+        for name in supported_event_names
+    }
+    return emit({
+        "ok": True,
+        "protocolReleaseTag": PROTOCOL_RELEASE_TAG,
+        "commands": SUPPORTED_COMMANDS,
+        "eventContract": {
+            "eventVersion": "v1",
+            "producer": DEFAULT_PRODUCER,
+            "supportedEvents": supported_event_names,
+            "eventVersions": event_versions,
+            "journal": "append-only-jsonl",
+            "projection": "replay-current-journal",
+        },
+    })
+
+
 def add_common_write_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--journal", required=True, help="Path to the append-only JSONL journal")
     parser.add_argument("--correlation-id", required=True)
@@ -237,6 +278,9 @@ def build_parser() -> argparse.ArgumentParser:
     projection = subparsers.add_parser("projection", help="Replay a JSONL journal and print projection state")
     projection.add_argument("--journal", required=True, help="Path to the append-only JSONL journal")
     projection.set_defaults(func=cmd_projection)
+
+    version = subparsers.add_parser("version", help="Print stable V3 CLI contract summary")
+    version.set_defaults(func=cmd_version)
 
     return parser
 
