@@ -500,6 +500,16 @@ class V3RuntimeContractTests(unittest.TestCase):
             reloaded = ControlPlane.from_jsonl_path(ROOT, path)
             self.assertEqual(reloaded.get_run("run-file-001").currentState, "planning")
 
+    def run_cli(self, *args, check=False):
+        return subprocess.run(
+            [sys.executable, str(ROOT / "tools/v3_control_plane.py"), *args],
+            cwd=ROOT,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=check,
+        )
+
     def test_cli_projection_outputs_stable_json_summary(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             path = Path(tmpdir) / "journal.jsonl"
@@ -632,6 +642,190 @@ class V3RuntimeContractTests(unittest.TestCase):
             projection = ControlPlane.from_jsonl_path(ROOT, path).projection()
             self.assertEqual(projection.get_run("run-cli-001").currentState, "planning")
             self.assertEqual(len(path.read_text(encoding="utf-8").splitlines()), 2)
+
+    def test_cli_record_route_decision_projects_stable_route_decision_json(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = Path(tmpdir) / "journal.jsonl"
+            recorded = self.run_cli(
+                "record-route-decision",
+                "--journal", str(path),
+                "--run-id", "run-cli-route-001",
+                "--attempt-id", "attempt-cli-route-001",
+                "--route-decision-id", "rd-cli-route-001",
+                "--workload-class", "code",
+                "--route-policy-ref", "policy://routing/v3/default",
+                "--selected-executor-class", "code_executor",
+                "--fallback-depth", "0",
+                "--decision-reason", "primary_policy_match",
+                "--correlation-id", "corr-cli-route-001",
+                "--trace-id", "trace-cli-route-001",
+                check=True,
+            )
+            projection = self.run_cli("projection", "--journal", str(path), check=True)
+
+            event = json.loads(recorded.stdout)["event"]
+            payload = json.loads(projection.stdout)
+            route = payload["projection"]["routeDecisions"]["rd-cli-route-001"]
+            self.assertEqual(event["eventName"], "route.decision.recorded")
+            self.assertEqual(route["eventId"], event["eventId"])
+            self.assertEqual(route["decision"]["workloadClass"], "code")
+            self.assertEqual(list(payload["projection"]["routeDecisions"].keys()), ["rd-cli-route-001"])
+            self.assertEqual(list(payload["projection"]["runs"].keys()), ["run-cli-route-001"])
+            self.assertEqual(list(payload["projection"]["attempts"].keys()), ["attempt-cli-route-001"])
+
+    def test_cli_transition_attempt_created_booting_active_happy_path(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = Path(tmpdir) / "journal.jsonl"
+            first = self.run_cli(
+                "transition-attempt",
+                "--journal", str(path),
+                "--run-id", "run-cli-attempt-001",
+                "--attempt-id", "attempt-cli-attempt-001",
+                "--old-state", "created",
+                "--new-state", "booting",
+                "--transition-trigger", "sandbox_allocated",
+                "--correlation-id", "corr-cli-attempt-001",
+                "--trace-id", "trace-cli-attempt-001",
+                check=True,
+            )
+            second = self.run_cli(
+                "transition-attempt",
+                "--journal", str(path),
+                "--run-id", "run-cli-attempt-001",
+                "--attempt-id", "attempt-cli-attempt-001",
+                "--old-state", "booting",
+                "--new-state", "active",
+                "--transition-trigger", "first_checkpoint",
+                "--correlation-id", "corr-cli-attempt-001",
+                "--trace-id", "trace-cli-attempt-001",
+                check=True,
+            )
+            projection = json.loads(self.run_cli("projection", "--journal", str(path), check=True).stdout)["projection"]
+
+            self.assertEqual(json.loads(first.stdout)["event"]["sequenceNo"], 1)
+            self.assertEqual(json.loads(second.stdout)["event"]["sequenceNo"], 2)
+            self.assertEqual(projection["attempts"]["attempt-cli-attempt-001"]["currentState"], "active")
+            self.assertEqual(projection["attempts"]["attempt-cli-attempt-001"]["eventIds"], [
+                "evt-corr-cli-attempt-001-0001",
+                "evt-corr-cli-attempt-001-0002",
+            ])
+
+    def test_cli_park_manual_and_rehydrate_manual_project_attempt_supersession(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = Path(tmpdir) / "journal.jsonl"
+            for args in [
+                ("request-run", "--journal", str(path), "--run-id", "run-cli-manual-001", "--correlation-id", "corr-cli-manual-001", "--trace-id", "trace-cli-manual-001"),
+                ("transition-run", "--journal", str(path), "--run-id", "run-cli-manual-001", "--old-state", "validating", "--new-state", "planning", "--transition-trigger", "validation_passed", "--correlation-id", "corr-cli-manual-001", "--trace-id", "trace-cli-manual-001"),
+                ("transition-run", "--journal", str(path), "--run-id", "run-cli-manual-001", "--old-state", "planning", "--new-state", "executing", "--transition-trigger", "execution_starts", "--correlation-id", "corr-cli-manual-001", "--trace-id", "trace-cli-manual-001"),
+                ("transition-attempt", "--journal", str(path), "--run-id", "run-cli-manual-001", "--attempt-id", "attempt-cli-manual-001", "--old-state", "created", "--new-state", "booting", "--transition-trigger", "sandbox_allocated", "--correlation-id", "corr-cli-manual-001", "--trace-id", "trace-cli-manual-001"),
+                ("transition-attempt", "--journal", str(path), "--run-id", "run-cli-manual-001", "--attempt-id", "attempt-cli-manual-001", "--old-state", "booting", "--new-state", "active", "--transition-trigger", "first_checkpoint", "--correlation-id", "corr-cli-manual-001", "--trace-id", "trace-cli-manual-001"),
+            ]:
+                self.run_cli(*args, check=True)
+
+            parked = self.run_cli(
+                "park-manual",
+                "--journal", str(path),
+                "--run-id", "run-cli-manual-001",
+                "--attempt-id", "attempt-cli-manual-001",
+                "--park-id", "park-cli-manual-001",
+                "--manual-gate-type", "operator_review",
+                "--rehydration-token-id", "rt-cli-manual-001",
+                "--correlation-id", "corr-cli-manual-001",
+                "--trace-id", "trace-cli-manual-001",
+                check=True,
+            )
+            rehydrated = self.run_cli(
+                "rehydrate-manual",
+                "--journal", str(path),
+                "--run-id", "run-cli-manual-001",
+                "--previous-attempt-id", "attempt-cli-manual-001",
+                "--new-attempt-id", "attempt-cli-manual-002",
+                "--rehydration-token-id", "rt-cli-manual-001",
+                "--correlation-id", "corr-cli-manual-001",
+                "--trace-id", "trace-cli-manual-001",
+                check=True,
+            )
+            projection = json.loads(self.run_cli("projection", "--journal", str(path), check=True).stdout)["projection"]
+
+            self.assertEqual(json.loads(parked.stdout)["event"]["eventName"], "manual_gate.parked")
+            self.assertEqual(json.loads(rehydrated.stdout)["event"]["eventName"], "manual_gate.rehydrated")
+            self.assertEqual(projection["runs"]["run-cli-manual-001"]["currentState"], "planning")
+            self.assertEqual(projection["attempts"]["attempt-cli-manual-001"]["currentState"], "superseded")
+            self.assertEqual(projection["attempts"]["attempt-cli-manual-002"]["currentState"], "created")
+
+    def test_cli_illegal_transition_attempt_outputs_json_error_without_polluting_journal(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = Path(tmpdir) / "journal.jsonl"
+            self.run_cli(
+                "transition-attempt",
+                "--journal", str(path),
+                "--run-id", "run-cli-attempt-bad-001",
+                "--attempt-id", "attempt-cli-attempt-bad-001",
+                "--old-state", "created",
+                "--new-state", "booting",
+                "--transition-trigger", "sandbox_allocated",
+                "--correlation-id", "corr-cli-attempt-bad-001",
+                "--trace-id", "trace-cli-attempt-bad-001",
+                check=True,
+            )
+            before = path.read_text(encoding="utf-8")
+
+            bad = self.run_cli(
+                "transition-attempt",
+                "--journal", str(path),
+                "--run-id", "run-cli-attempt-bad-001",
+                "--attempt-id", "attempt-cli-attempt-bad-001",
+                "--old-state", "booting",
+                "--new-state", "superseded",
+                "--transition-trigger", "new_attempt_launched",
+                "--correlation-id", "corr-cli-attempt-bad-001",
+                "--trace-id", "trace-cli-attempt-bad-001",
+            )
+
+            error = json.loads(bad.stderr)
+            self.assertNotEqual(bad.returncode, 0)
+            self.assertEqual(error["ok"], False)
+            self.assertEqual(error["error"]["type"], "ControlPlaneError")
+            self.assertIn("illegal attempt transition", error["error"]["message"])
+            self.assertEqual(path.read_text(encoding="utf-8"), before)
+
+    def test_cli_duplicate_event_id_outputs_stable_json_error(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = Path(tmpdir) / "journal.jsonl"
+            self.run_cli(
+                "request-run",
+                "--journal", str(path),
+                "--run-id", "run-cli-dup-001",
+                "--correlation-id", "corr-cli-dup-001",
+                "--trace-id", "trace-cli-dup-001",
+                "--event-id", "evt-cli-dup-fixed",
+                check=True,
+            )
+            before = path.read_text(encoding="utf-8")
+
+            duplicate = self.run_cli(
+                "transition-run",
+                "--journal", str(path),
+                "--run-id", "run-cli-dup-001",
+                "--old-state", "validating",
+                "--new-state", "planning",
+                "--transition-trigger", "validation_passed",
+                "--correlation-id", "corr-cli-dup-001",
+                "--trace-id", "trace-cli-dup-001",
+                "--event-id", "evt-cli-dup-fixed",
+            )
+
+            error = json.loads(duplicate.stderr)
+            self.assertEqual(duplicate.stdout, "")
+            self.assertNotEqual(duplicate.returncode, 0)
+            self.assertEqual(error, {
+                "ok": False,
+                "error": {
+                    "type": "ControlPlaneError",
+                    "message": "duplicate eventId 'evt-cli-dup-fixed'",
+                },
+            })
+            self.assertEqual(path.read_text(encoding="utf-8"), before)
 
 
 if __name__ == "__main__":
