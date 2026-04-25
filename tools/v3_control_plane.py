@@ -13,8 +13,8 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from dark_factory_v3.control_plane import ControlPlane, ControlPlaneError  # noqa: E402
-from dark_factory_v3.projection import ProjectionState  # noqa: E402
-from dark_factory_v3.protocol import PROTOCOL_RELEASE_TAG, load_event_contracts  # noqa: E402
+from dark_factory_v3.projection import ProjectionReplayError, ProjectionState, RunLifecycleReducer  # noqa: E402
+from dark_factory_v3.protocol import EventEnvelope, PROTOCOL_RELEASE_TAG, load_event_contracts  # noqa: E402
 
 SUPPORTED_COMMANDS = [
     "request-run",
@@ -24,9 +24,204 @@ SUPPORTED_COMMANDS = [
     "park-manual",
     "rehydrate-manual",
     "projection",
+    "verify-journal",
     "version",
 ]
 DEFAULT_PRODUCER = "dark-factory-control-plane"
+
+
+VERIFY_JOURNAL_CHECKS = [
+    "jsonl.valid_json",
+    "journal.sequence_contiguous",
+    "journal.event_id_unique",
+    "envelope.required_fields",
+    "envelope.protocol_release_tag",
+    "envelope.event_version_compatible",
+    "projection.replay",
+    "projection.event_ids_unique",
+    "projection.event_ids_resolvable",
+]
+REQUIRED_ENVELOPE_FIELDS = ("correlationId", "traceId", "eventName", "emittedAt", "eventId", "eventVersion")
+
+
+class JournalVerificationError(ValueError):
+    def __init__(
+        self,
+        check: str,
+        message: str,
+        *,
+        line: int | None = None,
+        event_id: str | None = None,
+        entity_id: str | None = None,
+        collection: str | None = None,
+    ) -> None:
+        super().__init__(message)
+        self.check = check
+        self.message = message
+        self.line = line
+        self.event_id = event_id
+        self.entity_id = entity_id
+        self.collection = collection
+
+    def to_dict(self) -> dict[str, Any]:
+        payload: dict[str, Any] = {"check": self.check, "message": self.message}
+        if self.line is not None:
+            payload["line"] = self.line
+        if self.event_id is not None:
+            payload["eventId"] = self.event_id
+        if self.entity_id is not None:
+            payload["entityId"] = self.entity_id
+        if self.collection is not None:
+            payload["collection"] = self.collection
+        return payload
+
+
+def emit_journal_verification_error(exc: JournalVerificationError) -> int:
+    emit({"ok": False, "error": exc.to_dict()}, stream=sys.stderr)
+    return 2
+
+
+def _read_verified_journal_events(journal_path: Path) -> list[tuple[int, EventEnvelope]]:
+    contracts = load_event_contracts(ROOT)
+    events: list[tuple[int, EventEnvelope]] = []
+    seen_event_ids: dict[str, int] = {}
+    if not journal_path.exists():
+        raise JournalVerificationError("jsonl.valid_json", f"journal does not exist: {journal_path}")
+    for line_number, line in enumerate(journal_path.read_text(encoding="utf-8").splitlines(), start=1):
+        if not line.strip():
+            continue
+        try:
+            raw = json.loads(line)
+        except json.JSONDecodeError as exc:
+            raise JournalVerificationError("jsonl.valid_json", f"line {line_number} is not valid JSON: {exc.msg}", line=line_number) from exc
+        if not isinstance(raw, dict):
+            raise JournalVerificationError("jsonl.valid_json", f"line {line_number} must be a JSON object", line=line_number)
+        event_id = raw.get("eventId") if isinstance(raw.get("eventId"), str) else None
+        expected_sequence = len(events) + 1
+        if raw.get("sequenceNo") != expected_sequence:
+            raise JournalVerificationError(
+                "journal.sequence_contiguous",
+                f"expected sequenceNo {expected_sequence}, got {raw.get('sequenceNo')!r}",
+                line=line_number,
+                event_id=event_id,
+            )
+        if event_id in seen_event_ids:
+            raise JournalVerificationError(
+                "journal.event_id_unique",
+                f"duplicate eventId {event_id!r}; first seen on line {seen_event_ids[event_id]}",
+                line=line_number,
+                event_id=event_id,
+            )
+        if event_id is not None:
+            seen_event_ids[event_id] = line_number
+        for field_name in REQUIRED_ENVELOPE_FIELDS:
+            if not raw.get(field_name):
+                raise JournalVerificationError(
+                    "envelope.required_fields",
+                    f"missing required envelope field {field_name!r}",
+                    line=line_number,
+                    event_id=event_id,
+                )
+        if raw.get("protocolReleaseTag") != PROTOCOL_RELEASE_TAG:
+            raise JournalVerificationError(
+                "envelope.protocol_release_tag",
+                f"protocolReleaseTag must be {PROTOCOL_RELEASE_TAG!r}, got {raw.get('protocolReleaseTag')!r}",
+                line=line_number,
+                event_id=event_id,
+            )
+        event_name = raw.get("eventName")
+        legacy_runtime_versions = {"run.lifecycle.transitioned": "v1", "attempt.lifecycle.transitioned": "v1"}
+        if event_name in contracts:
+            expected_version = str(contracts[event_name]["version"])
+        elif event_name in legacy_runtime_versions:
+            expected_version = legacy_runtime_versions[event_name]
+        else:
+            raise JournalVerificationError(
+                "envelope.event_version_compatible",
+                f"unknown eventName {event_name!r}",
+                line=line_number,
+                event_id=event_id,
+            )
+        if str(raw.get("eventVersion")) != expected_version:
+            raise JournalVerificationError(
+                "envelope.event_version_compatible",
+                f"eventVersion for {event_name!r} must be {expected_version!r}, got {raw.get('eventVersion')!r}",
+                line=line_number,
+                event_id=event_id,
+            )
+        try:
+            event = EventEnvelope.from_dict(raw, isReplay=True)
+        except (TypeError, ValueError) as exc:
+            raise JournalVerificationError("envelope.required_fields", str(exc), line=line_number, event_id=event_id) from exc
+        if event.eventId != event_id:
+            raise JournalVerificationError(
+                "projection.event_ids_resolvable",
+                f"raw journal eventId {event_id!r} does not match replay envelope eventId {event.eventId!r}",
+                line=line_number,
+                event_id=event.eventId,
+                entity_id=event.runId or event.attemptId,
+            )
+        events.append((line_number, event))
+    return events
+
+
+def _projection_summary(projection: ProjectionState) -> dict[str, int]:
+    return {
+        "attempts": len(projection.attempts),
+        "routeDecisions": len(projection.route_decisions),
+        "runs": len(projection.runs),
+        "unknownEvents": len(projection.unknown_events),
+    }
+
+
+def _verify_projection_event_ids(projection: ProjectionState, journal_event_ids: set[str]) -> None:
+    collections = (
+        ("runs", projection.runs),
+        ("attempts", projection.attempts),
+    )
+    for collection_name, entities in collections:
+        for entity_id in sorted(entities):
+            event_ids = list(entities[entity_id].eventIds)
+            if event_ids != list(dict.fromkeys(event_ids)):
+                raise JournalVerificationError(
+                    "projection.event_ids_unique",
+                    f"{collection_name} {entity_id} has duplicate eventIds",
+                    entity_id=entity_id,
+                    collection=collection_name,
+                )
+            for event_id in event_ids:
+                if event_id not in journal_event_ids:
+                    raise JournalVerificationError(
+                        "projection.event_ids_resolvable",
+                        f"{collection_name} {entity_id} references eventId not found in journal",
+                        event_id=event_id,
+                        entity_id=entity_id,
+                        collection=collection_name,
+                    )
+
+
+def verify_journal_payload(journal_path: Path) -> dict[str, Any]:
+    line_events = _read_verified_journal_events(journal_path)
+    events = [event for _, event in line_events]
+    try:
+        projection = RunLifecycleReducer(root=ROOT).replay(events)
+    except ProjectionReplayError as exc:
+        raise JournalVerificationError("projection.replay", str(exc)) from exc
+    _verify_projection_event_ids(projection, {event.eventId for event in events})
+    return {
+        "ok": True,
+        "journal": str(journal_path),
+        "events": len(events),
+        "checks": VERIFY_JOURNAL_CHECKS,
+        "projectionSummary": _projection_summary(projection),
+    }
+
+
+def cmd_verify_journal(args: argparse.Namespace) -> int:
+    try:
+        return emit(verify_journal_payload(Path(args.journal)))
+    except JournalVerificationError as exc:
+        return emit_journal_verification_error(exc)
 
 
 def _stable_projection_value(value: Any) -> Any:
@@ -279,6 +474,10 @@ def build_parser() -> argparse.ArgumentParser:
     projection.add_argument("--journal", required=True, help="Path to the append-only JSONL journal")
     projection.set_defaults(func=cmd_projection)
 
+    verify_journal = subparsers.add_parser("verify-journal", help="Verify an append-only JSONL journal before replay/projection")
+    verify_journal.add_argument("--journal", required=True, help="Path to the append-only JSONL journal")
+    verify_journal.set_defaults(func=cmd_verify_journal)
+
     version = subparsers.add_parser("version", help="Print stable V3 CLI contract summary")
     version.set_defaults(func=cmd_version)
 
@@ -292,6 +491,8 @@ def main(argv: list[str] | None = None) -> int:
         return args.func(args)
     except ControlPlaneError as exc:
         return emit_control_plane_error(exc)
+    except JournalVerificationError as exc:
+        return emit_journal_verification_error(exc)
 
 
 if __name__ == "__main__":

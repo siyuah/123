@@ -134,6 +134,52 @@ Optional:
 
 Appends `manual_gate.rehydrated`. Current reducer semantics project the run back to `planning`, mark the previous attempt `superseded`, and create the new attempt as `created`.
 
+### verify-journal
+
+Required:
+
+- `--journal`
+
+Verifies an append-only JSONL journal before replay/projection consumers trust it. Recommended gate: run `verify-journal` before `projection`, replay, or any downstream projection/materialization job.
+
+Checks are intentionally stable and named:
+
+- `jsonl.valid_json`: every non-empty line is a JSON object.
+- `journal.sequence_contiguous`: `sequenceNo` starts at 1 and increments by exactly 1 for every journal line.
+- `journal.event_id_unique`: every `eventId` is unique.
+- `envelope.required_fields`: `correlationId`, `traceId`, `eventName`, `emittedAt`, `eventId`, and `eventVersion` are present.
+- `envelope.protocol_release_tag`: `protocolReleaseTag` is exactly `v3.0-agent-control-r1`.
+- `envelope.event_version_compatible`: `eventVersion` is compatible with the current known event contract for `eventName`.
+- `projection.replay`: the journal can be replayed by `RunLifecycleReducer`.
+- `projection.event_ids_unique`: every projected run/attempt has unique `eventIds`.
+- `projection.event_ids_resolvable`: every projected run/attempt `eventId` exists in the journal.
+
+Success output is stable JSON:
+
+```json
+{
+  "ok": true,
+  "journal": "/tmp/v3-control-plane-smoke.jsonl",
+  "events": 8,
+  "checks": ["jsonl.valid_json", "journal.sequence_contiguous", "..."],
+  "projectionSummary": {"runs": 1, "attempts": 2, "routeDecisions": 1, "unknownEvents": 0}
+}
+```
+
+Failure output is stable JSON on stderr and exits non-zero without a Python traceback. `error.check` is the failed check id. Location fields are included when available: `line`, `eventId`, `entityId`, and `collection`.
+
+```json
+{
+  "ok": false,
+  "error": {
+    "check": "journal.sequence_contiguous",
+    "message": "expected sequenceNo 2, got 3",
+    "line": 2,
+    "eventId": "evt-corr-smoke-001-0002"
+  }
+}
+```
+
 ### projection
 
 Required:
@@ -190,7 +236,7 @@ Keep the journal at a known path:
 python3 tools/v3_control_plane_smoke.py --journal /tmp/v3-control-plane-smoke.jsonl
 ```
 
-The smoke script invokes `tools/v3_control_plane.py` through subprocess, appends this timeline, then replays projection:
+The smoke script invokes `tools/v3_control_plane.py` through subprocess, appends this timeline, replays projection, then runs `verify-journal` against the generated journal:
 
 1. `request-run`
 2. `record-route-decision`
@@ -210,11 +256,12 @@ Success output is stable JSON:
   "journal": "/tmp/v3-control-plane-smoke.jsonl",
   "events": 8,
   "sequenceNos": [1, 2, 3, 4, 5, 6, 7, 8],
-  "projection": {"runs": {}, "attempts": {}, "routeDecisions": {}, "unknownEvents": []}
+  "projection": {"runs": {}, "attempts": {}, "routeDecisions": {}, "unknownEvents": []},
+  "verifyJournal": {"ok": true, "events": 8, "checks": ["..."], "projectionSummary": {}}
 }
 ```
 
-The script asserts that the run ends in `planning`, the original attempt is `superseded`, the new attempt is `created`, route decision `rd-smoke-001` exists, and event `sequenceNo` values are contiguous from 1.
+The script asserts that the run ends in `planning`, the original attempt is `superseded`, the new attempt is `created`, route decision `rd-smoke-001` exists, event `sequenceNo` values are contiguous from 1, projection event lineage has no duplicate event ids, and `verify-journal` succeeds before the smoke output is accepted.
 
 ### Projection lineage contract
 

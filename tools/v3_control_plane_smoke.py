@@ -127,12 +127,21 @@ def run_smoke(journal: Path, *, inject_illegal_transition: bool) -> dict[str, An
     projection_payload = run_cli("projection", "--journal", str(journal))
     projection = projection_payload["projection"]
     sequence_nos = validate_projection(journal, projection)
+    verify_payload = run_cli("verify-journal", "--journal", str(journal))
+    if verify_payload.get("ok") is not True:
+        raise SmokeAssertionError("verify-journal did not return ok")
     return {
         "ok": True,
         "journal": str(journal),
         "events": 8,
         "sequenceNos": sequence_nos,
         "projection": projection,
+        "verifyJournal": {
+            "ok": verify_payload["ok"],
+            "events": verify_payload["events"],
+            "checks": verify_payload["checks"],
+            "projectionSummary": verify_payload["projectionSummary"],
+        },
     }
 
 
