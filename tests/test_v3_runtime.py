@@ -822,9 +822,11 @@ class V3RuntimeContractTests(unittest.TestCase):
                 stderr=subprocess.PIPE,
                 check=True,
             )
-            smoke_payload = json.loads(smoke.stdout[smoke.stdout.index("{"):])
+            smoke_stdout = smoke.stdout.strip()
             self.assertEqual(smoke.returncode, 0)
-            self.assertTrue(smoke.stdout.strip())
+            self.assertTrue(smoke_stdout)
+            self.assertTrue(smoke_stdout.startswith("{"), smoke.stdout)
+            smoke_payload = json.loads(smoke_stdout)
             self.assertEqual(smoke_payload["ok"], True)
             self.assertEqual(smoke_payload["verifyJournal"]["ok"], True)
             self.assertTrue(journal.exists())
@@ -837,9 +839,11 @@ class V3RuntimeContractTests(unittest.TestCase):
                 stderr=subprocess.PIPE,
                 check=True,
             )
-            verify_payload = json.loads(verify.stdout[verify.stdout.index("{"):])
+            verify_stdout = verify.stdout.strip()
             self.assertEqual(verify.returncode, 0)
-            self.assertTrue(verify.stdout.strip())
+            self.assertTrue(verify_stdout)
+            self.assertTrue(verify_stdout.startswith("{"), verify.stdout)
+            verify_payload = json.loads(verify_stdout)
             self.assertEqual(verify_payload["ok"], True)
             self.assertEqual(Path(verify_payload["journal"]), journal)
             self.assertTrue(all(isinstance(check, dict) for check in verify_payload["checks"]))

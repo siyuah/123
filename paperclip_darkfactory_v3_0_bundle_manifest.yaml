@@ -113,8 +113,8 @@ files:
   bytes: 1643
   normativity: release-gate-tool
 - path: Makefile
-  sha256: 6454fcfac98c85eb17cefc556ec70641a18a2659b287dc83e8792ad49c40139e
-  bytes: 752
+  sha256: 10da3d47bacbd079989b322b1c1b1ed15dcd4e83a59b793385a9c4b8d4fc1777
+  bytes: 753
   normativity: release-gate-tool
 - path: .github/workflows/v3-bundle-validate.yml
   sha256: 1713723b9a78b03bc58cb3d180998cf18909d59049f0920a463e26bc44181a07
@@ -161,8 +161,8 @@ files:
   bytes: 10733
   normativity: informative
 - path: tests/test_v3_runtime.py
-  sha256: 7b32332f98ebbbc0a7fd50e85dbe17db3d827e3a0f3f9f2da70a098a77327737
-  bytes: 56132
+  sha256: f2f2db50f0f51ace44718b8f70fda502db33132013c1f9c5932785aa9916c5a9
+  bytes: 56307
   normativity: release-gate-test
 - path: tests/test_v3_journal_verification.py
   role: journal verification unit tests

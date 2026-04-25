@@ -23,4 +23,4 @@ verify-v3-journal:
 		echo "JOURNAL is required: make verify-v3-journal JOURNAL=path/to/file.jsonl" >&2; \
 		exit 2; \
 	fi
-	python3 tools/v3_control_plane.py verify-journal --journal "$(JOURNAL)"
+	@python3 tools/v3_control_plane.py verify-journal --journal "$(JOURNAL)"
