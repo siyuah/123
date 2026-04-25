@@ -1,9 +1,9 @@
 {
-  "checkedAt": "2026-04-25T12:34:10Z",
+  "checkedAt": "2026-04-25T13:21:01Z",
   "checks": [
     {
       "details": {
-        "checkedFiles": 42,
+        "checkedFiles": 43,
         "missingPaths": []
       },
       "id": "manifest-path-exists",

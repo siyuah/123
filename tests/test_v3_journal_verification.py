@@ -30,7 +30,8 @@ class V3JournalVerificationInternalsTests(unittest.TestCase):
             v3_control_plane._verify_projection_event_ids(projection, {"evt-present-001"})
 
         self.assertEqual(ctx.exception.to_dict(), {
-            "check": "projection.event_ids_resolvable",
+            "type": "JournalVerificationError",
+            "checkId": "projection.event_ids_resolvable",
             "message": "runs run-missing-001 references eventId not found in journal",
             "eventId": "evt-missing-from-journal",
             "entityId": "run-missing-001",

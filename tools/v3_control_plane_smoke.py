@@ -118,7 +118,7 @@ def validate_projection(journal: Path, projection: dict[str, Any]) -> list[int]:
     return sequence_nos
 
 
-def run_smoke(journal: Path, *, inject_illegal_transition: bool) -> dict[str, Any]:
+def run_smoke(journal: Path, *, inject_illegal_transition: bool, verify_report: Path | None = None) -> dict[str, Any]:
     journal.parent.mkdir(parents=True, exist_ok=True)
     if journal.exists():
         journal.unlink()
@@ -127,7 +127,10 @@ def run_smoke(journal: Path, *, inject_illegal_transition: bool) -> dict[str, An
     projection_payload = run_cli("projection", "--journal", str(journal))
     projection = projection_payload["projection"]
     sequence_nos = validate_projection(journal, projection)
-    verify_payload = run_cli("verify-journal", "--journal", str(journal))
+    verify_args = ["verify-journal", "--journal", str(journal)]
+    if verify_report is not None:
+        verify_args.extend(["--output", str(verify_report)])
+    verify_payload = run_cli(*verify_args)
     if verify_payload.get("ok") is not True:
         raise SmokeAssertionError("verify-journal did not return ok")
     return {
@@ -149,6 +152,10 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Run an end-to-end V3 control-plane CLI smoke timeline")
     parser.add_argument("--journal", help="Path to keep the append-only JSONL journal. Defaults to a temporary smoke directory.")
     parser.add_argument(
+        "--verify-report",
+        help="Optional path for the verify-journal --output report when --journal is supplied.",
+    )
+    parser.add_argument(
         "--inject-illegal-transition",
         action="store_true",
         help=argparse.SUPPRESS,
@@ -160,7 +167,8 @@ def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     try:
         if args.journal:
-            payload = run_smoke(Path(args.journal), inject_illegal_transition=args.inject_illegal_transition)
+            verify_report = Path(args.verify_report) if args.verify_report else None
+            payload = run_smoke(Path(args.journal), inject_illegal_transition=args.inject_illegal_transition, verify_report=verify_report)
             return emit(payload)
         with tempfile.TemporaryDirectory(prefix="v3-control-plane-smoke-") as tmpdir:
             journal = Path(tmpdir) / "v3_control_plane_smoke.jsonl"

@@ -30,17 +30,19 @@ SUPPORTED_COMMANDS = [
 DEFAULT_PRODUCER = "dark-factory-control-plane"
 
 
-VERIFY_JOURNAL_CHECKS = [
-    "jsonl.valid_json",
-    "journal.sequence_contiguous",
-    "journal.event_id_unique",
-    "envelope.required_fields",
-    "envelope.protocol_release_tag",
-    "envelope.event_version_compatible",
-    "projection.replay",
-    "projection.event_ids_unique",
-    "projection.event_ids_resolvable",
-]
+VERIFY_JOURNAL_CHECK_MESSAGES = {
+    "jsonl.valid_json": "journal contains only non-empty JSON object lines",
+    "journal.not_empty": "journal contains at least one event",
+    "journal.sequence_contiguous": "sequenceNo starts at 1 and increments by one per journal line",
+    "journal.event_id_unique": "eventId values are unique across the journal",
+    "envelope.required_fields": "required EventEnvelope fields are present",
+    "envelope.protocol_release_tag": f"protocolReleaseTag is {PROTOCOL_RELEASE_TAG}",
+    "envelope.event_version_compatible": "eventVersion matches the known event contract",
+    "projection.replay": "RunLifecycleReducer can replay the full journal",
+    "projection.event_ids_unique": "projected run and attempt eventIds are unique",
+    "projection.event_ids_resolvable": "projected run and attempt eventIds resolve to journal envelopes",
+}
+VERIFY_JOURNAL_CHECKS = list(VERIFY_JOURNAL_CHECK_MESSAGES)
 REQUIRED_ENVELOPE_FIELDS = ("correlationId", "traceId", "eventName", "emittedAt", "eventId", "eventVersion")
 
 
@@ -50,6 +52,7 @@ class JournalVerificationError(ValueError):
         check: str,
         message: str,
         *,
+        line_number: int | None = None,
         line: int | None = None,
         event_id: str | None = None,
         entity_id: str | None = None,
@@ -58,15 +61,19 @@ class JournalVerificationError(ValueError):
         super().__init__(message)
         self.check = check
         self.message = message
-        self.line = line
+        self.line_number = line_number if line_number is not None else line
         self.event_id = event_id
         self.entity_id = entity_id
         self.collection = collection
 
     def to_dict(self) -> dict[str, Any]:
-        payload: dict[str, Any] = {"check": self.check, "message": self.message}
-        if self.line is not None:
-            payload["line"] = self.line
+        payload: dict[str, Any] = {
+            "type": "JournalVerificationError",
+            "checkId": self.check,
+            "message": self.message,
+        }
+        if self.line_number is not None:
+            payload["lineNumber"] = self.line_number
         if self.event_id is not None:
             payload["eventId"] = self.event_id
         if self.entity_id is not None:
@@ -165,13 +172,37 @@ def _read_verified_journal_events(journal_path: Path) -> list[tuple[int, EventEn
     return events
 
 
-def _projection_summary(projection: ProjectionState) -> dict[str, int]:
+def _projection_summary(projection: ProjectionState, *, run_id: str | None = None) -> dict[str, int]:
+    if run_id is None:
+        return {
+            "attempts": len(projection.attempts),
+            "routeDecisions": len(projection.route_decisions),
+            "runs": len(projection.runs),
+            "unknownEvents": len(projection.unknown_events),
+        }
+    attempts = {
+        attempt_id: attempt
+        for attempt_id, attempt in projection.attempts.items()
+        if attempt.runId == run_id
+    }
+    route_decisions = {
+        decision_id: decision
+        for decision_id, decision in projection.route_decisions.items()
+        if decision.decision.runId == run_id
+    }
     return {
-        "attempts": len(projection.attempts),
-        "routeDecisions": len(projection.route_decisions),
-        "runs": len(projection.runs),
+        "attempts": len(attempts),
+        "routeDecisions": len(route_decisions),
+        "runs": 1 if run_id in projection.runs else 0,
         "unknownEvents": len(projection.unknown_events),
     }
+
+
+def _passed_checks() -> list[dict[str, str]]:
+    return [
+        {"id": check_id, "status": "pass", "message": VERIFY_JOURNAL_CHECK_MESSAGES[check_id]}
+        for check_id in VERIFY_JOURNAL_CHECKS
+    ]
 
 
 def _verify_projection_event_ids(projection: ProjectionState, journal_event_ids: set[str]) -> None:
@@ -200,26 +231,40 @@ def _verify_projection_event_ids(projection: ProjectionState, journal_event_ids:
                     )
 
 
-def verify_journal_payload(journal_path: Path) -> dict[str, Any]:
+def verify_journal_payload(journal_path: Path, *, run_id: str | None = None) -> dict[str, Any]:
     line_events = _read_verified_journal_events(journal_path)
     events = [event for _, event in line_events]
+    if not events:
+        raise JournalVerificationError("journal.not_empty", "journal must contain at least one event")
     try:
         projection = RunLifecycleReducer(root=ROOT).replay(events)
     except ProjectionReplayError as exc:
         raise JournalVerificationError("projection.replay", str(exc)) from exc
     _verify_projection_event_ids(projection, {event.eventId for event in events})
-    return {
+    full_summary = _projection_summary(projection)
+    payload: dict[str, Any] = {
         "ok": True,
         "journal": str(journal_path),
         "events": len(events),
-        "checks": VERIFY_JOURNAL_CHECKS,
-        "projectionSummary": _projection_summary(projection),
+        "checks": _passed_checks(),
+        "checkIds": VERIFY_JOURNAL_CHECKS,
+        "projectionSummary": _projection_summary(projection, run_id=run_id),
     }
+    if run_id is not None:
+        payload["runId"] = run_id
+        payload["fullProjectionSummary"] = full_summary
+    return payload
 
 
 def cmd_verify_journal(args: argparse.Namespace) -> int:
     try:
-        return emit(verify_journal_payload(Path(args.journal)))
+        payload = verify_journal_payload(Path(args.journal), run_id=args.run_id)
+        if args.output:
+            output_path = Path(args.output)
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+            payload["outputPath"] = str(output_path)
+            output_path.write_text(json.dumps(payload, ensure_ascii=False, sort_keys=True, indent=2) + "\n", encoding="utf-8")
+        return emit(payload)
     except JournalVerificationError as exc:
         return emit_journal_verification_error(exc)
 
@@ -476,6 +521,13 @@ def build_parser() -> argparse.ArgumentParser:
 
     verify_journal = subparsers.add_parser("verify-journal", help="Verify an append-only JSONL journal before replay/projection")
     verify_journal.add_argument("--journal", required=True, help="Path to the append-only JSONL journal")
+    verify_journal.add_argument("--output", help="Write the complete stable verify JSON report to this path")
+    verify_journal.add_argument("--run-id", help="Filter projectionSummary to one run after replaying the full journal")
+    verify_journal.add_argument(
+        "--strict-empty",
+        action="store_true",
+        help="Require at least one event in the journal. Empty journals fail by default; this flag locks that contract for CI.",
+    )
     verify_journal.set_defaults(func=cmd_verify_journal)
 
     version = subparsers.add_parser("version", help="Print stable V3 CLI contract summary")

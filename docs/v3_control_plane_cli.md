@@ -10,6 +10,8 @@ Run commands from the repository root:
 python3 tools/v3_control_plane.py version
 python3 tools/v3_control_plane.py <command> --journal /path/to/journal.jsonl ...
 python3 tools/v3_control_plane_smoke.py --journal /tmp/v3-smoke.jsonl
+make smoke-v3-control-plane JOURNAL=/tmp/v3-smoke.jsonl
+make verify-v3-journal JOURNAL=/tmp/v3-smoke.jsonl
 ```
 
 `tools/v3_control_plane.py` writes and replays an append-only JSONL journal. Every write command requires `--journal`, `--correlation-id`, and `--trace-id`. `projection` replays the journal and does not append an event.
@@ -140,17 +142,30 @@ Required:
 
 - `--journal`
 
+Optional:
+
+- `--output PATH`: write the complete stable verify JSON report to `PATH`. Stdout still emits the same stable JSON and includes `outputPath`.
+- `--run-id RUN_ID`: replay the full journal, then filter only `projectionSummary` to the requested run and related attempts/route decisions. `fullProjectionSummary` remains available so CI can confirm full replay scope.
+- `--strict-empty`: explicitly locks the CI contract that an empty journal fails. Empty journals fail by default; this flag is present for agent/CI scripts that want the requirement visible in command logs.
+
 Verifies an append-only JSONL journal before replay/projection consumers trust it. Recommended gate: run `verify-journal` before `projection`, replay, or any downstream projection/materialization job.
 
-Checks are intentionally stable and named:
+Checks are stable objects with this shape:
+
+```json
+{"id": "jsonl.valid_json", "status": "pass", "message": "journal contains only non-empty JSON object lines"}
+```
+
+Current check ids:
 
 - `jsonl.valid_json`: every non-empty line is a JSON object.
+- `journal.not_empty`: the journal contains at least one event. Empty journals fail by default and with `--strict-empty`.
 - `journal.sequence_contiguous`: `sequenceNo` starts at 1 and increments by exactly 1 for every journal line.
 - `journal.event_id_unique`: every `eventId` is unique.
 - `envelope.required_fields`: `correlationId`, `traceId`, `eventName`, `emittedAt`, `eventId`, and `eventVersion` are present.
 - `envelope.protocol_release_tag`: `protocolReleaseTag` is exactly `v3.0-agent-control-r1`.
 - `envelope.event_version_compatible`: `eventVersion` is compatible with the current known event contract for `eventName`.
-- `projection.replay`: the journal can be replayed by `RunLifecycleReducer`.
+- `projection.replay`: the full journal can be replayed by `RunLifecycleReducer`.
 - `projection.event_ids_unique`: every projected run/attempt has unique `eventIds`.
 - `projection.event_ids_resolvable`: every projected run/attempt `eventId` exists in the journal.
 
@@ -161,20 +176,35 @@ Success output is stable JSON:
   "ok": true,
   "journal": "/tmp/v3-control-plane-smoke.jsonl",
   "events": 8,
-  "checks": ["jsonl.valid_json", "journal.sequence_contiguous", "..."],
-  "projectionSummary": {"runs": 1, "attempts": 2, "routeDecisions": 1, "unknownEvents": 0}
+  "checks": [{"id": "jsonl.valid_json", "status": "pass", "message": "..."}],
+  "checkIds": ["jsonl.valid_json", "journal.not_empty", "..."],
+  "projectionSummary": {"runs": 1, "attempts": 2, "routeDecisions": 1, "unknownEvents": 0},
+  "outputPath": "/tmp/v3-control-plane-smoke.verify.json"
 }
 ```
 
-Failure output is stable JSON on stderr and exits non-zero without a Python traceback. `error.check` is the failed check id. Location fields are included when available: `line`, `eventId`, `entityId`, and `collection`.
+With `--run-id run-smoke-001`, `projectionSummary` is filtered after full replay and `fullProjectionSummary` records the unfiltered totals:
+
+```json
+{
+  "ok": true,
+  "runId": "run-smoke-001",
+  "events": 9,
+  "projectionSummary": {"runs": 1, "attempts": 2, "routeDecisions": 1, "unknownEvents": 0},
+  "fullProjectionSummary": {"runs": 2, "attempts": 2, "routeDecisions": 1, "unknownEvents": 0}
+}
+```
+
+Failure output is stable JSON on stderr and exits non-zero without a Python traceback. `error.type` is `JournalVerificationError`; `error.checkId` is the failed check id. Location fields are included when available: `lineNumber`, `eventId`, `entityId`, and `collection`.
 
 ```json
 {
   "ok": false,
   "error": {
-    "check": "journal.sequence_contiguous",
+    "type": "JournalVerificationError",
+    "checkId": "journal.sequence_contiguous",
     "message": "expected sequenceNo 2, got 3",
-    "line": 2,
+    "lineNumber": 2,
     "eventId": "evt-corr-smoke-001-0002"
   }
 }
@@ -230,10 +260,12 @@ Run a complete timeline with a temporary journal:
 python3 tools/v3_control_plane_smoke.py
 ```
 
-Keep the journal at a known path:
+Keep the journal at a known path and optionally keep the verify report:
 
 ```bash
-python3 tools/v3_control_plane_smoke.py --journal /tmp/v3-control-plane-smoke.jsonl
+python3 tools/v3_control_plane_smoke.py --journal /tmp/v3-control-plane-smoke.jsonl --verify-report /tmp/v3-control-plane-smoke.verify.json
+make smoke-v3-control-plane JOURNAL=/tmp/v3-control-plane-smoke.jsonl
+make verify-v3-journal JOURNAL=/tmp/v3-control-plane-smoke.jsonl
 ```
 
 The smoke script invokes `tools/v3_control_plane.py` through subprocess, appends this timeline, replays projection, then runs `verify-journal` against the generated journal:
@@ -257,11 +289,23 @@ Success output is stable JSON:
   "events": 8,
   "sequenceNos": [1, 2, 3, 4, 5, 6, 7, 8],
   "projection": {"runs": {}, "attempts": {}, "routeDecisions": {}, "unknownEvents": []},
-  "verifyJournal": {"ok": true, "events": 8, "checks": ["..."], "projectionSummary": {}}
+  "verifyJournal": {"ok": true, "events": 8, "checks": [{"id": "jsonl.valid_json", "status": "pass", "message": "..."}], "projectionSummary": {}}
 }
 ```
 
-The script asserts that the run ends in `planning`, the original attempt is `superseded`, the new attempt is `created`, route decision `rd-smoke-001` exists, event `sequenceNo` values are contiguous from 1, projection event lineage has no duplicate event ids, and `verify-journal` succeeds before the smoke output is accepted.
+The script asserts that the run ends in `planning`, the original attempt is `superseded`, the new attempt is `created`, route decision `rd-smoke-001` exists, event `sequenceNo` values are contiguous from 1, projection event lineage has no duplicate event ids, and `verify-journal` succeeds with object checks before the smoke output is accepted.
+
+## CI/agent recommended flow
+
+Use the same journal path through the flow so diagnostics can be inspected if a later stage fails:
+
+```bash
+make smoke-v3-control-plane JOURNAL=/tmp/v3-control-plane-smoke.jsonl
+make verify-v3-journal JOURNAL=/tmp/v3-control-plane-smoke.jsonl
+python3 tools/v3_control_plane.py projection --journal /tmp/v3-control-plane-smoke.jsonl
+```
+
+For persisted diagnostics, call `verify-journal` directly with `--output /tmp/v3-control-plane-smoke.verify.json`. For scoped dashboards, add `--run-id RUN_ID`; this never weakens validation because the full journal is replayed before the summary is filtered.
 
 ### Projection lineage contract
 

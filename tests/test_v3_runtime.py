@@ -634,17 +634,25 @@ class V3RuntimeContractTests(unittest.TestCase):
             self.assertEqual(payload["ok"], True)
             self.assertEqual(Path(payload["journal"]), journal)
             self.assertEqual(payload["events"], smoke_payload["events"])
-            self.assertEqual(payload["checks"], [
-                "jsonl.valid_json",
-                "journal.sequence_contiguous",
-                "journal.event_id_unique",
-                "envelope.required_fields",
-                "envelope.protocol_release_tag",
-                "envelope.event_version_compatible",
-                "projection.replay",
-                "projection.event_ids_unique",
-                "projection.event_ids_resolvable",
-            ])
+            self.assertTrue(all(isinstance(check, dict) for check in payload["checks"]))
+            self.assertEqual(
+                [check["id"] for check in payload["checks"]],
+                [
+                    "jsonl.valid_json",
+                    "journal.not_empty",
+                    "journal.sequence_contiguous",
+                    "journal.event_id_unique",
+                    "envelope.required_fields",
+                    "envelope.protocol_release_tag",
+                    "envelope.event_version_compatible",
+                    "projection.replay",
+                    "projection.event_ids_unique",
+                    "projection.event_ids_resolvable",
+                ],
+            )
+            self.assertTrue(all(check["status"] == "pass" for check in payload["checks"]))
+            self.assertTrue(all(check.get("message") for check in payload["checks"]))
+            self.assertEqual(payload["checkIds"], [check["id"] for check in payload["checks"]])
             self.assertEqual(payload["projectionSummary"], {
                 "attempts": 2,
                 "routeDecisions": 1,
@@ -681,8 +689,9 @@ class V3RuntimeContractTests(unittest.TestCase):
             self.assertEqual(result.stdout, "")
             self.assertNotEqual(result.returncode, 0)
             self.assertEqual(error["ok"], False)
-            self.assertEqual(error["error"]["check"], "journal.sequence_contiguous")
-            self.assertEqual(error["error"]["line"], 2)
+            self.assertEqual(error["error"]["type"], "JournalVerificationError")
+            self.assertEqual(error["error"]["checkId"], "journal.sequence_contiguous")
+            self.assertEqual(error["error"]["lineNumber"], 2)
             self.assertEqual(error["error"]["eventId"], "evt-corr-smoke-001-0002")
             self.assertIn("expected sequenceNo 2", error["error"]["message"])
 
@@ -696,8 +705,8 @@ class V3RuntimeContractTests(unittest.TestCase):
 
             error = json.loads(result.stderr)
             self.assertNotEqual(result.returncode, 0)
-            self.assertEqual(error["error"]["check"], "journal.event_id_unique")
-            self.assertEqual(error["error"]["line"], 2)
+            self.assertEqual(error["error"]["checkId"], "journal.event_id_unique")
+            self.assertEqual(error["error"]["lineNumber"], 2)
             self.assertEqual(error["error"]["eventId"], "evt-corr-smoke-001-0001")
             self.assertIn("duplicate eventId", error["error"]["message"])
 
@@ -711,8 +720,8 @@ class V3RuntimeContractTests(unittest.TestCase):
 
             error = json.loads(result.stderr)
             self.assertNotEqual(result.returncode, 0)
-            self.assertEqual(error["error"]["check"], "envelope.protocol_release_tag")
-            self.assertEqual(error["error"]["line"], 1)
+            self.assertEqual(error["error"]["checkId"], "envelope.protocol_release_tag")
+            self.assertEqual(error["error"]["lineNumber"], 1)
             self.assertEqual(error["error"]["eventId"], "evt-corr-smoke-001-0001")
 
     def test_cli_verify_journal_non_json_line_fails_with_line_number(self):
@@ -727,9 +736,119 @@ class V3RuntimeContractTests(unittest.TestCase):
 
             error = json.loads(result.stderr)
             self.assertNotEqual(result.returncode, 0)
-            self.assertEqual(error["error"]["check"], "jsonl.valid_json")
-            self.assertEqual(error["error"]["line"], 3)
+            self.assertEqual(error["error"]["checkId"], "jsonl.valid_json")
+            self.assertEqual(error["error"]["lineNumber"], 3)
             self.assertNotIn("Traceback", result.stderr)
+
+    def test_cli_verify_journal_output_writes_report_and_stdout_includes_output_path(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            journal = Path(tmpdir) / "smoke.jsonl"
+            report = Path(tmpdir) / "verify-report.json"
+            self.make_smoke_journal(journal)
+
+            result = self.run_cli("verify-journal", "--journal", str(journal), "--output", str(report), check=True)
+
+            stdout_payload = json.loads(result.stdout)
+            report_payload = json.loads(report.read_text(encoding="utf-8"))
+            self.assertEqual(stdout_payload["ok"], True)
+            self.assertEqual(stdout_payload["outputPath"], str(report))
+            self.assertEqual(report_payload, stdout_payload)
+            self.assertEqual([check["status"] for check in stdout_payload["checks"]], ["pass"] * len(stdout_payload["checks"]))
+
+    def test_cli_verify_journal_run_id_filters_summary_only_after_full_replay(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            journal = Path(tmpdir) / "multi-run.jsonl"
+            self.make_smoke_journal(journal)
+            extra = self.run_cli(
+                "request-run",
+                "--journal", str(journal),
+                "--run-id", "run-extra-001",
+                "--correlation-id", "corr-extra-001",
+                "--trace-id", "trace-extra-001",
+                check=True,
+            )
+            extra_event = json.loads(extra.stdout)["event"]
+            extra_event["sequenceNo"] = 9
+            extra_event["eventId"] = "evt-corr-extra-001-0009"
+            extra_event["idempotencyKey"] = "evt-corr-extra-001-0009"
+            lines = journal.read_text(encoding="utf-8").splitlines()
+            lines[-1] = json.dumps(extra_event, ensure_ascii=False, sort_keys=True)
+            journal.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+            result = self.run_cli("verify-journal", "--journal", str(journal), "--run-id", "run-smoke-001", check=True)
+
+            payload = json.loads(result.stdout)
+            self.assertEqual(payload["ok"], True)
+            self.assertEqual(payload["events"], 9)
+            self.assertEqual(payload["runId"], "run-smoke-001")
+            self.assertEqual(payload["projectionSummary"], {
+                "attempts": 2,
+                "routeDecisions": 1,
+                "runs": 1,
+                "unknownEvents": 0,
+            })
+            self.assertEqual(payload["fullProjectionSummary"], {
+                "attempts": 2,
+                "routeDecisions": 1,
+                "runs": 2,
+                "unknownEvents": 0,
+            })
+
+    def test_cli_verify_journal_empty_journal_fails_with_stable_json_error(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            journal = Path(tmpdir) / "empty.jsonl"
+            journal.write_text("", encoding="utf-8")
+
+            result = self.run_cli("verify-journal", "--journal", str(journal), "--strict-empty")
+
+            error = json.loads(result.stderr)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertEqual(result.stdout, "")
+            self.assertEqual(error["ok"], False)
+            self.assertEqual(error["error"], {
+                "type": "JournalVerificationError",
+                "checkId": "journal.not_empty",
+                "message": "journal must contain at least one event",
+            })
+
+    def test_makefile_smoke_and_verify_journal_targets_run(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            journal = Path(tmpdir) / "make-smoke.jsonl"
+            smoke = subprocess.run(
+                ["make", "smoke-v3-control-plane", f"JOURNAL={journal}"],
+                cwd=ROOT,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                check=True,
+            )
+            smoke_payload = json.loads(smoke.stdout)
+            self.assertEqual(smoke_payload["ok"], True)
+            self.assertTrue(journal.exists())
+
+            verify = subprocess.run(
+                ["make", "verify-v3-journal", f"JOURNAL={journal}"],
+                cwd=ROOT,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                check=True,
+            )
+            verify_payload = json.loads(verify.stdout[verify.stdout.index("{"):])
+            self.assertEqual(verify_payload["ok"], True)
+            self.assertEqual(Path(verify_payload["journal"]), journal)
+
+    def test_makefile_verify_journal_target_requires_journal(self):
+        result = subprocess.run(
+            ["make", "verify-v3-journal"],
+            cwd=ROOT,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("JOURNAL is required", result.stderr)
 
     def test_cli_projection_outputs_stable_json_summary(self):
         with tempfile.TemporaryDirectory() as tmpdir:
