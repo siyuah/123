@@ -1,9 +1,12 @@
 import json
+import subprocess
+import sys
+import tempfile
 import unittest
 from pathlib import Path
 
 from dark_factory_v3.control_plane import ControlPlane, ControlPlaneError
-from dark_factory_v3.journal import InMemoryAppendOnlyJournal, JournalAppendError
+from dark_factory_v3.journal import FileBackedJsonlJournal, InMemoryAppendOnlyJournal, JournalAppendError
 from dark_factory_v3.projection import ProjectionReplayError, RunLifecycleReducer
 from dark_factory_v3.protocol import (
     PROTOCOL_RELEASE_TAG,
@@ -457,6 +460,178 @@ class V3RuntimeContractTests(unittest.TestCase):
         self.assertEqual(plane.get_run("run-cp-004").currentState, "validating")
         self.assertIsNone(plane.get_attempt("attempt-missing"))
         self.assertIsNone(plane.get_route_decision("rd-missing"))
+    def test_file_backed_jsonl_journal_round_trips_and_enforces_append_invariants(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = Path(tmpdir) / "journal.jsonl"
+            journal = FileBackedJsonlJournal(path)
+            journal.append(make_event(eventId="evt-file-001", sequenceNo=1))
+            journal.append(make_event(eventId="evt-file-002", sequenceNo=2))
+
+            self.assertTrue(path.exists())
+            self.assertEqual(path.read_text(encoding="utf-8").count("\n"), 2)
+            restored = FileBackedJsonlJournal.load(path)
+            self.assertEqual([event.eventId for event in restored.read_all()], ["evt-file-001", "evt-file-002"])
+            self.assertTrue(all(event.isReplay for event in restored.read_all()))
+
+            with self.assertRaisesRegex(JournalAppendError, "duplicate eventId"):
+                restored.append(make_event(eventId="evt-file-001", sequenceNo=3))
+            with self.assertRaisesRegex(JournalAppendError, "sequenceNo"):
+                restored.append(make_event(eventId="evt-file-003", sequenceNo=2))
+            self.assertEqual(len(path.read_text(encoding="utf-8").splitlines()), 2)
+
+    def test_control_plane_loaded_from_jsonl_path_continues_correlation_sequence(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = Path(tmpdir) / "journal.jsonl"
+            first = ControlPlane.from_jsonl_path(ROOT, path, clock=lambda: "2026-04-24T00:00:00Z")
+            first.request_run(run_id="run-file-001", correlation_id="corr-file-001", trace_id="trace-file-001")
+
+            restored = ControlPlane.from_jsonl_path(ROOT, path, clock=lambda: "2026-04-24T00:00:01Z")
+            second = restored.transition_run(
+                run_id="run-file-001",
+                old_state="validating",
+                new_state="planning",
+                transition_trigger="validation_passed",
+                correlation_id="corr-file-001",
+                trace_id="trace-file-001",
+            )
+
+            self.assertEqual(second.sequenceNo, 2)
+            self.assertEqual(second.eventId, "evt-corr-file-001-0002")
+            reloaded = ControlPlane.from_jsonl_path(ROOT, path)
+            self.assertEqual(reloaded.get_run("run-file-001").currentState, "planning")
+
+    def test_cli_projection_outputs_stable_json_summary(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = Path(tmpdir) / "journal.jsonl"
+            plane = ControlPlane.from_jsonl_path(ROOT, path, clock=lambda: "2026-04-24T00:00:00Z")
+            plane.request_run(run_id="run-cli-proj-001", correlation_id="corr-cli-proj-001", trace_id="trace-cli-proj-001")
+            result = subprocess.run(
+                [sys.executable, str(ROOT / "tools/v3_control_plane.py"), "projection", "--journal", str(path)],
+                cwd=ROOT,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                check=True,
+            )
+
+            payload = json.loads(result.stdout)
+            self.assertEqual(payload["ok"], True)
+            self.assertEqual(payload["projection"]["runs"]["run-cli-proj-001"]["currentState"], "validating")
+            self.assertEqual(payload["projection"]["attempts"], {})
+            self.assertEqual(payload["projection"]["routeDecisions"], {})
+            self.assertEqual(payload["projection"]["unknownEvents"], [])
+
+    def test_cli_illegal_transition_exits_nonzero_without_polluting_journal(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = Path(tmpdir) / "journal.jsonl"
+            ok = subprocess.run(
+                [
+                    sys.executable,
+                    str(ROOT / "tools/v3_control_plane.py"),
+                    "request-run",
+                    "--journal",
+                    str(path),
+                    "--run-id",
+                    "run-cli-bad-001",
+                    "--correlation-id",
+                    "corr-cli-bad-001",
+                    "--trace-id",
+                    "trace-cli-bad-001",
+                ],
+                cwd=ROOT,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                check=True,
+            )
+            before = path.read_text(encoding="utf-8")
+            bad = subprocess.run(
+                [
+                    sys.executable,
+                    str(ROOT / "tools/v3_control_plane.py"),
+                    "transition-run",
+                    "--journal",
+                    str(path),
+                    "--run-id",
+                    "run-cli-bad-001",
+                    "--old-state",
+                    "validating",
+                    "--new-state",
+                    "completed",
+                    "--transition-trigger",
+                    "closure_success",
+                    "--correlation-id",
+                    "corr-cli-bad-001",
+                    "--trace-id",
+                    "trace-cli-bad-001",
+                ],
+                cwd=ROOT,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+
+            self.assertEqual(json.loads(ok.stdout)["event"]["sequenceNo"], 1)
+            self.assertNotEqual(bad.returncode, 0)
+            self.assertIn("illegal run transition", bad.stderr)
+            self.assertEqual(path.read_text(encoding="utf-8"), before)
+
+    def test_cli_request_run_and_transition_run_happy_path_persist_events(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = Path(tmpdir) / "journal.jsonl"
+            subprocess.run(
+                [
+                    sys.executable,
+                    str(ROOT / "tools/v3_control_plane.py"),
+                    "request-run",
+                    "--journal",
+                    str(path),
+                    "--run-id",
+                    "run-cli-001",
+                    "--correlation-id",
+                    "corr-cli-001",
+                    "--trace-id",
+                    "trace-cli-001",
+                ],
+                cwd=ROOT,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                check=True,
+            )
+            transitioned = subprocess.run(
+                [
+                    sys.executable,
+                    str(ROOT / "tools/v3_control_plane.py"),
+                    "transition-run",
+                    "--journal",
+                    str(path),
+                    "--run-id",
+                    "run-cli-001",
+                    "--old-state",
+                    "validating",
+                    "--new-state",
+                    "planning",
+                    "--transition-trigger",
+                    "validation_passed",
+                    "--correlation-id",
+                    "corr-cli-001",
+                    "--trace-id",
+                    "trace-cli-001",
+                ],
+                cwd=ROOT,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                check=True,
+            )
+
+            event = json.loads(transitioned.stdout)["event"]
+            self.assertEqual(event["sequenceNo"], 2)
+            self.assertEqual(event["eventId"], "evt-corr-cli-001-0002")
+            projection = ControlPlane.from_jsonl_path(ROOT, path).projection()
+            self.assertEqual(projection.get_run("run-cli-001").currentState, "planning")
+            self.assertEqual(len(path.read_text(encoding="utf-8").splitlines()), 2)
 
 
 if __name__ == "__main__":

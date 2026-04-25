@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Callable, Dict, Optional
 
-from .journal import InMemoryAppendOnlyJournal, JournalAppendError
+from .journal import FileBackedJsonlJournal, InMemoryAppendOnlyJournal, JournalAppendError
 from .projection import ProjectionReplayError, ProjectionState, RunLifecycleReducer
 from .protocol import EventEnvelope, load_event_contracts
 
@@ -35,6 +35,18 @@ class ControlPlane:
         self.root = Path(self.root)
         self._contracts = load_event_contracts(self.root)
         self._reducer = RunLifecycleReducer(root=self.root)
+        self._reducer.replay(self.journal.read_all())
+
+    @classmethod
+    def from_jsonl_path(
+        cls,
+        root: Path | str,
+        journal_path: Path | str,
+        *,
+        clock: Clock = lambda: "1970-01-01T00:00:00Z",
+        producer: str = "dark-factory-control-plane",
+    ) -> "ControlPlane":
+        return cls(root=root, journal=FileBackedJsonlJournal.load(journal_path), clock=clock, producer=producer)
 
     def request_run(
         self,

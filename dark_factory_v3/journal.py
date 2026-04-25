@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import List, Optional, Set
 
 from .protocol import EventEnvelope
@@ -62,4 +63,38 @@ class InMemoryAppendOnlyJournal:
             except (TypeError, ValueError, json.JSONDecodeError) as exc:
                 raise JournalAppendError(f"invalid journal line {line_number}: {exc}") from exc
             journal.append(event.as_replay())
+        return journal
+
+
+@dataclass(init=False)
+class FileBackedJsonlJournal(InMemoryAppendOnlyJournal):
+    """Append-only EventEnvelope journal persisted as newline-delimited JSON."""
+
+    path: Path
+
+    def __init__(self, path: Path | str) -> None:
+        super().__init__()
+        self.path = Path(path)
+
+    def append(self, event: EventEnvelope) -> EventEnvelope:
+        appended = super().append(event)
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        with self.path.open("a", encoding="utf-8") as handle:
+            handle.write(json.dumps(appended.to_dict(), ensure_ascii=False, sort_keys=True))
+            handle.write("\n")
+        return appended
+
+    @classmethod
+    def load(cls, path: Path | str) -> "FileBackedJsonlJournal":
+        journal = cls(path)
+        if not journal.path.exists():
+            return journal
+        for line_number, line in enumerate(journal.path.read_text(encoding="utf-8").splitlines(), start=1):
+            if not line.strip():
+                continue
+            try:
+                event = EventEnvelope.from_dict(json.loads(line))
+            except (TypeError, ValueError, json.JSONDecodeError) as exc:
+                raise JournalAppendError(f"invalid journal line {line_number}: {exc}") from exc
+            InMemoryAppendOnlyJournal.append(journal, event.as_replay())
         return journal
