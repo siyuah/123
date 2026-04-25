@@ -98,7 +98,7 @@ files:
   normativity: release-gate-report
 - path: paperclip_darkfactory_v3_0_bundle_manifest.yaml
   sha256: SELF_HASH_EXCLUDED
-  bytes: 8525
+  bytes: 8680
   normativity: release-gate-input
 - path: paperclip_darkfactory_v3_0_consistency_report.json
   sha256: SELF_HASH_EXCLUDED
@@ -119,6 +119,10 @@ files:
 - path: .github/workflows/v3-bundle-validate.yml
   sha256: 1713723b9a78b03bc58cb3d180998cf18909d59049f0920a463e26bc44181a07
   bytes: 542
+  normativity: ci-gate
+- path: .github/workflows/v3-contracts.yml
+  sha256: ab3cb1e4b95bb85fa4db87c8dc9edbff900bd91f2a638726e5e977e1a5e5db49
+  bytes: 3766
   normativity: ci-gate
 - path: tests/test_validate_v3_bundle.py
   sha256: b67774069e8e4d7a3824e17f43bd82255a7ca378ec398727017581123ebc9a1f
@@ -157,8 +161,8 @@ files:
   normativity: release-gate-tool
 - path: docs/v3_control_plane_cli.md
   role: runtime CLI operator contract
-  sha256: 642ee7855b6b1deecf6801c1b473435f2c9817230c27faf41044ad93b18e9be6
-  bytes: 10733
+  sha256: 3c95fa71407defd2cfc718053a6236f0d4e0b043464fff205c96a8f012ae8eb8
+  bytes: 11694
   normativity: informative
 - path: tests/test_v3_runtime.py
   sha256: f2f2db50f0f51ace44718b8f70fda502db33132013c1f9c5932785aa9916c5a9

@@ -1,0 +1,105 @@
+name: V3 Runtime Contracts
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  v3-runtime-contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Show Python version
+        run: python --version
+
+      - name: Install validation dependencies
+        run: python -m pip install pyyaml
+
+      - name: Run V3 runtime contract tests
+        run: make test-v3-contracts
+
+      - name: Validate V3 bundle
+        run: make validate-v3
+
+      - name: Smoke V3 control plane and assert JSON contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          make smoke-v3-control-plane > "$RUNNER_TEMP/v3_make_smoke.json"
+          python -m json.tool "$RUNNER_TEMP/v3_make_smoke.json" > /dev/null
+          python - "$RUNNER_TEMP/v3_make_smoke.json" <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+
+          payload = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+          if payload.get("ok") is not True:
+              raise SystemExit("smoke payload ok must be true")
+          verify = payload.get("verifyJournal")
+          if not isinstance(verify, dict) or verify.get("ok") is not True:
+              raise SystemExit("smoke verifyJournal.ok must be true")
+          PY
+
+      - name: Verify V3 smoke journal and assert JSON contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tools/v3_control_plane_smoke.py --journal "$RUNNER_TEMP/v3_smoke.jsonl" > "$RUNNER_TEMP/v3_smoke.json"
+          python -m json.tool "$RUNNER_TEMP/v3_smoke.json" > /dev/null
+          python - "$RUNNER_TEMP/v3_smoke.json" <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+
+          payload = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+          if payload.get("ok") is not True:
+              raise SystemExit("direct smoke payload ok must be true")
+          verify = payload.get("verifyJournal")
+          if not isinstance(verify, dict) or verify.get("ok") is not True:
+              raise SystemExit("direct smoke verifyJournal.ok must be true")
+          PY
+
+          make verify-v3-journal JOURNAL="$RUNNER_TEMP/v3_smoke.jsonl" > "$RUNNER_TEMP/v3_verify.json"
+          python -m json.tool "$RUNNER_TEMP/v3_verify.json" > /dev/null
+          python - "$RUNNER_TEMP/v3_verify.json" <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+
+          payload = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+          if payload.get("ok") is not True:
+              raise SystemExit("verify payload ok must be true")
+          checks = payload.get("checks")
+          if not isinstance(checks, list) or not checks:
+              raise SystemExit("verify checks must be a non-empty list")
+          for index, check in enumerate(checks):
+              if not isinstance(check, dict):
+                  raise SystemExit(f"verify check {index} must be an object")
+              if check.get("status") != "pass":
+                  raise SystemExit(f"verify check {check.get('id', index)} status must be pass")
+          PY
+
+      - name: Upload V3 control-plane diagnostics
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: v3-control-plane-diagnostics
+          path: |
+            ${{ runner.temp }}/v3_make_smoke.json
+            ${{ runner.temp }}/v3_smoke.json
+            ${{ runner.temp }}/v3_smoke.jsonl
+            ${{ runner.temp }}/v3_verify.json
+          if-no-files-found: warn
