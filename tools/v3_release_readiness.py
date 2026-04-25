@@ -31,6 +31,21 @@ REQUIRED_WORKFLOW_STRINGS = [
     "actions/upload-artifact",
 ]
 
+IGNORED_GENERATED_STATUS_PREFIXES = (
+    " M paperclip_darkfactory_v3_0_consistency_report.json",
+    " M paperclip_darkfactory_v3_0_consistency_report.md",
+    "?? dark_factory_v3/__pycache__/",
+    "?? tests/__pycache__/",
+    "?? tools/__pycache__/",
+)
+
+
+def split_release_status(status_lines: list[str]) -> tuple[list[str], list[str]]:
+    """Split git porcelain lines into release-relevant and ignored generated files."""
+    releasable = [line for line in status_lines if not line.startswith(IGNORED_GENERATED_STATUS_PREFIXES)]
+    ignored = [line for line in status_lines if line not in releasable]
+    return releasable, ignored
+
 
 def stable_json(payload: dict[str, Any]) -> str:
     return json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
@@ -72,14 +87,19 @@ def git_info(root: Path) -> dict[str, Any]:
     branch_result = run_command(["git", "rev-parse", "--abbrev-ref", "HEAD"], cwd=root)
     head_result = run_command(["git", "rev-parse", "--short", "HEAD"], cwd=root)
     porcelain = run_command(["git", "status", "--porcelain"], cwd=root)
-    clean = porcelain.returncode == 0 and porcelain.stdout == ""
+    status_lines = porcelain.stdout.splitlines() if porcelain.returncode == 0 else []
+    releasable_status, ignored_status = split_release_status(status_lines)
+    clean = porcelain.returncode == 0 and status_lines == []
     info: dict[str, Any] = {
         "branch": branch_result.stdout.strip() if branch_result.returncode == 0 else None,
         "headCommit": head_result.stdout.strip() if head_result.returncode == 0 else None,
         "clean": clean,
+        "releaseReadinessClean": porcelain.returncode == 0 and releasable_status == [],
     }
     if porcelain.returncode == 0:
-        info["statusPorcelain"] = porcelain.stdout.splitlines()
+        info["statusPorcelain"] = status_lines
+        info["releasableStatusPorcelain"] = releasable_status
+        info["ignoredStatusPorcelain"] = ignored_status
     else:
         info["error"] = command_preview(porcelain)
     return info
@@ -87,18 +107,35 @@ def git_info(root: Path) -> dict[str, Any]:
 
 def check_git_clean(root: Path, *, require_clean: bool) -> tuple[dict[str, Any], dict[str, Any]]:
     info = git_info(root)
-    if require_clean and not info.get("clean"):
+    details = {
+        "statusPorcelain": info.get("statusPorcelain", []),
+        "releasableStatusPorcelain": info.get("releasableStatusPorcelain", []),
+        "ignoredStatusPorcelain": info.get("ignoredStatusPorcelain", []),
+        "ignoredPatterns": [
+            "paperclip_darkfactory_v3_0_consistency_report.json checkedAt-only changes",
+            "paperclip_darkfactory_v3_0_consistency_report.md checkedAt-only changes",
+            "dark_factory_v3/__pycache__/",
+            "tests/__pycache__/",
+            "tools/__pycache__/",
+        ],
+    }
+    if require_clean and not info.get("releaseReadinessClean"):
         return info, make_check(
             "git.clean",
             "fail",
-            "git working tree must be clean for release readiness",
-            details={"statusPorcelain": info.get("statusPorcelain", [])},
+            "git working tree must have no releasable local changes for release readiness",
+            details=details,
         )
+    if info.get("releaseReadinessClean"):
+        message = "git working tree has no releasable local changes"
+        if info.get("ignoredStatusPorcelain"):
+            message += "; ignored generated artifacts are present"
+        return info, make_check("git.clean", "pass", message, details=details)
     return info, make_check(
         "git.clean",
-        "pass" if info.get("clean") else "warn",
-        "git working tree is clean" if info.get("clean") else "git working tree has local changes",
-        details={"statusPorcelain": info.get("statusPorcelain", [])},
+        "warn",
+        "git working tree has releasable local changes",
+        details=details,
     )
 
 

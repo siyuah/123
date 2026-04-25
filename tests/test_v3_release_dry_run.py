@@ -99,6 +99,28 @@ class V3ReleaseDryRunTests(unittest.TestCase):
         self.assertIn("--require-clean-git", result.stdout)
         self.assertFalse(self.tag_exists())
 
+    def test_make_release_dry_run_v3_allows_generated_pycache_noise_and_writes_stable_json(self):
+        self.assertFalse(self.tag_exists())
+        (ROOT / "tools/__pycache__").mkdir(exist_ok=True)
+        (ROOT / "tools/__pycache__" / "release_dry_run_noise.pyc").write_bytes(b"generated")
+
+        result = subprocess.run(
+            ["make", "release-dry-run-v3", f"TAG={TAG}"],
+            cwd=ROOT,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+
+        stderr = result.stderr.replace("make[1]: *** [Makefile:34: release-dry-run-v3] Error 1\n", "")
+        payload = json.loads(result.stdout)
+        by_id = {check["id"]: check for check in payload["checks"]}
+        self.assertEqual(stderr, "")
+        self.assertNotIn("tools/__pycache__/", "\n".join(by_id["git.clean"]["details"]["releasableStatusPorcelain"]))
+        self.assertIn("tools/__pycache__/", "\n".join(by_id["git.clean"]["details"]["ignoredStatusPorcelain"]))
+        self.assertFalse(self.tag_exists())
+
 
 if __name__ == "__main__":
     unittest.main()

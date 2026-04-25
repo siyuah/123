@@ -7,6 +7,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 READINESS = ROOT / "tools/v3_release_readiness.py"
+REPORT_JSON = ROOT / "paperclip_darkfactory_v3_0_consistency_report.json"
+REPORT_MD = ROOT / "paperclip_darkfactory_v3_0_consistency_report.md"
 
 
 class V3ReleaseReadinessTests(unittest.TestCase):
@@ -61,18 +63,27 @@ class V3ReleaseReadinessTests(unittest.TestCase):
         self.assertNotIn("Traceback", result.stdout)
         self.assertEqual(result.stderr, "")
 
-    def test_make_release_readiness_v3_target_is_non_destructive_to_dry_run(self):
-        result = subprocess.run(
-            ["make", "-n", "release-readiness-v3"],
-            cwd=ROOT,
-            text=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            check=True,
-        )
+    def test_require_clean_git_reports_expected_generated_artifacts_as_ignored(self):
+        (ROOT / "tests/__pycache__").mkdir(exist_ok=True)
+        (ROOT / "tests/__pycache__" / "release_readiness_noise.pyc").write_bytes(b"generated")
 
-        self.assertIn("tools/v3_release_readiness.py", result.stdout)
-        self.assertIn("--require-clean-git", result.stdout)
+        result = self.run_readiness("--skip-slow", "--require-clean-git")
+
+        payload = json.loads(result.stdout)
+        by_id = {check["id"]: check for check in payload["checks"]}
+        self.assertEqual(result.stderr, "")
+        self.assertNotIn("tests/__pycache__/", "\n".join(by_id["git.clean"]["details"]["releasableStatusPorcelain"]))
+        self.assertIn("tests/__pycache__/", "\n".join(by_id["git.clean"]["details"]["ignoredStatusPorcelain"]))
+
+    def test_release_readiness_does_not_modify_consistency_report_checked_at(self):
+        before_json = REPORT_JSON.read_text(encoding="utf-8")
+        before_md = REPORT_MD.read_text(encoding="utf-8")
+
+        result = self.run_readiness("--skip-slow", check=True)
+
+        self.assertEqual(result.stderr, "")
+        self.assertEqual(REPORT_JSON.read_text(encoding="utf-8"), before_json)
+        self.assertEqual(REPORT_MD.read_text(encoding="utf-8"), before_md)
 
 
 if __name__ == "__main__":

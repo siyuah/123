@@ -1,6 +1,7 @@
 .PHONY: validate-v3 test-v3-contracts manifest-v3 smoke-v3-control-plane verify-v3-journal release-readiness-v3 release-dry-run-v3
 MAKEFLAGS += --no-print-directory
 TAG ?= v3.0.0-rc1
+RELEASE_READINESS_FLAGS ?=
 
 validate-v3:
 	python3 tools/validate_v3_bundle.py --write-report
@@ -27,7 +28,7 @@ verify-v3-journal:
 	@python3 tools/v3_control_plane.py verify-journal --journal "$(JOURNAL)"
 
 release-readiness-v3:
-	@python3 tools/v3_release_readiness.py --require-clean-git
+	@python3 tools/v3_release_readiness.py --require-clean-git $(RELEASE_READINESS_FLAGS)
 
 release-dry-run-v3:
 	@python3 tools/v3_release_dry_run.py --tag $(TAG) --require-clean-git

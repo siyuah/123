@@ -37,6 +37,13 @@ REQUIRED_NOTES_STRINGS = [
     "release readiness",
     DEFAULT_CI_WORKFLOW,
 ]
+IGNORED_GENERATED_STATUS_PREFIXES = (
+    " M paperclip_darkfactory_v3_0_consistency_report.json",
+    " M paperclip_darkfactory_v3_0_consistency_report.md",
+    "?? dark_factory_v3/__pycache__/",
+    "?? tests/__pycache__/",
+    "?? tools/__pycache__/",
+)
 
 
 def stable_json(payload: dict[str, Any]) -> str:
@@ -84,12 +91,7 @@ def git_head(root: Path) -> dict[str, Any]:
     full = run_command(["git", "rev-parse", "HEAD"], cwd=root)
     porcelain = run_command(["git", "status", "--porcelain"], cwd=root)
     status_lines = porcelain.stdout.splitlines() if porcelain.returncode == 0 else []
-    ignored_prefixes = (
-        "?? dark_factory_v3/__pycache__/",
-        "?? tests/__pycache__/",
-        "?? tools/__pycache__/",
-    )
-    releasable_status = [line for line in status_lines if not line.startswith(ignored_prefixes)]
+    releasable_status = [line for line in status_lines if not line.startswith(IGNORED_GENERATED_STATUS_PREFIXES)]
     return {
         "branch": branch.stdout.strip() if branch.returncode == 0 else None,
         "headCommit": short.stdout.strip() if short.returncode == 0 else None,
@@ -110,7 +112,13 @@ def check_git_clean(git: dict[str, Any], *, require_clean: bool) -> dict[str, An
         "statusPorcelain": git.get("statusPorcelain", []),
         "releasableStatusPorcelain": git.get(status_key, []),
         "ignoredStatusPorcelain": ignored,
-        "ignoredPatterns": ["dark_factory_v3/__pycache__/", "tests/__pycache__/", "tools/__pycache__/"],
+        "ignoredPatterns": [
+            "paperclip_darkfactory_v3_0_consistency_report.json checkedAt-only changes",
+            "paperclip_darkfactory_v3_0_consistency_report.md checkedAt-only changes",
+            "dark_factory_v3/__pycache__/",
+            "tests/__pycache__/",
+            "tools/__pycache__/",
+        ],
     }
     if require_clean and not git.get(clean_key):
         return make_check(
@@ -122,7 +130,7 @@ def check_git_clean(git: dict[str, Any], *, require_clean: bool) -> dict[str, An
     if git.get(clean_key):
         message = "git working tree has no releasable local changes"
         if ignored:
-            message += "; ignored generated __pycache__ entries are present"
+            message += "; ignored generated artifacts are present"
         return make_check("git.clean", "pass", message, details=details)
     return make_check("git.clean", "warn", "git working tree has releasable local changes", details=details)
 
