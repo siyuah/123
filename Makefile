@@ -1,4 +1,4 @@
-.PHONY: validate-v3 test-v3-contracts manifest-v3 smoke-v3-control-plane verify-v3-journal
+.PHONY: validate-v3 test-v3-contracts manifest-v3 smoke-v3-control-plane verify-v3-journal release-readiness-v3
 MAKEFLAGS += --no-print-directory
 
 validate-v3:
@@ -24,3 +24,6 @@ verify-v3-journal:
 		exit 2; \
 	fi
 	@python3 tools/v3_control_plane.py verify-journal --journal "$(JOURNAL)"
+
+release-readiness-v3:
+	@python3 tools/v3_release_readiness.py --require-clean-git
