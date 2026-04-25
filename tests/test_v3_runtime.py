@@ -264,6 +264,32 @@ class V3RuntimeContractTests(unittest.TestCase):
         self.assertEqual(manual.get_attempt("attempt-manual-001").currentState, "superseded")
         self.assertEqual(manual.get_attempt("attempt-manual-002").currentState, "created")
 
+    def test_projection_rehydrates_manual_gate_with_unique_ordered_event_lineage(self):
+        reducer = RunLifecycleReducer()
+        manual = reducer.replay(replay_golden_timeline(ROOT / "tests/golden_timelines/v3_0/GL-V30-manual-park-rehydrate.jsonl").read_all())
+
+        run = manual.get_run("run-manual-001")
+        previous_attempt = manual.get_attempt("attempt-manual-001")
+        new_attempt = manual.get_attempt("attempt-manual-002")
+        self.assertEqual(run.currentState, "planning")
+        self.assertEqual(previous_attempt.currentState, "superseded")
+        self.assertEqual(new_attempt.currentState, "created")
+        self.assertEqual(run.eventIds, ("evt-manual-001", "evt-manual-002"))
+        self.assertEqual(previous_attempt.eventIds, ("evt-manual-002",))
+        self.assertEqual(new_attempt.eventIds, ("evt-manual-002",))
+        self.assertEqual(run.eventIds.count("evt-manual-002"), 1)
+        self.assertEqual(previous_attempt.eventIds.count("evt-manual-002"), 1)
+
+    def test_all_golden_timeline_projection_event_lineage_is_unique(self):
+        reducer = RunLifecycleReducer()
+        for timeline in sorted((ROOT / "tests/golden_timelines/v3_0").glob("*.jsonl")):
+            with self.subTest(timeline=timeline.name):
+                projection = reducer.replay(replay_golden_timeline(timeline).read_all())
+                for run in projection.runs.values():
+                    self.assertEqual(list(run.eventIds), list(dict.fromkeys(run.eventIds)))
+                for attempt in projection.attempts.values():
+                    self.assertEqual(list(attempt.eventIds), list(dict.fromkeys(attempt.eventIds)))
+
     def test_projection_rejects_illegal_run_state_transition(self):
         reducer = RunLifecycleReducer()
         illegal = EventEnvelope(
@@ -553,6 +579,13 @@ class V3RuntimeContractTests(unittest.TestCase):
         self.assertEqual(projection["attempts"]["attempt-smoke-002"]["currentState"], "created")
         self.assertIn("rd-smoke-001", projection["routeDecisions"])
         self.assertEqual(payload["sequenceNos"], list(range(1, 9)))
+        rehydrated_event_id = "evt-corr-smoke-001-0008"
+        for collection_name in ("runs", "attempts"):
+            for entity_id, entity in projection[collection_name].items():
+                with self.subTest(collection=collection_name, entity=entity_id):
+                    self.assertEqual(entity["eventIds"], list(dict.fromkeys(entity["eventIds"])))
+        self.assertLessEqual(projection["runs"]["run-smoke-001"]["eventIds"].count(rehydrated_event_id), 1)
+        self.assertLessEqual(projection["attempts"]["attempt-smoke-001"]["eventIds"].count(rehydrated_event_id), 1)
 
     def test_control_plane_smoke_script_keeps_user_supplied_journal_path(self):
         with tempfile.TemporaryDirectory() as tmpdir:

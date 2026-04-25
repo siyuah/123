@@ -86,6 +86,13 @@ def load_journal_events(journal: Path) -> list[dict[str, Any]]:
     return [json.loads(line) for line in journal.read_text(encoding="utf-8").splitlines() if line.strip()]
 
 
+def _assert_unique_event_ids(collection_name: str, entities: dict[str, Any]) -> None:
+    for entity_id, entity in entities.items():
+        event_ids = entity.get("eventIds", [])
+        if event_ids != list(dict.fromkeys(event_ids)):
+            raise SmokeAssertionError(f"{collection_name} {entity_id} has duplicate eventIds: {event_ids}")
+
+
 def validate_projection(journal: Path, projection: dict[str, Any]) -> list[int]:
     events = load_journal_events(journal)
     sequence_nos = [event["sequenceNo"] for event in events]
@@ -101,6 +108,13 @@ def validate_projection(journal: Path, projection: dict[str, Any]) -> list[int]:
         raise SmokeAssertionError("attempt-smoke-002 did not project to created")
     if "rd-smoke-001" not in projection["routeDecisions"]:
         raise SmokeAssertionError("rd-smoke-001 routeDecision missing from projection")
+    _assert_unique_event_ids("run", projection["runs"])
+    _assert_unique_event_ids("attempt", projection["attempts"])
+    rehydrated_event_id = "evt-corr-smoke-001-0008"
+    if projection["runs"]["run-smoke-001"]["eventIds"].count(rehydrated_event_id) > 1:
+        raise SmokeAssertionError("run-smoke-001 repeats the rehydrated eventId")
+    if projection["attempts"]["attempt-smoke-001"]["eventIds"].count(rehydrated_event_id) > 1:
+        raise SmokeAssertionError("attempt-smoke-001 repeats the rehydrated eventId")
     return sequence_nos
 
 

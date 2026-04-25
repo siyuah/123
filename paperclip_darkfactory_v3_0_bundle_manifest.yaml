@@ -98,7 +98,7 @@ files:
   normativity: release-gate-report
 - path: paperclip_darkfactory_v3_0_bundle_manifest.yaml
   sha256: SELF_HASH_EXCLUDED
-  bytes: 8230
+  bytes: 8316
   normativity: release-gate-input
 - path: paperclip_darkfactory_v3_0_consistency_report.json
   sha256: SELF_HASH_EXCLUDED
@@ -134,8 +134,8 @@ files:
   normativity: minimal-runtime-skeleton
 - path: dark_factory_v3/projection.py
   role: runtime implementation
-  sha256: f053f3e01ca8d19762ec2437201f8e3fc88d469c24c54c75707e9e25e070cff6
-  bytes: 14202
+  sha256: 2a9598f485352ccc4e0860031f484848f47a8e5167c59a31b67c53ccb40b20b2
+  bytes: 14512
 - path: dark_factory_v3/journal.py
   sha256: c3476c09edee1dcaedd593aec96a25438e1f1c50f3ecb4e5ac786deb8cbeb733
   bytes: 3980
@@ -152,17 +152,17 @@ files:
   normativity: minimal-runtime-skeleton
 - path: tools/v3_control_plane_smoke.py
   role: runtime CLI smoke test
-  sha256: dbf65d4e69c4848635e132b17b13d732aa3a37672b5828accb5ced7020841c17
-  bytes: 6863
+  sha256: 7579dd4f83ccfc4433bc5177d32cc5e7088392579f8967fe919688c4207f2d9b
+  bytes: 7731
   normativity: release-gate-tool
 - path: docs/v3_control_plane_cli.md
   role: runtime CLI operator contract
-  sha256: f8188c50b79b99718d91fa12394e1b864faedca522b210a1360c69d5f54e403a
-  bytes: 5365
+  sha256: 675885b3a58ae11e9a45fa69fb4042dbb68f08a225826a0a8b45cc5c5cd86d19
+  bytes: 6124
   normativity: informative
 - path: tests/test_v3_runtime.py
-  sha256: c7a60369573bf8730c06513e6a35427ee7113fda45f4e510087084ec754ab2c3
-  bytes: 42002
+  sha256: 91a5f6162637675a99c7d50eea1f9e96c8cf894ebb5554af9f8f14c4ba79f316
+  bytes: 44240
   normativity: release-gate-test
 - path: tests/golden_timelines/v3_0/GL-V30-routing-chat.jsonl
   sha256: 06909dfbe69534a7177d3494c7f4f0443b22358ddb696e0f023789dbc49358be

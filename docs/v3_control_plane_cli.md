@@ -216,6 +216,13 @@ Success output is stable JSON:
 
 The script asserts that the run ends in `planning`, the original attempt is `superseded`, the new attempt is `created`, route decision `rd-smoke-001` exists, and event `sequenceNo` values are contiguous from 1.
 
+### Projection lineage contract
+
+- `RunProjection.eventIds` and `AttemptProjection.eventIds` are unique, ordered envelope lineage.
+- The order is the first time each `EventEnvelope.eventId` contributes to that run or attempt projection during replay.
+- Compound events such as `manual_gate.rehydrated` may fold multiple internal state transitions into one projection update (for example `parked_manual -> rehydrating -> planning` for the run, and `parked_manual -> rehydrate_pending -> superseded` for the previous attempt), but they still list that envelope's `eventId` only once per affected projection.
+- Internal state folding is not duplicate envelope lineage. Use each listed `eventId` to look up exactly one JSONL envelope in the append-only journal.
+
 ## Append-only journal and replay semantics
 
 - The journal is JSONL: one event envelope per line.

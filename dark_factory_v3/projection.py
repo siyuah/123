@@ -210,6 +210,12 @@ class RunLifecycleReducer:
         trigger = self._required(event, "transitionTrigger", event.payload.get("transitionTrigger") or event.payload.get("trigger"))
         self._transition_attempt(attempts, attempt_id, run_id, old_state, trigger, new_state, event.eventId, allow_bootstrap=True)
 
+    @staticmethod
+    def _append_event_id_once(event_ids: tuple[str, ...], event_id: str) -> tuple[str, ...]:
+        if event_id in event_ids:
+            return event_ids
+        return event_ids + (event_id,)
+
     def _transition_run(
         self,
         runs: Dict[str, RunProjection],
@@ -231,7 +237,7 @@ class RunLifecycleReducer:
             raise ProjectionReplayError(
                 f"run {run_id!r} transition state mismatch at {event_id}: expected {old_state!r}, got {current.currentState!r}"
             )
-        runs[run_id] = replace(current, currentState=new_state, eventIds=current.eventIds + (event_id,))
+        runs[run_id] = replace(current, currentState=new_state, eventIds=self._append_event_id_once(current.eventIds, event_id))
 
     def _transition_attempt(
         self,
@@ -255,14 +261,14 @@ class RunLifecycleReducer:
             raise ProjectionReplayError(
                 f"attempt {attempt_id!r} transition state mismatch at {event_id}: expected {old_state!r}, got {current.currentState!r}"
             )
-        attempts[attempt_id] = replace(current, currentState=new_state, eventIds=current.eventIds + (event_id,))
+        attempts[attempt_id] = replace(current, currentState=new_state, eventIds=self._append_event_id_once(current.eventIds, event_id))
 
     def _ensure_run(self, runs: Dict[str, RunProjection], run_id: str, event_id: str, *, preferred_state: str) -> None:
         current = runs.get(run_id)
         if current is None:
             runs[run_id] = RunProjection(runId=run_id, currentState=preferred_state, eventIds=(event_id,))
         else:
-            runs[run_id] = replace(current, eventIds=current.eventIds + (event_id,))
+            runs[run_id] = replace(current, eventIds=self._append_event_id_once(current.eventIds, event_id))
 
     def _ensure_attempt(
         self,
@@ -277,7 +283,7 @@ class RunLifecycleReducer:
         if current is None:
             attempts[attempt_id] = AttemptProjection(attemptId=attempt_id, runId=run_id, currentState=preferred_state, eventIds=(event_id,))
         else:
-            attempts[attempt_id] = replace(current, eventIds=current.eventIds + (event_id,))
+            attempts[attempt_id] = replace(current, eventIds=self._append_event_id_once(current.eventIds, event_id))
 
     def _assert_legal(self, domain: str, old_state: str, trigger: str, new_state: str, event_id: str) -> None:
         if (domain, old_state, trigger, new_state) not in self._transitions:
