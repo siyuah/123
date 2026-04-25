@@ -1,7 +1,7 @@
 # V3.0 Bundle Consistency Check
 
 protocolReleaseTag: `v3.0-agent-control-r1`
-checkedAt: `2026-04-25T09:05:58Z`
+checkedAt: `2026-04-25T09:58:48Z`
 status: `pass`
 
 errors: 0

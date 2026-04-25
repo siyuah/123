@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass, field
-from typing import List, Set
+from typing import List, Optional, Set
 
 from .protocol import EventEnvelope
 
@@ -39,5 +39,27 @@ class InMemoryAppendOnlyJournal:
     def read_all(self) -> List[EventEnvelope]:
         return list(self._events)
 
+    def read_by_correlation(self, correlation_id: str) -> List[EventEnvelope]:
+        return [event for event in self._events if event.correlationId == correlation_id]
+
+    def get_event(self, event_id: str) -> Optional[EventEnvelope]:
+        for event in self._events:
+            if event.eventId == event_id:
+                return event
+        return None
+
     def to_jsonl(self) -> str:
         return "\n".join(json.dumps(event.to_dict(), ensure_ascii=False, sort_keys=True) for event in self._events)
+
+    @classmethod
+    def from_jsonl(cls, jsonl: str) -> "InMemoryAppendOnlyJournal":
+        journal = cls()
+        for line_number, line in enumerate(jsonl.splitlines(), start=1):
+            if not line.strip():
+                continue
+            try:
+                event = EventEnvelope.from_dict(json.loads(line))
+            except (TypeError, ValueError, json.JSONDecodeError) as exc:
+                raise JournalAppendError(f"invalid journal line {line_number}: {exc}") from exc
+            journal.append(event.as_replay())
+        return journal

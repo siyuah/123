@@ -34,6 +34,11 @@ def _validate_literal(field_name: str, value: str, allowed: Iterable[str]) -> No
         raise ValueError(f"{field_name} must be one of {sorted(allowed_set)}, got {value!r}")
 
 
+def _require_non_empty(field_name: str, value: str) -> None:
+    if not value:
+        raise ValueError(f"{field_name} must be non-empty")
+
+
 _DEFAULT_ENUMS = {
     "runState": {
         "requested",
@@ -75,6 +80,7 @@ class Run:
     protocolReleaseTag: str = PROTOCOL_RELEASE_TAG
 
     def __post_init__(self) -> None:
+        _require_non_empty("runId", self.runId)
         _validate_literal("runState", self.currentState, _DEFAULT_ENUMS["runState"])
         if self.protocolReleaseTag != PROTOCOL_RELEASE_TAG:
             raise ValueError("invalid protocolReleaseTag")
@@ -91,6 +97,8 @@ class Attempt:
     protocolReleaseTag: str = PROTOCOL_RELEASE_TAG
 
     def __post_init__(self) -> None:
+        _require_non_empty("attemptId", self.attemptId)
+        _require_non_empty("runId", self.runId)
         _validate_literal("attemptState", self.currentState, _DEFAULT_ENUMS["attemptState"])
         if self.protocolReleaseTag != PROTOCOL_RELEASE_TAG:
             raise ValueError("invalid protocolReleaseTag")
@@ -121,6 +129,16 @@ class RouteDecision:
     def __post_init__(self) -> None:
         if self.protocolReleaseTag != PROTOCOL_RELEASE_TAG:
             raise ValueError("invalid protocolReleaseTag")
+        for field_name in (
+            "routeDecisionId",
+            "runId",
+            "attemptId",
+            "routePolicyRef",
+            "selectedExecutorClass",
+            "decisionReason",
+            "recordedAt",
+        ):
+            _require_non_empty(field_name, getattr(self, field_name))
         _validate_literal("workloadClass", self.workloadClass, _DEFAULT_ENUMS["workloadClass"])
         _validate_literal("routeDecisionState", self.routeDecisionState, _DEFAULT_ENUMS["routeDecisionState"])
         if self.fallbackDepth < 0:
@@ -168,6 +186,17 @@ class EventEnvelope:
     def __post_init__(self) -> None:
         if self.protocolReleaseTag != PROTOCOL_RELEASE_TAG:
             raise ValueError("invalid protocolReleaseTag")
+        for field_name in (
+            "eventName",
+            "eventVersion",
+            "eventId",
+            "emittedAt",
+            "traceId",
+            "producer",
+            "causationId",
+            "correlationId",
+        ):
+            _require_non_empty(field_name, getattr(self, field_name))
         if self.sequenceNo < 1:
             raise ValueError("sequenceNo must be positive")
 
@@ -218,7 +247,7 @@ class EventEnvelope:
         )
 
     @classmethod
-    def from_dict(cls, data: Mapping[str, Any]) -> "EventEnvelope":
+    def from_dict(cls, data: Mapping[str, Any], *, isReplay: Optional[bool] = None) -> "EventEnvelope":
         known = {
             "eventName",
             "eventVersion",
@@ -244,9 +273,15 @@ class EventEnvelope:
         payload = {key: value for key, value in data.items() if key not in known and key != "seq"}
         if "sequenceNo" not in kwargs and "seq" in data:
             kwargs["sequenceNo"] = data["seq"]
+        if isReplay is not None:
+            kwargs["isReplay"] = isReplay
         kwargs.setdefault("isReplay", False)
         kwargs["payload"] = payload
         return cls(**kwargs)  # type: ignore[arg-type]
+
+    def as_replay(self) -> "EventEnvelope":
+        data = self.to_dict()
+        return EventEnvelope.from_dict(data, isReplay=True)
 
     def to_dict(self) -> Dict[str, Any]:
         base = {
@@ -286,5 +321,5 @@ def replay_golden_timeline(path: Path | str):
     for line in Path(path).read_text(encoding="utf-8").splitlines():
         if not line.strip():
             continue
-        journal.append(EventEnvelope.from_dict(json.loads(line)))
+        journal.append(EventEnvelope.from_dict(json.loads(line), isReplay=True))
     return journal
