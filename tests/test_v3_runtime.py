@@ -2,6 +2,7 @@ import json
 import unittest
 from pathlib import Path
 
+from dark_factory_v3.control_plane import ControlPlane, ControlPlaneError
 from dark_factory_v3.journal import InMemoryAppendOnlyJournal, JournalAppendError
 from dark_factory_v3.projection import ProjectionReplayError, RunLifecycleReducer
 from dark_factory_v3.protocol import (
@@ -319,6 +320,143 @@ class V3RuntimeContractTests(unittest.TestCase):
 
         self.assertEqual(projection.get_run("run-001").currentState, "validating")
         self.assertEqual(projection.get_attempt("attempt-001").currentState, "booting")
+    def test_control_plane_happy_path_appends_contract_events_and_projects_state(self):
+        plane = ControlPlane(root=ROOT, clock=lambda: "2026-04-24T00:00:00Z")
+
+        first = plane.request_run(run_id="run-cp-001", correlation_id="corr-cp-001", trace_id="trace-cp-001")
+        route = plane.record_route_decision(
+            run_id="run-cp-001",
+            attempt_id="attempt-cp-001",
+            route_decision_id="rd-cp-001",
+            workload_class="code",
+            route_policy_ref="policy://routing/v3/default",
+            selected_executor_class="code_executor",
+            fallback_depth=0,
+            decision_reason="primary_policy_match",
+            correlation_id="corr-cp-001",
+            trace_id="trace-cp-001",
+        )
+        booting = plane.transition_attempt(
+            run_id="run-cp-001",
+            attempt_id="attempt-cp-001",
+            old_state="created",
+            new_state="booting",
+            transition_trigger="sandbox_allocated",
+            correlation_id="corr-cp-001",
+            trace_id="trace-cp-001",
+        )
+        active = plane.transition_attempt(
+            run_id="run-cp-001",
+            attempt_id="attempt-cp-001",
+            old_state="booting",
+            new_state="active",
+            transition_trigger="first_checkpoint",
+            correlation_id="corr-cp-001",
+            trace_id="trace-cp-001",
+        )
+        plane.transition_run(
+            run_id="run-cp-001",
+            old_state="validating",
+            new_state="planning",
+            transition_trigger="validation_passed",
+            correlation_id="corr-cp-001",
+            trace_id="trace-cp-001",
+        )
+        plane.transition_run(
+            run_id="run-cp-001",
+            old_state="planning",
+            new_state="executing",
+            transition_trigger="execution_starts",
+            correlation_id="corr-cp-001",
+            trace_id="trace-cp-001",
+        )
+        parked = plane.park_manual(
+            run_id="run-cp-001",
+            attempt_id="attempt-cp-001",
+            park_id="park-cp-001",
+            manual_gate_type="operator_review",
+            rehydration_token_id="rt-cp-001",
+            correlation_id="corr-cp-001",
+            trace_id="trace-cp-001",
+        )
+        rehydrated = plane.rehydrate_manual(
+            run_id="run-cp-001",
+            previous_attempt_id="attempt-cp-001",
+            new_attempt_id="attempt-cp-002",
+            rehydration_token_id="rt-cp-001",
+            correlation_id="corr-cp-001",
+            trace_id="trace-cp-001",
+        )
+
+        self.assertEqual(first.eventName, "run.lifecycle.transitioned")
+        self.assertEqual(first.eventVersion, "v1")
+        self.assertEqual(first.protocolReleaseTag, PROTOCOL_RELEASE_TAG)
+        self.assertEqual(first.payload["oldState"], "requested")
+        self.assertEqual(first.payload["newState"], "validating")
+        self.assertEqual(route.idempotencyKey, "rd-cp-001")
+        self.assertEqual(parked.idempotencyKey, "park-cp-001")
+        self.assertEqual(rehydrated.idempotencyKey, "rt-cp-001")
+        self.assertEqual([event.sequenceNo for event in plane.journal.read_by_correlation("corr-cp-001")], list(range(1, 9)))
+        self.assertEqual([event.eventId for event in plane.journal.read_all()], [
+            first.eventId,
+            route.eventId,
+            booting.eventId,
+            active.eventId,
+            "evt-corr-cp-001-0005",
+            "evt-corr-cp-001-0006",
+            parked.eventId,
+            rehydrated.eventId,
+        ])
+
+        projection = plane.projection()
+        self.assertEqual(projection.get_run("run-cp-001").currentState, "planning")
+        self.assertEqual(projection.get_attempt("attempt-cp-001").currentState, "superseded")
+        self.assertEqual(projection.get_attempt("attempt-cp-002").currentState, "created")
+        self.assertEqual(projection.get_route_decision("rd-cp-001").decision.workloadClass, "code")
+
+    def test_control_plane_rejects_illegal_transition_without_polluting_journal(self):
+        plane = ControlPlane(root=ROOT)
+        plane.request_run(run_id="run-cp-002", correlation_id="corr-cp-002", trace_id="trace-cp-002")
+        before = plane.journal.read_all()
+
+        with self.assertRaisesRegex(ControlPlaneError, "illegal run transition"):
+            plane.transition_run(
+                run_id="run-cp-002",
+                old_state="validating",
+                new_state="completed",
+                transition_trigger="closure_success",
+                correlation_id="corr-cp-002",
+                trace_id="trace-cp-002",
+            )
+
+        self.assertEqual(plane.journal.read_all(), before)
+        self.assertEqual(plane.projection().get_run("run-cp-002").currentState, "validating")
+
+    def test_control_plane_surfaces_duplicate_event_ids_and_preserves_journal(self):
+        plane = ControlPlane(root=ROOT)
+        plane.request_run(run_id="run-cp-003", correlation_id="corr-cp-003", trace_id="trace-cp-003", event_id="evt-fixed")
+        before = plane.journal.read_all()
+
+        with self.assertRaisesRegex(ControlPlaneError, "duplicate eventId"):
+            plane.transition_run(
+                run_id="run-cp-003",
+                old_state="validating",
+                new_state="planning",
+                transition_trigger="validation_passed",
+                correlation_id="corr-cp-003",
+                trace_id="trace-cp-003",
+                event_id="evt-fixed",
+            )
+
+        self.assertEqual(plane.journal.read_all(), before)
+
+    def test_control_plane_projection_query_api_reads_current_journal(self):
+        plane = ControlPlane(root=ROOT)
+        plane.request_run(run_id="run-cp-004", correlation_id="corr-cp-004", trace_id="trace-cp-004")
+
+        self.assertEqual(plane.get_run("run-cp-004").currentState, "validating")
+        self.assertIsNone(plane.get_attempt("attempt-missing"))
+        self.assertIsNone(plane.get_route_decision("rd-missing"))
 
 
 if __name__ == "__main__":
