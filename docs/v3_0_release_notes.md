@@ -36,15 +36,20 @@ make verify-v3-journal JOURNAL=/tmp/v3-control-plane-smoke.jsonl
 make release-readiness-v3
 make release-dry-run-v3 TAG=v3.0.0-rc1
 make release-dry-run-v3-remote-ci TAG=v3.0.0-rc1
+make release-evidence-v3 TAG=v3.0.0-rc1
+make release-evidence-v3-remote-ci TAG=v3.0.0-rc1
 ```
 
 `make release-dry-run-v3-remote-ci` is optional and best-effort: it uses the GitHub CLI to inspect the latest `main` run for `.github/workflows/v3-contracts.yml`, skips when `gh`, auth, network, or run history is unavailable, and does not create tags or releases. Use `make release-dry-run-v3-remote-ci-strict TAG=v3.0.0-rc1` only when a human wants latest remote CI success to be a blocking pre-release condition.
+
+`make release-evidence-v3` emits a stable JSON RC evidence package that records this release notes file, bundle manifest, consistency report, readiness summary, dry-run summary, git cleanliness, and artifact hashes. It is offline by default. `make release-evidence-v3-remote-ci` adds the optional latest-`main` GitHub Actions observation and treats unavailable `gh`, auth, network, or workflow history as `skipped`; neither evidence target creates a tag, pushes, or calls the GitHub Release API.
 
 For machine-readable artifacts:
 
 ```bash
 python3 tools/v3_release_readiness.py --output /tmp/v3-release-readiness.json
 python3 tools/v3_release_dry_run.py --tag v3.0.0-rc1 --output /tmp/v3-release-dry-run.json
+python3 tools/v3_release_evidence.py --tag v3.0.0-rc1 --output /tmp/v3-release-evidence.json
 ```
 
 ## Key commit range

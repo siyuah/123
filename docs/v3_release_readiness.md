@@ -15,9 +15,13 @@ make release-readiness-v3
 make release-dry-run-v3 TAG=v3.0.0-rc1
 make release-dry-run-v3-remote-ci TAG=v3.0.0-rc1
 make release-dry-run-v3-remote-ci-strict TAG=v3.0.0-rc1
+make release-evidence-v3 TAG=v3.0.0-rc1
+make release-evidence-v3-remote-ci TAG=v3.0.0-rc1
 ```
 
 `make release-dry-run-v3` runs a non-destructive release dry-run against `docs/v3_0_release_notes.md`. It validates release-note evidence, local readiness, and candidate tag availability, then prints recommended manual commands. It does not create a git tag, does not push, and does not call the GitHub Release API.
+
+`make release-evidence-v3` builds an auditable RC evidence package in stable JSON. It summarizes the release notes, bundle manifest, consistency report, readiness gate, dry-run gate, git cleanliness, and artifact hashes without creating tags/releases or accessing the network. Use `make release-evidence-v3-remote-ci TAG=v3.0.0-rc1` only when a human wants the evidence package to include the optional latest-`main` GitHub Actions check; missing `gh`, auth, network, or workflow history is recorded as `skipped` and does not invalidate offline evidence.
 
 `make release-readiness-v3` runs:
 
@@ -38,6 +42,21 @@ That target is intended for final local release checks. Because it requires a cl
 - `--require-remote-ci-success`: make the optional remote CI check fail the report when the latest run is not completed with `conclusion: success`; without this flag, non-successful remote runs are warnings.
 - `--remote-ci-workflow NAME`: workflow file/name passed to `gh run list`. Defaults to `v3-contracts.yml`.
 - `--remote-ci-branch BRANCH`: branch passed to `gh run list`. Defaults to `main`.
+
+## Evidence package
+
+`tools/v3_release_evidence.py` combines the local release readiness gate, release dry-run, release notes, bundle manifest, consistency report, CI workflow file, git state, and SHA-256 artifact inventory into one audit-friendly JSON document:
+
+```bash
+python3 tools/v3_release_evidence.py --tag v3.0.0-rc1 --output /tmp/v3-release-evidence.json
+python3 tools/v3_release_evidence.py --tag v3.0.0-rc1 --include-generated-reports
+make release-evidence-v3 TAG=v3.0.0-rc1
+make release-evidence-v3-remote-ci TAG=v3.0.0-rc1
+```
+
+The default evidence target is offline and does not call `gh`. Remote CI is included only with `--include-remote-ci` or `make release-evidence-v3-remote-ci`; when the GitHub CLI, authentication, network, or workflow history is unavailable the check is `skipped` and `ok` remains true. The evidence tool is non-destructive: it never creates a local tag, never pushes commits/tags, and never calls the GitHub Release API.
+
+Top-level evidence fields include `protocolReleaseTag`, `tag`, `headSha`, `branch`, `releaseNotesSha256`, `bundleManifestSha256`, `consistencyReportSha256`, `artifacts`, `readiness`, `dryRun`, `checks`, and `summary`. Use `--include-generated-reports` when reviewers need the full nested readiness/dry-run reports embedded rather than compact summaries.
 
 ## Report shape
 

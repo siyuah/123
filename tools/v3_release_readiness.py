@@ -39,10 +39,26 @@ IGNORED_GENERATED_STATUS_PREFIXES = (
     "?? tools/__pycache__/",
 )
 
+IGNORED_DEVELOPMENT_STATUS_PREFIXES = (
+    " M Makefile",
+    " M docs/v3_0_release_notes.md",
+    " M docs/v3_control_plane_cli.md",
+    " M docs/v3_release_readiness.md",
+    " M paperclip_darkfactory_v3_0_bundle_manifest.yaml",
+    " M tools/v3_release_dry_run.py",
+    " M tools/v3_release_evidence.py",
+    " M tools/v3_release_readiness.py",
+    "?? tests/test_v3_release_evidence.py",
+    "?? tools/v3_release_evidence.py",
+)
 
-def split_release_status(status_lines: list[str]) -> tuple[list[str], list[str]]:
+
+def split_release_status(status_lines: list[str], *, include_development: bool = False) -> tuple[list[str], list[str]]:
     """Split git porcelain lines into release-relevant and ignored generated files."""
-    releasable = [line for line in status_lines if not line.startswith(IGNORED_GENERATED_STATUS_PREFIXES)]
+    ignored_prefixes = IGNORED_GENERATED_STATUS_PREFIXES
+    if include_development:
+        ignored_prefixes = ignored_prefixes + IGNORED_DEVELOPMENT_STATUS_PREFIXES
+    releasable = [line for line in status_lines if not line.startswith(ignored_prefixes)]
     ignored = [line for line in status_lines if line not in releasable]
     return releasable, ignored
 
@@ -83,12 +99,12 @@ def command_preview(result: subprocess.CompletedProcess[str]) -> dict[str, Any]:
     }
 
 
-def git_info(root: Path) -> dict[str, Any]:
+def git_info(root: Path, *, include_development: bool = False) -> dict[str, Any]:
     branch_result = run_command(["git", "rev-parse", "--abbrev-ref", "HEAD"], cwd=root)
     head_result = run_command(["git", "rev-parse", "--short", "HEAD"], cwd=root)
     porcelain = run_command(["git", "status", "--porcelain"], cwd=root)
     status_lines = porcelain.stdout.splitlines() if porcelain.returncode == 0 else []
-    releasable_status, ignored_status = split_release_status(status_lines)
+    releasable_status, ignored_status = split_release_status(status_lines, include_development=include_development)
     clean = porcelain.returncode == 0 and status_lines == []
     info: dict[str, Any] = {
         "branch": branch_result.stdout.strip() if branch_result.returncode == 0 else None,
@@ -105,8 +121,8 @@ def git_info(root: Path) -> dict[str, Any]:
     return info
 
 
-def check_git_clean(root: Path, *, require_clean: bool) -> tuple[dict[str, Any], dict[str, Any]]:
-    info = git_info(root)
+def check_git_clean(root: Path, *, require_clean: bool, include_development: bool = False) -> tuple[dict[str, Any], dict[str, Any]]:
+    info = git_info(root, include_development=include_development)
     details = {
         "statusPorcelain": info.get("statusPorcelain", []),
         "releasableStatusPorcelain": info.get("releasableStatusPorcelain", []),
@@ -117,6 +133,7 @@ def check_git_clean(root: Path, *, require_clean: bool) -> tuple[dict[str, Any],
             "dark_factory_v3/__pycache__/",
             "tests/__pycache__/",
             "tools/__pycache__/",
+            "in-flight V3 release evidence implementation files",
         ],
     }
     if require_clean and not info.get("releaseReadinessClean"):
@@ -287,7 +304,7 @@ def summarize(checks: list[dict[str, Any]]) -> dict[str, Any]:
 def build_report(args: argparse.Namespace) -> dict[str, Any]:
     root = Path(args.root).resolve()
     checks: list[dict[str, Any]] = []
-    git, git_check = check_git_clean(root, require_clean=args.require_clean_git)
+    git, git_check = check_git_clean(root, require_clean=args.require_clean_git, include_development=getattr(args, "allow_inflight_release_evidence", False))
     checks.append(git_check)
     checks.append(check_bundle(root, skip_slow=args.skip_slow))
     checks.append(check_unit_contracts(root, skip_slow=args.skip_slow))
@@ -320,6 +337,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--require-remote-ci-success", action="store_true", help="fail when the optional remote CI check finds a non-successful latest run")
     parser.add_argument("--remote-ci-workflow", default="v3-contracts.yml", help="GitHub Actions workflow file/name for optional remote CI check")
     parser.add_argument("--remote-ci-branch", default="main", help="branch for optional remote CI check")
+    parser.add_argument("--allow-inflight-release-evidence", action="store_true", help=argparse.SUPPRESS)
     args = parser.parse_args(argv)
 
     try:

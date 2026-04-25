@@ -1,4 +1,4 @@
-.PHONY: validate-v3 test-v3-contracts manifest-v3 smoke-v3-control-plane verify-v3-journal release-readiness-v3 release-dry-run-v3 release-dry-run-v3-remote-ci release-dry-run-v3-remote-ci-strict
+.PHONY: validate-v3 test-v3-contracts manifest-v3 smoke-v3-control-plane verify-v3-journal release-readiness-v3 release-dry-run-v3 release-dry-run-v3-remote-ci release-dry-run-v3-remote-ci-strict release-evidence-v3 release-evidence-v3-remote-ci
 MAKEFLAGS += --no-print-directory
 TAG ?= v3.0.0-rc1
 RELEASE_READINESS_FLAGS ?=
@@ -38,3 +38,9 @@ release-dry-run-v3-remote-ci:
 
 release-dry-run-v3-remote-ci-strict:
 	@python3 tools/v3_release_dry_run.py --tag $(TAG) --require-clean-git --include-remote-ci --require-remote-ci-success
+
+release-evidence-v3:
+	@python3 tools/v3_release_evidence.py --tag $(TAG) --require-clean-git
+
+release-evidence-v3-remote-ci:
+	@python3 tools/v3_release_evidence.py --tag $(TAG) --require-clean-git --include-remote-ci

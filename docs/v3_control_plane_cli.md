@@ -311,6 +311,8 @@ The GitHub Actions workflow `.github/workflows/v3-contracts.yml` runs on pushes 
 
 Optional release dry-run remote CI checks are available through `python3 tools/v3_release_dry_run.py --include-remote-ci`, `make release-dry-run-v3-remote-ci TAG=v3.0.0-rc1`, and strict `make release-dry-run-v3-remote-ci-strict TAG=v3.0.0-rc1`. They use the GitHub CLI only to inspect the latest `main` workflow run and never create a tag, never push, and never call the GitHub Release API; missing `gh`, auth, network, or run history is reported as `skipped` unless strict success is explicitly required.
 
+For RC handoff evidence, run `make release-evidence-v3 TAG=v3.0.0-rc1` to emit one stable JSON package containing release notes, bundle manifest, consistency report, readiness, dry-run, git cleanliness, and artifact hashes. It is offline by default. `make release-evidence-v3-remote-ci TAG=v3.0.0-rc1` adds the same optional latest-`main` remote CI observation used by dry-run. Evidence generation is non-destructive: it never creates tags/releases, never pushes, and never calls the GitHub Release API.
+
 Both Makefile control-plane targets are expected to emit stdout that can be passed directly to `json.loads` or `python -m json.tool`; recipe command echoes, `make` directory banners, and shell `echo` prefixes are contract violations. CI uploads the smoke JSON, smoke journal, and verify JSON as the `v3-control-plane-diagnostics` artifact for failure analysis.
 
 For persisted diagnostics, call `verify-journal` directly with `--output /tmp/v3-control-plane-smoke.verify.json`. For scoped dashboards, add `--run-id RUN_ID`; this never weakens validation because the full journal is replayed before the summary is filtered.

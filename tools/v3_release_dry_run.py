@@ -52,8 +52,11 @@ IGNORED_DEVELOPMENT_STATUS_PREFIXES = (
     " M paperclip_darkfactory_v3_0_bundle_manifest.yaml",
     " M tools/v3_release_dry_run.py",
     " M tools/v3_release_readiness.py",
+    " M tools/v3_release_evidence.py",
     "?? tests/test_v3_release_dry_run_remote_ci.py",
+    "?? tests/test_v3_release_evidence.py",
     "?? tools/v3_remote_ci.py",
+    "?? tools/v3_release_evidence.py",
 )
 
 
