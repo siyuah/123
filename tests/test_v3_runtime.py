@@ -3,6 +3,7 @@ import unittest
 from pathlib import Path
 
 from dark_factory_v3.journal import InMemoryAppendOnlyJournal, JournalAppendError
+from dark_factory_v3.projection import ProjectionReplayError, RunLifecycleReducer
 from dark_factory_v3.protocol import (
     PROTOCOL_RELEASE_TAG,
     Attempt,
@@ -218,6 +219,106 @@ class V3RuntimeContractTests(unittest.TestCase):
                     self.assertEqual(event.eventVersion, contracts[event.eventName]["version"])
                     self.assertEqual(event.protocolReleaseTag, PROTOCOL_RELEASE_TAG)
                     self.assertTrue(event.isReplay)
+
+    def test_golden_timelines_replay_into_queryable_control_plane_projection(self):
+        reducer = RunLifecycleReducer()
+        expected_runs = {
+            "GL-V30-routing-chat.jsonl": ("run-routing-chat-001", "planning"),
+            "GL-V30-routing-code.jsonl": ("run-routing-code-001", "planning"),
+            "GL-V30-routing-vision.jsonl": ("run-routing-vision-001", "planning"),
+            "GL-V30-manual-park-rehydrate.jsonl": ("run-manual-001", "planning"),
+        }
+        for timeline in sorted((ROOT / "tests/golden_timelines/v3_0").glob("*.jsonl")):
+            with self.subTest(timeline=timeline.name):
+                journal = replay_golden_timeline(timeline)
+                projection = reducer.replay(journal.read_all())
+                self.assertEqual(len(projection.unknown_events), len([
+                    event for event in journal.read_all()
+                    if event.eventName not in {
+                        "route.decision.recorded",
+                        "run.lifecycle.transitioned",
+                        "attempt.lifecycle.transitioned",
+                        "manual_gate.parked",
+                        "manual_gate.rehydrated",
+                    }
+                ]))
+                if timeline.name in expected_runs:
+                    run_id, expected_state = expected_runs[timeline.name]
+                    run = projection.get_run(run_id)
+                    self.assertIsNotNone(run)
+                    self.assertEqual(run.currentState, expected_state)
+
+        routing = reducer.replay(replay_golden_timeline(ROOT / "tests/golden_timelines/v3_0/GL-V30-routing-chat.jsonl").read_all())
+        route = routing.get_route_decision("rd-chat-001")
+        self.assertIsNotNone(route)
+        self.assertEqual(route.decision.workloadClass, "chat")
+        self.assertEqual(route.decision.routeDecisionState, "selected_primary")
+        self.assertEqual(routing.get_attempt("attempt-routing-chat-001").currentState, "created")
+
+        manual = reducer.replay(replay_golden_timeline(ROOT / "tests/golden_timelines/v3_0/GL-V30-manual-park-rehydrate.jsonl").read_all())
+        self.assertEqual(manual.get_run("run-manual-001").currentState, "planning")
+        self.assertEqual(manual.get_attempt("attempt-manual-001").currentState, "superseded")
+        self.assertEqual(manual.get_attempt("attempt-manual-002").currentState, "created")
+
+    def test_projection_rejects_illegal_run_state_transition(self):
+        reducer = RunLifecycleReducer()
+        illegal = EventEnvelope(
+            eventName="run.lifecycle.transitioned",
+            eventVersion="v1",
+            eventId="evt-run-illegal-001",
+            emittedAt="2026-04-24T00:00:00Z",
+            traceId="trace-illegal-001",
+            producer="dark-factory-orchestrator",
+            causationId="run-illegal-001",
+            correlationId="corr-illegal-001",
+            sequenceNo=1,
+            runId="run-illegal-001",
+            payload={
+                "oldState": "requested",
+                "newState": "completed",
+                "transitionTrigger": "closure_success",
+            },
+        )
+
+        with self.assertRaisesRegex(ProjectionReplayError, "illegal run transition"):
+            reducer.replay([illegal])
+
+    def test_projection_applies_explicit_lifecycle_transition_events(self):
+        reducer = RunLifecycleReducer()
+        events = [
+            EventEnvelope(
+                eventName="run.lifecycle.transitioned",
+                eventVersion="v1",
+                eventId="evt-run-001",
+                emittedAt="2026-04-24T00:00:00Z",
+                traceId="trace-run-001",
+                producer="dark-factory-orchestrator",
+                causationId="run-001",
+                correlationId="corr-run-001",
+                sequenceNo=1,
+                runId="run-001",
+                payload={"oldState": "requested", "newState": "validating", "transitionTrigger": "request_accepted"},
+            ),
+            EventEnvelope(
+                eventName="attempt.lifecycle.transitioned",
+                eventVersion="v1",
+                eventId="evt-attempt-001",
+                emittedAt="2026-04-24T00:00:01Z",
+                traceId="trace-run-001",
+                producer="dark-factory-executor",
+                causationId="evt-run-001",
+                correlationId="corr-run-001",
+                sequenceNo=2,
+                runId="run-001",
+                attemptId="attempt-001",
+                payload={"oldState": "created", "newState": "booting", "transitionTrigger": "sandbox_allocated"},
+            ),
+        ]
+
+        projection = reducer.replay(events)
+
+        self.assertEqual(projection.get_run("run-001").currentState, "validating")
+        self.assertEqual(projection.get_attempt("attempt-001").currentState, "booting")
 
 
 if __name__ == "__main__":
