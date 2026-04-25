@@ -1,7 +1,7 @@
 # V3.0 Bundle Consistency Check
 
 protocolReleaseTag: `v3.0-agent-control-r1`
-checkedAt: `2026-04-25T15:07:01Z`
+checkedAt: `2026-04-25T19:33:01Z`
 status: `pass`
 
 errors: 0
@@ -11,7 +11,7 @@ checks: 12
 ## Checks
 
 - `manifest-path-exists`: **pass** — all manifest paths exist
-  - details: `{"checkedFiles": 47}`
+  - details: `{"checkedFiles": 52}`
 - `manifest-unique-paths`: **pass** — manifest paths are unique
 - `manifest-sha256-match`: **pass** — manifest sha256 values match disk
 - `tracked-files-classified-by-manifest`: **pass** — tracked files are listed or explicitly excluded

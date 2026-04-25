@@ -309,6 +309,8 @@ python3 tools/v3_control_plane.py projection --journal /tmp/v3-control-plane-smo
 
 The GitHub Actions workflow `.github/workflows/v3-contracts.yml` runs on pushes to `main`, pull requests targeting `main`, and manual `workflow_dispatch`. It uses Ubuntu with Python 3.12 and stays offline after standard `actions/checkout` and `actions/setup-python` setup. The CI gate runs `make test-v3-contracts`, `make validate-v3`, validates that `make smoke-v3-control-plane` emits parseable JSON with `ok=true` and `verifyJournal.ok=true`, then creates a temporary smoke journal and runs `make verify-v3-journal JOURNAL="$RUNNER_TEMP/v3_smoke.jsonl"`.
 
+Optional release dry-run remote CI checks are available through `python3 tools/v3_release_dry_run.py --include-remote-ci`, `make release-dry-run-v3-remote-ci TAG=v3.0.0-rc1`, and strict `make release-dry-run-v3-remote-ci-strict TAG=v3.0.0-rc1`. They use the GitHub CLI only to inspect the latest `main` workflow run and never create a tag, never push, and never call the GitHub Release API; missing `gh`, auth, network, or run history is reported as `skipped` unless strict success is explicitly required.
+
 Both Makefile control-plane targets are expected to emit stdout that can be passed directly to `json.loads` or `python -m json.tool`; recipe command echoes, `make` directory banners, and shell `echo` prefixes are contract violations. CI uploads the smoke JSON, smoke journal, and verify JSON as the `v3-control-plane-diagnostics` artifact for failure analysis.
 
 For persisted diagnostics, call `verify-journal` directly with `--output /tmp/v3-control-plane-smoke.verify.json`. For scoped dashboards, add `--run-id RUN_ID`; this never weakens validation because the full journal is replayed before the summary is filtered.

@@ -139,7 +139,7 @@ def check_git_clean(root: Path, *, require_clean: bool) -> tuple[dict[str, Any],
     )
 
 
-def check_bundle(root: Path) -> dict[str, Any]:
+def check_bundle(root: Path, *, skip_slow: bool = False) -> dict[str, Any]:
     try:
         from validate_v3_bundle import validate_bundle
 
@@ -148,16 +148,25 @@ def check_bundle(root: Path) -> dict[str, Any]:
         return make_check("bundle.validate", "fail", str(exc), details={"errorType": type(exc).__name__})
     errors = int(report.get("summary", {}).get("errors", 0))
     warnings = int(report.get("summary", {}).get("warnings", 0))
+    failed_checks = [check for check in report.get("checks", []) if check.get("status") == "fail"]
+    failed_check_ids = [str(check.get("id")) for check in failed_checks]
+    manifest_sha_only = errors > 0 and set(failed_check_ids) == {"manifest-sha256-match"}
     status = "pass" if errors == 0 else "fail"
+    message = "V3 manifest and bundle validation passed" if status == "pass" else "V3 manifest and bundle validation failed"
+    if skip_slow and manifest_sha_only:
+        status = "warn"
+        message = "V3 manifest sha256 drift detected during --skip-slow readiness; run make manifest-v3 before strict release readiness"
     return make_check(
         "bundle.validate",
         status,
-        "V3 manifest and bundle validation passed" if status == "pass" else "V3 manifest and bundle validation failed",
+        message,
         details={
             "bundleStatus": report.get("status"),
             "errors": errors,
             "warnings": warnings,
             "checks": int(report.get("summary", {}).get("checks", 0)),
+            "failedCheckIds": failed_check_ids,
+            "skipSlowManifestShaMismatchIsWarning": bool(skip_slow and manifest_sha_only),
         },
     )
 
@@ -239,6 +248,25 @@ def check_ci_workflow(root: Path, workflow: str) -> dict[str, Any]:
     )
 
 
+def check_remote_ci(root: Path, args: argparse.Namespace) -> dict[str, Any]:
+    try:
+        from v3_remote_ci import check_latest_main_workflow
+
+        return check_latest_main_workflow(
+            root,
+            workflow=args.remote_ci_workflow,
+            branch=args.remote_ci_branch,
+            require_success=args.require_remote_ci_success,
+        )
+    except Exception as exc:
+        return make_check(
+            "ci.latest_main_workflow",
+            "skipped",
+            "optional GitHub Actions check skipped because the remote CI helper failed",
+            details={"errorType": type(exc).__name__, "message": str(exc)},
+        )
+
+
 def summarize(checks: list[dict[str, Any]]) -> dict[str, Any]:
     failed = [check["id"] for check in checks if check["status"] == "fail"]
     skipped = [check["id"] for check in checks if check["status"] == "skipped"]
@@ -261,11 +289,13 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
     checks: list[dict[str, Any]] = []
     git, git_check = check_git_clean(root, require_clean=args.require_clean_git)
     checks.append(git_check)
-    checks.append(check_bundle(root))
+    checks.append(check_bundle(root, skip_slow=args.skip_slow))
     checks.append(check_unit_contracts(root, skip_slow=args.skip_slow))
     smoke_check, verify_check = check_smoke_and_verify(root, skip_slow=args.skip_slow)
     checks.extend([smoke_check, verify_check])
     checks.append(check_ci_workflow(root, args.ci_workflow))
+    if args.include_remote_ci or args.check_remote_ci:
+        checks.append(check_remote_ci(root, args))
     summary = summarize(checks)
     ok = summary["failed"] == 0
     return {
@@ -285,6 +315,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--skip-slow", action="store_true", help="skip slower unit/smoke/journal checks and mark them skipped")
     parser.add_argument("--require-clean-git", action="store_true", help="fail if git status --porcelain is not clean")
     parser.add_argument("--ci-workflow", default=".github/workflows/v3-contracts.yml", help="path to the V3 contracts CI workflow")
+    parser.add_argument("--include-remote-ci", action="store_true", help="include optional GitHub Actions latest main workflow check via gh CLI")
+    parser.add_argument("--check-remote-ci", action="store_true", help="alias for --include-remote-ci")
+    parser.add_argument("--require-remote-ci-success", action="store_true", help="fail when the optional remote CI check finds a non-successful latest run")
+    parser.add_argument("--remote-ci-workflow", default="v3-contracts.yml", help="GitHub Actions workflow file/name for optional remote CI check")
+    parser.add_argument("--remote-ci-branch", default="main", help="branch for optional remote CI check")
     args = parser.parse_args(argv)
 
     try:

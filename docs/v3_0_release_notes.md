@@ -19,10 +19,10 @@ Included scope:
 - control-plane CLI: request-run, transition-run, transition-attempt, route-decision, manual park/rehydrate, projection, version, and verify-journal operator contracts.
 - smoke contract: tools/v3_control_plane_smoke.py and make smoke-v3-control-plane generate a representative journal timeline.
 - journal verification: make verify-v3-journal JOURNAL=... and verify-journal stable JSON diagnostics validate JSONL shape, envelope fields, sequence integrity, protocol tag, event versions, replay, and event-id resolvability.
-- Makefile gates: make test-v3-contracts, make validate-v3, make smoke-v3-control-plane, make verify-v3-journal, make release-readiness-v3, and make release-dry-run-v3.
-- GitHub Actions CI: .github/workflows/v3-contracts.yml and .github/workflows/v3-bundle-validate.yml provide repository-side validation coverage.
-- release readiness gate: tools/v3_release_readiness.py aggregates local bundle validation, runtime contracts, control-plane smoke, journal verification, CI workflow presence, and git cleanliness into stable JSON.
-- release dry-run gate: tools/v3_release_dry_run.py checks this release notes document, release readiness, candidate tag availability, and suggested manual publication commands without creating any tag or release.
+- Makefile gates: make test-v3-contracts, make validate-v3, make smoke-v3-control-plane, make verify-v3-journal, make release-readiness-v3, make release-dry-run-v3, and optional remote-CI dry-run targets.
+- GitHub Actions CI: .github/workflows/v3-contracts.yml and .github/workflows/v3-bundle-validate.yml provide repository-side validation coverage; optional remote-CI checks can inspect the latest main workflow through the gh CLI without requiring local release validation to be online.
+- release readiness gate: tools/v3_release_readiness.py aggregates local bundle validation, runtime contracts, control-plane smoke, journal verification, CI workflow presence, optional remote CI status, and git cleanliness into stable JSON.
+- release dry-run gate: tools/v3_release_dry_run.py checks this release notes document, release readiness, candidate tag availability, optional remote CI status, and suggested manual publication commands without creating any tag or release.
 
 ## Local pre-release verification commands
 
@@ -35,7 +35,10 @@ make smoke-v3-control-plane JOURNAL=/tmp/v3-control-plane-smoke.jsonl
 make verify-v3-journal JOURNAL=/tmp/v3-control-plane-smoke.jsonl
 make release-readiness-v3
 make release-dry-run-v3 TAG=v3.0.0-rc1
+make release-dry-run-v3-remote-ci TAG=v3.0.0-rc1
 ```
+
+`make release-dry-run-v3-remote-ci` is optional and best-effort: it uses the GitHub CLI to inspect the latest `main` run for `.github/workflows/v3-contracts.yml`, skips when `gh`, auth, network, or run history is unavailable, and does not create tags or releases. Use `make release-dry-run-v3-remote-ci-strict TAG=v3.0.0-rc1` only when a human wants latest remote CI success to be a blocking pre-release condition.
 
 For machine-readable artifacts:
 
@@ -70,6 +73,7 @@ Notable commits in this V3.0 agent-control runtime line:
 - Does not commit `__pycache__/`, `.pyc`, or other interpreter caches produced by test/readiness runs.
 - Does not commit timestamp-only `checkedAt` churn in `paperclip_darkfactory_v3_0_consistency_report.json` or `.md`; revert timestamp-only validate output before committing.
 - Does not treat optional remote tag checking as a hard blocker when the network or remote is unavailable; local tag existence remains the authoritative offline safety check.
+- Does not treat optional remote CI inspection as a local/offline blocker unless `--require-remote-ci-success` or the strict Makefile target is explicitly requested.
 
 ## Rollback and troubleshooting
 
@@ -104,6 +108,7 @@ Inspect `summary.failedChecks`, `summary.warningChecks`, and each check object i
 - `control_plane.smoke`: run `make smoke-v3-control-plane JOURNAL=/tmp/v3-smoke.jsonl` for direct CLI diagnostics.
 - `journal.verify`: run `make verify-v3-journal JOURNAL=/tmp/v3-smoke.jsonl` or the direct verify-journal command above.
 - `ci.workflow_presence`: inspect `.github/workflows/v3-contracts.yml` for missing gate commands.
+- `ci.latest_main_workflow`: when optional remote CI is enabled, inspect the check `details.url`, `details.status`, `details.conclusion`, and `details.headSha`; skipped means the GitHub CLI, auth, network, or workflow history was unavailable and does not invalidate local release evidence.
 
 ### Failed release dry-run
 
@@ -113,4 +118,4 @@ Run:
 python3 tools/v3_release_dry_run.py --tag v3.0.0-rc1 --output /tmp/v3-release-dry-run.json
 ```
 
-Inspect `summary.failedChecks` and `summary.warningChecks`. A pass means the next manual commands are only recommendations in `recommendedCommands`; the dry-run itself never creates a local tag, never pushes, and never calls the GitHub Release API.
+Inspect `summary.failedChecks` and `summary.warningChecks`. A pass means the next manual commands are only recommendations in `recommendedCommands`; the dry-run itself never creates a local tag, never pushes, and never calls the GitHub Release API. When `ci.latest_main_workflow` appears as a warning, use `details.url` and `details.headSha` to compare the latest remote run with the intended release HEAD before deciding whether to rerun CI or use strict mode.

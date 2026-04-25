@@ -8,9 +8,13 @@
 python3 tools/v3_release_readiness.py
 python3 tools/v3_release_readiness.py --skip-slow
 python3 tools/v3_release_readiness.py --output /tmp/v3-release-readiness.json
+python3 tools/v3_release_readiness.py --include-remote-ci
 python3 tools/v3_release_dry_run.py --tag v3.0.0-rc1 --output /tmp/v3-release-dry-run.json
+python3 tools/v3_release_dry_run.py --tag v3.0.0-rc1 --include-remote-ci
 make release-readiness-v3
 make release-dry-run-v3 TAG=v3.0.0-rc1
+make release-dry-run-v3-remote-ci TAG=v3.0.0-rc1
+make release-dry-run-v3-remote-ci-strict TAG=v3.0.0-rc1
 ```
 
 `make release-dry-run-v3` runs a non-destructive release dry-run against `docs/v3_0_release_notes.md`. It validates release-note evidence, local readiness, and candidate tag availability, then prints recommended manual commands. It does not create a git tag, does not push, and does not call the GitHub Release API.
@@ -30,6 +34,10 @@ That target is intended for final local release checks. Because it requires a cl
 - `--skip-slow`: skip slower checks and mark them as `skipped` in the report. This currently skips `unit.contracts`, `control_plane.smoke`, and `journal.verify`.
 - `--require-clean-git`: fail when `git status --porcelain` is non-empty.
 - `--ci-workflow PATH`: override the workflow path checked for V3 CI gate presence. Defaults to `.github/workflows/v3-contracts.yml`.
+- `--include-remote-ci` / `--check-remote-ci`: add an optional GitHub Actions latest `main` workflow check through the `gh` CLI. This is best-effort and reports `skipped` when `gh`, auth, network, or workflow history is unavailable.
+- `--require-remote-ci-success`: make the optional remote CI check fail the report when the latest run is not completed with `conclusion: success`; without this flag, non-successful remote runs are warnings.
+- `--remote-ci-workflow NAME`: workflow file/name passed to `gh run list`. Defaults to `v3-contracts.yml`.
+- `--remote-ci-branch BRANCH`: branch passed to `gh run list`. Defaults to `main`.
 
 ## Report shape
 
