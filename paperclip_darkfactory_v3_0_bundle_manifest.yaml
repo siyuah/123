@@ -98,7 +98,7 @@ files:
   normativity: release-gate-report
 - path: paperclip_darkfactory_v3_0_bundle_manifest.yaml
   sha256: SELF_HASH_EXCLUDED
-  bytes: 9277
+  bytes: 9839
   normativity: release-gate-input
 - path: paperclip_darkfactory_v3_0_consistency_report.json
   sha256: SELF_HASH_EXCLUDED
@@ -117,9 +117,14 @@ files:
   sha256: 99ba9d42ea259028c4006f410aa5eba4ac81f10acb5226408598c4c2617a73f2
   bytes: 11522
   normativity: release-gate-tool
+- path: tools/v3_release_dry_run.py
+  role: release dry-run checker
+  sha256: aa08d32f9330136dd763cdec667344e6ad705c9a0506bf3dc1db8197ebae586f
+  bytes: 14053
+  normativity: release-gate-tool
 - path: Makefile
-  sha256: a89a4ec084f48ec6557794bd2e6132d0cc7e569f775d93fabbde98e572ac95f4
-  bytes: 857
+  sha256: b6d441f9dcc67656bdfdcac6a0b1d56ff19cd9edaaffee31df9645c8dd0ef710
+  bytes: 986
   normativity: release-gate-tool
 - path: .github/workflows/v3-bundle-validate.yml
   sha256: 1713723b9a78b03bc58cb3d180998cf18909d59049f0920a463e26bc44181a07
@@ -169,10 +174,15 @@ files:
   sha256: 3c95fa71407defd2cfc718053a6236f0d4e0b043464fff205c96a8f012ae8eb8
   bytes: 11694
   normativity: informative
+- path: docs/v3_0_release_notes.md
+  role: release notes
+  sha256: bf98db4897f7f986de745e7ad3d9285506108118306be554f57af2105cc9713f
+  bytes: 6312
+  normativity: informative
 - path: docs/v3_release_readiness.md
   role: release readiness operator contract
-  sha256: d479ec2600b559b5a42e56e375d5ac76b918f8da61027e411ada610701bf139d
-  bytes: 4011
+  sha256: 13ca0c29d4db6dfbf8bc574521061d6f440115021475d2d451334ea7f4e7aa03
+  bytes: 4585
   normativity: informative
 - path: tests/test_v3_runtime.py
   sha256: f2f2db50f0f51ace44718b8f70fda502db33132013c1f9c5932785aa9916c5a9
@@ -182,6 +192,11 @@ files:
   role: journal verification unit tests
   sha256: a9fbe81ef5a1645386580ea9072200b901da41231d4724be267875e2b854d7e2
   bytes: 1572
+  normativity: release-gate-test
+- path: tests/test_v3_release_dry_run.py
+  role: release dry-run unit tests
+  sha256: d9de45b63dede830162f8d06cc2c815098a40eb8c5e8b3d61fff06bec1f74b14
+  bytes: 4144
   normativity: release-gate-test
 - path: tests/test_v3_release_readiness.py
   role: release readiness unit tests

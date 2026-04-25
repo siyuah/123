@@ -8,8 +8,12 @@
 python3 tools/v3_release_readiness.py
 python3 tools/v3_release_readiness.py --skip-slow
 python3 tools/v3_release_readiness.py --output /tmp/v3-release-readiness.json
+python3 tools/v3_release_dry_run.py --tag v3.0.0-rc1 --output /tmp/v3-release-dry-run.json
 make release-readiness-v3
+make release-dry-run-v3 TAG=v3.0.0-rc1
 ```
+
+`make release-dry-run-v3` runs a non-destructive release dry-run against `docs/v3_0_release_notes.md`. It validates release-note evidence, local readiness, and candidate tag availability, then prints recommended manual commands. It does not create a git tag, does not push, and does not call the GitHub Release API.
 
 `make release-readiness-v3` runs:
 
@@ -79,6 +83,7 @@ make manifest-v3      # if manifest-covered files changed
 make test-v3-contracts
 make validate-v3
 make release-readiness-v3
+make release-dry-run-v3 TAG=v3.0.0-rc1
 ```
 
-If `make validate-v3` only refreshes `paperclip_darkfactory_v3_0_consistency_report.json` / `.md` timestamps, revert those timestamp-only changes before committing. If manifest/checksum/report content changes substantively, include those changes in the commit.
+Use `docs/v3_0_release_notes.md` as the human-readable release summary for the dry-run. If `make validate-v3` only refreshes `paperclip_darkfactory_v3_0_consistency_report.json` / `.md` timestamps, revert those timestamp-only changes before committing. If manifest/checksum/report content changes substantively, include those changes in the commit.
