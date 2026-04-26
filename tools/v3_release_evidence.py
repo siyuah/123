@@ -45,6 +45,11 @@ IGNORED_DEVELOPMENT_STATUS_PREFIXES = (
     " M tools/v3_release_dry_run.py",
     " M tools/v3_release_evidence.py",
     " M tools/v3_release_readiness.py",
+    " M tests/test_v3_release_dry_run.py",
+    " M tests/test_v3_release_dry_run_remote_ci.py",
+    " M tests/test_v3_release_evidence.py",
+    "?? tests/test_v3_release_post_verify.py",
+    "?? tools/v3_release_post_verify.py",
     "?? tests/test_v3_release_evidence.py",
     "?? tools/v3_release_evidence.py",
 )

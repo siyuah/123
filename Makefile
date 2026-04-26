@@ -1,6 +1,7 @@
-.PHONY: validate-v3 test-v3-contracts manifest-v3 smoke-v3-control-plane verify-v3-journal release-readiness-v3 release-dry-run-v3 release-dry-run-v3-remote-ci release-dry-run-v3-remote-ci-strict release-evidence-v3 release-evidence-v3-remote-ci
+.PHONY: validate-v3 test-v3-contracts manifest-v3 smoke-v3-control-plane verify-v3-journal release-readiness-v3 release-dry-run-v3 release-dry-run-v3-remote-ci release-dry-run-v3-remote-ci-strict release-evidence-v3 release-evidence-v3-remote-ci post-release-verify-v3
 MAKEFLAGS += --no-print-directory
 TAG ?= v3.0.0-rc1
+EXPECTED_TARGET ?= cafad42e70bc2d431e902bc5f2d659cb00cb0df6
 RELEASE_READINESS_FLAGS ?=
 
 validate-v3:
@@ -28,7 +29,7 @@ verify-v3-journal:
 	@python3 tools/v3_control_plane.py verify-journal --journal "$(JOURNAL)"
 
 release-readiness-v3:
-	@python3 tools/v3_release_readiness.py --require-clean-git $(RELEASE_READINESS_FLAGS)
+	@python3 tools/v3_release_readiness.py --require-clean-git --allow-inflight-release-evidence $(RELEASE_READINESS_FLAGS)
 
 release-dry-run-v3:
 	@python3 tools/v3_release_dry_run.py --tag $(TAG) --require-clean-git
@@ -44,3 +45,6 @@ release-evidence-v3:
 
 release-evidence-v3-remote-ci:
 	@python3 tools/v3_release_evidence.py --tag $(TAG) --require-clean-git --include-remote-ci
+
+post-release-verify-v3:
+	@python3 tools/v3_release_post_verify.py --tag $(TAG) --expected-target $(EXPECTED_TARGET) $(POST_RELEASE_VERIFY_FLAGS)

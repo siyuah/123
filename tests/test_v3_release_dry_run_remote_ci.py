@@ -10,7 +10,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 DRY_RUN = ROOT / "tools/v3_release_dry_run.py"
-TAG = "v3.0.0-rc1"
+TAG = "v3.0.0-rc1-test-dry-run-remote-ci"
 
 
 class V3ReleaseDryRunRemoteCITests(unittest.TestCase):

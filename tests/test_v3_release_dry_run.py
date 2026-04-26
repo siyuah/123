@@ -7,7 +7,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 DRY_RUN = ROOT / "tools/v3_release_dry_run.py"
-TAG = "v3.0.0-rc1"
+TAG = "v3.0.0-rc1-test-dry-run"
 
 
 class V3ReleaseDryRunTests(unittest.TestCase):
@@ -101,17 +101,22 @@ class V3ReleaseDryRunTests(unittest.TestCase):
 
     def test_make_release_dry_run_v3_allows_generated_pycache_noise_and_writes_stable_json(self):
         self.assertFalse(self.tag_exists())
-        (ROOT / "tools/__pycache__").mkdir(exist_ok=True)
-        (ROOT / "tools/__pycache__" / "release_dry_run_noise.pyc").write_bytes(b"generated")
+        pycache = ROOT / "tools/__pycache__"
+        pycache.mkdir(exist_ok=True)
+        noise = pycache / "release_dry_run_noise.pyc"
+        noise.write_bytes(b"generated")
 
-        result = subprocess.run(
-            ["make", "release-dry-run-v3", f"TAG={TAG}"],
-            cwd=ROOT,
-            text=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            check=False,
-        )
+        try:
+            result = subprocess.run(
+                ["make", "release-dry-run-v3", f"TAG={TAG}"],
+                cwd=ROOT,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                check=False,
+            )
+        finally:
+            noise.unlink(missing_ok=True)
 
         stderr = result.stderr.replace("make[1]: *** [Makefile:34: release-dry-run-v3] Error 1\n", "")
         payload = json.loads(result.stdout)

@@ -98,7 +98,7 @@ files:
   normativity: release-gate-report
 - path: paperclip_darkfactory_v3_0_bundle_manifest.yaml
   sha256: SELF_HASH_EXCLUDED
-  bytes: 10665
+  bytes: 11076
   normativity: release-gate-input
 - path: paperclip_darkfactory_v3_0_consistency_report.json
   sha256: SELF_HASH_EXCLUDED
@@ -114,27 +114,32 @@ files:
   normativity: release-gate-tool
 - path: tools/v3_release_readiness.py
   role: release readiness aggregator
-  sha256: 6d3cbdc8eeac2885157982c70ac842b151c665bc3d7eedaa625d3fd7052bf2be
-  bytes: 16381
+  sha256: 5733551d1332c46c5892f58764bca3c109c67cdf9000f319f1538d5dfe04a088
+  bytes: 16610
   normativity: release-gate-tool
 - path: tools/v3_release_dry_run.py
   role: release dry-run checker
-  sha256: 2174f52412012c7e56151b7ed2c8e876b7d049ff3468245315dc7c64c641ce34
-  bytes: 17347
+  sha256: 0f67687848ad21c968bf93ae58241e6027fda9682810e0bc84f260fac9c92029
+  bytes: 17576
   normativity: release-gate-tool
 - path: tools/v3_release_evidence.py
   role: release evidence package checker
-  sha256: 9a48d13dc15a9aff6acd011051d24c4cfca39962475f6255654098105073e147
-  bytes: 16889
+  sha256: 3e27cfc2ea6653dd484738a83fa9d96906fabdb839f9e9038a688b27e24039e4
+  bytes: 17118
   normativity: release-gate-tool
 - path: tools/v3_remote_ci.py
   role: optional GitHub Actions release gate helper
   sha256: fb0aec15ad6b99b4a229103d4d0cb729f46d93406ee6e86a79da25e9228c265c
   bytes: 5924
   normativity: release-gate-tool
+- path: tools/v3_release_post_verify.py
+  role: read-only post-release verifier
+  sha256: 6612d286fc352df5ef318dcc1b6fc7419521dbf5bfd75d01750eb438d7ed7811
+  bytes: 13692
+  normativity: release-gate-tool
 - path: Makefile
-  sha256: 9db6465fd488975721f042fb1beda01a5168103ecff5b6e1138d53a1e849ab1e
-  bytes: 1652
+  sha256: 65c555d239b80a34b7089bfb0e0607b3a47856270adc8a614d7f9fbc86ecd488
+  bytes: 1915
   normativity: release-gate-tool
 - path: .github/workflows/v3-bundle-validate.yml
   sha256: 1713723b9a78b03bc58cb3d180998cf18909d59049f0920a463e26bc44181a07
@@ -191,8 +196,8 @@ files:
   normativity: informative
 - path: docs/v3_release_readiness.md
   role: release readiness operator contract
-  sha256: fc559a61cb8da0c483f5edf749dbaf806f8e6dfed21d185804a2789b9046d5ee
-  bytes: 7415
+  sha256: c141fdc0a84476ec4326769ea88a01081592cae3c62305a0b731320f3434885e
+  bytes: 8124
   normativity: informative
 - path: tests/test_v3_runtime.py
   sha256: f2f2db50f0f51ace44718b8f70fda502db33132013c1f9c5932785aa9916c5a9
@@ -205,18 +210,23 @@ files:
   normativity: release-gate-test
 - path: tests/test_v3_release_dry_run.py
   role: release dry-run unit tests
-  sha256: 3443d7bd10f5a86d7facbe20ff7ae420a55299e575b299cdb349644b6122dcd4
-  bytes: 5209
+  sha256: 59aa1a99cdd6f879296b3d7e894a69dafa4cfa4ae246542cf795552d6eb93189
+  bytes: 5351
   normativity: release-gate-test
 - path: tests/test_v3_release_dry_run_remote_ci.py
   role: optional remote CI dry-run unit tests
-  sha256: 332f9b53cd6ee9b47002824331a665ed54332d337e54a1c89949989bbed22555
-  bytes: 8780
+  sha256: 615ca4a048b8bdef3e688cf5d9e89f845924c9d120cc40fc6091a4e69c4ead70
+  bytes: 8803
   normativity: release-gate-test
 - path: tests/test_v3_release_evidence.py
   role: release evidence unit tests
-  sha256: 5cf57bb55a07c5fb8a2fbca8dd1c9f58674b48d51035aae3d7aa2cce66d0cee5
-  bytes: 8179
+  sha256: 81b010e2f8d6f7eac6973959b82545f3cdabd9bd7852734ebba54db25fdf9f5b
+  bytes: 8289
+  normativity: release-gate-test
+- path: tests/test_v3_release_post_verify.py
+  role: post-release verifier unit tests
+  sha256: d5a73f40bae5d8cc13dfefc8e455db3376afa6e9ec93aeb07700e5fb2d646cd7
+  bytes: 5774
   normativity: release-gate-test
 - path: tests/test_v3_release_readiness.py
   role: release readiness unit tests

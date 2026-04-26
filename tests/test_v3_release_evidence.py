@@ -9,7 +9,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 EVIDENCE = ROOT / "tools/v3_release_evidence.py"
-TAG = "v3.0.0-rc1"
+TAG = "v3.0.0-rc1-test-evidence"
 
 
 class V3ReleaseEvidenceTests(unittest.TestCase):
@@ -106,9 +106,13 @@ class V3ReleaseEvidenceTests(unittest.TestCase):
     def test_require_clean_git_allows_generated_pycache_noise(self):
         pycache = ROOT / "tools/__pycache__"
         pycache.mkdir(exist_ok=True)
-        (pycache / "evidence_noise.pyc").write_bytes(b"generated")
+        noise = pycache / "evidence_noise.pyc"
+        noise.write_bytes(b"generated")
 
-        result = self.run_evidence("--tag", TAG, "--require-clean-git")
+        try:
+            result = self.run_evidence("--tag", TAG, "--require-clean-git")
+        finally:
+            noise.unlink(missing_ok=True)
 
         payload = json.loads(result.stdout)
         git_check = self.by_id(payload)["git.clean"]

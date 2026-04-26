@@ -23,6 +23,8 @@ make release-evidence-v3-remote-ci TAG=v3.0.0-rc1
 
 `make release-evidence-v3` builds an auditable RC evidence package in stable JSON. It summarizes the release notes, bundle manifest, consistency report, readiness gate, dry-run gate, git cleanliness, and artifact hashes without creating tags/releases or accessing the network. Use `make release-evidence-v3-remote-ci TAG=v3.0.0-rc1` only when a human wants the evidence package to include the optional latest-`main` GitHub Actions check; missing `gh`, auth, network, or workflow history is recorded as `skipped` and does not invalidate offline evidence.
 
+`make post-release-verify-v3 TAG=v3.0.0-rc1 EXPECTED_TARGET=cafad42e70bc2d431e902bc5f2d659cb00cb0df6` is the read-only post-release verification target for an already-published RC. It confirms the local tag exists and peels to the expected commit, then reads the public GitHub tag ref and GitHub Release. If `EXPECTED_TARGET` is omitted, the Makefile supplies the known RC1 peeled target. It warns on a dirty working tree by default so in-flight verifier changes can be validated; use `POST_RELEASE_VERIFY_FLAGS=--require-clean-git` for the strict final operator mode. It does not create/delete/move tags, does not push, does not create or modify a GitHub Release, and does not read or print tokens/secrets.
+
 `make release-readiness-v3` runs:
 
 ```bash
