@@ -1,0 +1,651 @@
+{
+  "document_type": "execution_plan",
+  "name": "paperclip_darkfactory_scheme_b",
+  "version": "1.0.0",
+  "language": "zh-CN",
+  "title": "Paperclip 上层控制壳 + Dark Factory 下层执行引擎：详细执行方案",
+  "summary": {
+    "core_judgment": "不要让 Paperclip 吃掉 Dark Factory；应让 Paperclip 管公司与治理，Dark Factory 管工程执行。",
+    "recommended_option": "方案B",
+    "one_sentence": "以 Paperclip 作为上层 control plane，以 Dark Factory 作为下层 engineering execution engine，通过 bridge/adapter 实现任务触发、状态回写、artifact 回写、handoff/resume 协同。"
+  },
+  "strategic_positioning": {
+    "paperclip_role": {
+      "position": "上层控制壳 / 公司级控制面",
+      "responsibilities": [
+        "company / project / goal 管理",
+        "org chart / agent registry",
+        "task inbox / comments / approvals",
+        "budget dashboard / burn rate / pause / resume",
+        "operator / board 审计与人工介入",
+        "heartbeat 调度与 adapter 管理"
+      ],
+      "non_goals": [
+        "不承载工程执行细节",
+        "不直接管理 worktree/container/cleanup 细节",
+        "不成为 verification / sandbox 的事实来源"
+      ]
+    },
+    "dark_factory_role": {
+      "position": "下层工程执行引擎 / execution plane",
+      "responsibilities": [
+        "task spec / acceptance spec",
+        "assignment policy / model routing",
+        "budget preflight",
+        "createTaskWorktree / createTaskContainer",
+        "command allowlist / protected paths",
+        "verification / artifacts / Playwright / preview",
+        "handoff / resume / scope approval",
+        "lifecycleSummary / executionSummary",
+        "finally cleanup / 幂等清理"
+      ],
+      "non_goals": [
+        "不承担 company / org chart / board 层治理 UI",
+        "不承担高层业务任务编排壳"
+      ]
+    },
+    "bridge_role": {
+      "position": "Paperclip 与 Dark Factory 之间的薄适配层",
+      "responsibilities": [
+        "读取 Paperclip task / comments / linked goal / budget / approval 状态",
+        "转换成 Dark Factory run request",
+        "将 Dark Factory 的 summary / status / artifacts / handoff 回写到 Paperclip",
+        "做状态映射与结果摘要，不做复杂调度决策"
+      ],
+      "strict_boundaries": [
+        "不做 model routing",
+        "不做 verification policy",
+        "不做 sandbox / cleanup 决策",
+        "不做 image policy 决策",
+        "不做复杂工作流编排"
+      ]
+    }
+  },
+  "target_architecture": {
+    "layers": [
+      {
+        "name": "Layer 1 - Paperclip Control Plane",
+        "contains": [
+          "Company",
+          "Goal",
+          "Task",
+          "Comment",
+          "Budget",
+          "Approval",
+          "Agent",
+          "Adapter config",
+          "Heartbeat status"
+        ],
+        "purpose": "管理业务层、组织层、治理层"
+      },
+      {
+        "name": "Layer 2 - Bridge / Adapter",
+        "contains": [
+          "Paperclip task reader",
+          "Input mapper",
+          "Output mapper",
+          "Status mapper",
+          "Artifact link writer",
+          "Comment event writer"
+        ],
+        "purpose": "把上层任务翻译成下层 run request，并把执行结果回写上层"
+      },
+      {
+        "name": "Layer 3 - Dark Factory Engine",
+        "contains": [
+          "CLI runner",
+          "Orchestrator",
+          "Sandbox managers",
+          "Budget interceptor",
+          "Verification pipeline",
+          "Artifact store",
+          "Lifecycle / execution summaries"
+        ],
+        "purpose": "负责工程执行、验证、清理与结构化结果"
+      }
+    ],
+    "guiding_principles": [
+      "Paperclip 看治理与摘要，Dark Factory 存执行细节与证据",
+      "Bridge 只做映射，不做第二套控制面",
+      "执行事实来源在 Dark Factory，任务协作事实来源在 Paperclip",
+      "先打通最小闭环，再做预算、审批、深度 UI drill-down"
+    ]
+  },
+  "scope_boundaries": {
+    "do_now": [
+      "保留 Paperclip 作为公司/任务/预算/审批/agent 壳",
+      "保留 Dark Factory 作为 task execution / sandbox / verification / cleanup 内核",
+      "新增 bridge 适配层",
+      "增加最小 task panel 展示 run summary 与 artifact links",
+      "打通 validate-only / print-plan / real run 的外部触发与摘要回写"
+    ],
+    "do_not_do_now": [
+      "不要重写 Paperclip 核心 task/company/goal 数据模型",
+      "不要把 task spec / acceptance spec / executionSummary 直接塞进 Paperclip 主模型",
+      "不要把 worktree/container/cleanup 迁入 Paperclip core",
+      "不要第一版就做复杂 org chart 驱动的 runtime 决策",
+      "不要第一版就做深度双向实时同步",
+      "不要第一版就内嵌完整 verification UI"
+    ]
+  },
+  "canonical_data_model_split": {
+    "paperclip_task_shell": {
+      "description": "业务壳，维持 Paperclip 原生心智",
+      "fields": [
+        "title",
+        "description",
+        "assignee",
+        "comments",
+        "linkedGoal",
+        "budgetLimit",
+        "approvalState",
+        "taskStatus",
+        "taskKind=engineering",
+        "repoRef",
+        "runtimeProfileHint",
+        "verificationProfileHint",
+        "riskHint",
+        "externalExecutor=darkfactory"
+      ]
+    },
+    "dark_factory_run_request": {
+      "description": "工程核，服务执行引擎",
+      "fields": [
+        "externalTaskId",
+        "taskType",
+        "goal",
+        "scope",
+        "repo",
+        "baseCommit",
+        "riskLevel",
+        "acceptanceRequired",
+        "runtimeProfile",
+        "verificationProfile",
+        "budgetLimit",
+        "imagePolicy",
+        "handoffRules"
+      ]
+    },
+    "fact_sources": {
+      "execution_detail_source_of_truth": "Dark Factory",
+      "task_collaboration_source_of_truth": "Paperclip"
+    }
+  },
+  "end_to_end_workflow": [
+    {
+      "step": 1,
+      "name": "Paperclip 中创建工程任务",
+      "details": [
+        "operator 或 agent 在 Paperclip 中创建 engineering task",
+        "task 挂到 company / project / goal 下",
+        "指派给 Dark Factory Executor agent"
+      ]
+    },
+    {
+      "step": 2,
+      "name": "Paperclip heartbeat 触发 adapter",
+      "details": [
+        "executor agent 被 heartbeat 调起",
+        "bridge 读取 task、comments、goal、budget、approval 状态"
+      ]
+    },
+    {
+      "step": 3,
+      "name": "Bridge 转换为 Dark Factory run request",
+      "details": [
+        "规范化任务描述",
+        "生成执行参数",
+        "调用 Dark Factory validate-only / print-plan / real run"
+      ]
+    },
+    {
+      "step": 4,
+      "name": "Dark Factory 执行工程闭环",
+      "details": [
+        "build task spec / acceptance spec",
+        "budget preflight",
+        "createTaskWorktree",
+        "createTaskContainer",
+        "exec / verify / artifact",
+        "finally cleanup",
+        "产出 lifecycleSummary / executionSummary"
+      ]
+    },
+    {
+      "step": 5,
+      "name": "Bridge 回写 Paperclip",
+      "details": [
+        "回写状态摘要",
+        "回写 comments 事件",
+        "回写 artifact links",
+        "必要时标记 handoff_required 或 awaiting_approval"
+      ]
+    }
+  ],
+  "integration_contracts": {
+    "paperclip_to_darkfactory": {
+      "endpoint": "POST /api/external-runs",
+      "purpose": "从 Paperclip 发起 Dark Factory run",
+      "payload_example": {
+        "source": "paperclip",
+        "externalTaskId": "pc_task_123",
+        "companyId": "cmp_001",
+        "projectId": "proj_001",
+        "goalId": "goal_001",
+        "task": {
+          "title": "Fix onboarding validation bug",
+          "description": "Investigate and fix the broken onboarding validation flow",
+          "comments": [
+            {
+              "author": "operator",
+              "body": "Please prioritize regression safety."
+            }
+          ]
+        },
+        "repo": {
+          "url": "git@github.com:org/repo.git",
+          "defaultBranch": "main",
+          "baseCommit": "abc123"
+        },
+        "executionProfile": {
+          "taskType": "bugfix",
+          "riskLevel": "medium",
+          "verificationProfile": "web-app",
+          "runtimeProfile": "node-web"
+        },
+        "budget": {
+          "usdLimit": 8
+        },
+        "requestedMode": "plan"
+      }
+    },
+    "darkfactory_to_paperclip_status": {
+      "endpoint": "POST /paperclip/tasks/:id/external-status",
+      "purpose": "回写摘要状态",
+      "fields": [
+        "status",
+        "phase",
+        "reasonCode",
+        "humanInterventionRequired",
+        "artifactCount",
+        "budgetUsed",
+        "costSummary",
+        "externalRunUrl"
+      ]
+    },
+    "darkfactory_to_paperclip_comment": {
+      "endpoint": "POST /paperclip/tasks/:id/comments",
+      "purpose": "回写事件摘要",
+      "event_types": [
+        "plan_generated",
+        "validation_failed",
+        "verification_failed",
+        "handoff_required",
+        "resume_suggested",
+        "run_completed"
+      ]
+    },
+    "darkfactory_to_paperclip_artifacts": {
+      "endpoint": "POST /paperclip/tasks/:id/artifacts",
+      "purpose": "回写 artifact 链接",
+      "artifacts": [
+        "save-plan json",
+        "verification report",
+        "screenshots",
+        "playwright trace",
+        "external run detail url"
+      ]
+    }
+  },
+  "status_mapping": {
+    "mapping_strategy": "摘要映射，不做一一同名映射",
+    "paperclip_statuses": [
+      "queued",
+      "in_progress",
+      "blocked",
+      "awaiting_approval",
+      "handoff_required",
+      "done",
+      "cancelled"
+    ],
+    "dark_factory_status_examples": [
+      "validation",
+      "plan",
+      "dry-run",
+      "real-run",
+      "verification_failed",
+      "budget_exceeded",
+      "handoff_required",
+      "resume_pending",
+      "completed"
+    ],
+    "examples": [
+      {
+        "dark_factory_signal": "lifecycleSummary.mode=validation",
+        "paperclip_projection": {
+          "taskStatus": "in_progress",
+          "substatus": "validating"
+        }
+      },
+      {
+        "dark_factory_signal": "lifecycleSummary.mode=plan",
+        "paperclip_projection": {
+          "taskStatus": "in_progress",
+          "substatus": "planning"
+        }
+      },
+      {
+        "dark_factory_signal": "executionSummary.failurePhase=container",
+        "paperclip_projection": {
+          "taskStatus": "blocked",
+          "reasonCode": "runtime_environment_failure"
+        }
+      },
+      {
+        "dark_factory_signal": "handoff_required",
+        "paperclip_projection": {
+          "taskStatus": "awaiting_approval"
+        }
+      },
+      {
+        "dark_factory_signal": "completed",
+        "paperclip_projection": {
+          "taskStatus": "done"
+        }
+      }
+    ]
+  },
+  "ui_embedding_plan": {
+    "paperclip_task_detail_panel": {
+      "name": "Dark Factory Run Panel",
+      "show_fields": [
+        "current lifecycle mode",
+        "current phase",
+        "status",
+        "reason code",
+        "latest run time",
+        "cost summary",
+        "artifact links",
+        "handoff/resume flag",
+        "Open full run detail link"
+      ],
+      "real_run_extra_fields": [
+        "execution failure phase",
+        "cleanup status",
+        "worktree cleaned up",
+        "container removed"
+      ]
+    },
+    "ui_principles": [
+      "第一版只做摘要面板，不做深度 execution UI",
+      "评论流只写摘要与事件，不承载全部执行细节",
+      "artifact 先做链接跳转，再考虑内嵌预览"
+    ]
+  },
+  "repository_mapping": {
+    "paperclip_side": {
+      "recommended_additions": [
+        "packages/adapters/darkfactory/",
+        "packages/shared/darkfactory-bridge/",
+        "server/routes/darkfactory.ts",
+        "ui/components/darkfactory-run-panel/"
+      ],
+      "modification_principle": "尽量新增，不改核心 task/company/goal 模型"
+    },
+    "dark_factory_side": {
+      "recommended_additions": [
+        "src/adapters/paperclip/input-mapper.ts",
+        "src/adapters/paperclip/output-mapper.ts",
+        "src/adapters/paperclip/client.ts",
+        "src/contracts/paperclip-bridge.ts"
+      ],
+      "modification_principle": "runner/orchestrator/sandbox 核心尽量不动，只加适配层"
+    }
+  },
+  "phased_roadmap": [
+    {
+      "phase": "Phase 0",
+      "duration": "2-4 days",
+      "goal": "边界与契约对齐",
+      "deliverables": [
+        "integration-architecture.md",
+        "paperclip-task-to-darkfactory-run.md",
+        "状态映射表",
+        "最小字段清单",
+        "职责边界清单"
+      ],
+      "must_decide": [
+        "Paperclip task 的最小 engineering metadata",
+        "ExternalRunRequest schema",
+        "artifact link 回写形式",
+        "handoff / approval 映射形式",
+        "budget 谁是真实计量源，谁是展示层"
+      ]
+    },
+    {
+      "phase": "Phase 1",
+      "duration": "1 week",
+      "goal": "打通无副作用模式",
+      "deliverables": [
+        "Dark Factory adapter V0",
+        "Paperclip task action: Run validation",
+        "Paperclip task action: Generate plan",
+        "comment summary writer",
+        "Dark Factory Run Panel V0"
+      ],
+      "success_criteria": [
+        "Paperclip task 能拿到 Dark Factory validate-only JSON",
+        "Paperclip task 能拿到 Dark Factory print-plan JSON",
+        "comments 和 panel 能看到 lifecycleSummary"
+      ]
+    },
+    {
+      "phase": "Phase 2",
+      "duration": "1-2 weeks",
+      "goal": "接通 real run",
+      "deliverables": [
+        "Paperclip task action: Run execution",
+        "real run 状态回写",
+        "artifact link 回写",
+        "failure phase / cleanup summary 回写"
+      ],
+      "success_criteria": [
+        "即使 Docker 不存在，也能在 Paperclip 中看到 container phase 失败与 cleanup 摘要",
+        "task detail 能展示 lifecycleSummary + executionSummary 摘要"
+      ]
+    },
+    {
+      "phase": "Phase 3",
+      "duration": "1 week",
+      "goal": "接通人工介入",
+      "deliverables": [
+        "handoff_required -> awaiting_approval 映射",
+        "Resume with note action",
+        "resume request bridge",
+        "operator intervention banner"
+      ],
+      "success_criteria": [
+        "失败任务能进入 Paperclip 人工接管流程",
+        "operator 的处理意见能回灌到 Dark Factory",
+        "Dark Factory 能 resume 并继续执行"
+      ]
+    },
+    {
+      "phase": "Phase 4",
+      "duration": "1 week",
+      "goal": "接通预算与审批治理",
+      "deliverables": [
+        "cost / budget 回写",
+        "high-risk approval gate 映射",
+        "pause / resume / blocked 可视化"
+      ],
+      "success_criteria": [
+        "Paperclip 能看见预算消耗",
+        "高风险任务能触发审批",
+        "operator 能从上层治理视角看见受阻 run"
+      ]
+    },
+    {
+      "phase": "Phase 5",
+      "duration": "later",
+      "goal": "产品化增强",
+      "deliverables": [
+        "artifact preview",
+        "verification report drill-down",
+        "goal -> engineering template hints",
+        "org-role -> runtime profile hints",
+        "Project Lead / scheduler 协同"
+      ],
+      "success_criteria": [
+        "形成完整的上层治理 + 下层工程执行双层系统"
+      ]
+    }
+  ],
+  "workstreams": {
+    "A_contracts": [
+      "定义 ExternalRunRequest",
+      "定义 ExternalRunSummary",
+      "定义 ArtifactLink",
+      "定义 HandoffEvent",
+      "定义 ResumeRequest"
+    ],
+    "B_dark_factory_side": [
+      "新增 paperclip input mapper",
+      "新增 paperclip output mapper",
+      "新增 paperclip client",
+      "暴露 validate-only / print-plan / real run API"
+    ],
+    "C_paperclip_side": [
+      "新增 darkfactory adapter",
+      "新增 task action: Run validation",
+      "新增 task action: Generate plan",
+      "新增 task action: Run execution",
+      "新增 Dark Factory Run Panel"
+    ],
+    "D_writeback_and_ui": [
+      "comment summary writer",
+      "status mapper",
+      "artifact link presenter",
+      "handoff banner / approval CTA"
+    ],
+    "E_governance_and_recovery": [
+      "approval mapping",
+      "resume action mapping",
+      "budget sync",
+      "operator override hooks"
+    ]
+  },
+  "first_version_definition_of_done": [
+    "Paperclip 里一条 engineering task 能触发 Dark Factory validate-only",
+    "Paperclip 里能看到 lifecycleSummary 摘要",
+    "Paperclip 里能触发 Dark Factory real run",
+    "real run 失败时，Paperclip 能显示 failure phase 与 cleanup 摘要",
+    "artifact links 能从 Paperclip task detail 打开",
+    "handoff_required 能在 Paperclip 中被 operator 看到并触发 resume"
+  ],
+  "risk_register": [
+    {
+      "risk": "Bridge 变成第二套控制面",
+      "impact": "系统边界混乱，长期维护困难",
+      "mitigation": [
+        "Bridge 只做映射，不做复杂决策",
+        "调度留给 Paperclip，执行留给 Dark Factory"
+      ]
+    },
+    {
+      "risk": "状态模型双写打架",
+      "impact": "Paperclip 和 Dark Factory 状态不一致",
+      "mitigation": [
+        "执行细节以 Dark Factory 为准",
+        "任务协作状态以 Paperclip 为准",
+        "只做单向摘要映射"
+      ]
+    },
+    {
+      "risk": "Paperclip 核心被工程语义污染",
+      "impact": "难以追 upstream，产品模型失真",
+      "mitigation": [
+        "不重写 task/comment/company/goal 主模型",
+        "只增加 metadata、panel、adapter"
+      ]
+    },
+    {
+      "risk": "评论流淹没执行细节",
+      "impact": "Paperclip task detail 噪声过高",
+      "mitigation": [
+        "comments 只写摘要与事件",
+        "完整执行细节留在 Dark Factory 原生 API / artifact store"
+      ]
+    },
+    {
+      "risk": "第一版目标过大",
+      "impact": "进度拖慢，无法形成最小闭环",
+      "mitigation": [
+        "先 validate-only / print-plan，再 real run，再 handoff/resume，再 budget/governance"
+      ]
+    }
+  ],
+  "decision_rules": {
+    "what_stays_in_paperclip": [
+      "公司/项目/目标",
+      "agent registry / org chart",
+      "board / approvals / comments",
+      "预算看板与治理视图",
+      "任务分派与协作状态"
+    ],
+    "what_stays_in_dark_factory": [
+      "task spec / acceptance spec",
+      "runner / orchestrator / sandbox",
+      "verification / artifacts",
+      "lifecycleSummary / executionSummary",
+      "image policy / runtime policy",
+      "cleanup / resume / handoff internals"
+    ],
+    "what_lives_in_bridge_only": [
+      "input mapping",
+      "output mapping",
+      "status projection",
+      "artifact link projection",
+      "comment event shaping"
+    ]
+  },
+  "immediate_action_plan": {
+    "documents_to_write_first": [
+      "paperclip-darkfactory-bridge-contract.md",
+      "paperclip-darkfactory-state-mapping.md"
+    ],
+    "first_api_to_implement": [
+      "POST /api/external-runs"
+    ],
+    "first_integration_target": [
+      "Paperclip task -> Dark Factory print-plan",
+      "结果回写到 Paperclip comment + panel"
+    ],
+    "why_this_first": [
+      "print-plan / validate-only 是零副作用模式，最适合对齐桥接契约",
+      "不会立即卷入 worktree/container 的真实环境复杂度",
+      "有助于快速验证上下层边界是否合理"
+    ]
+  },
+  "engineering_priorities": [
+    "合同先行，先定义 bridge contract",
+    "先接 validate-only / print-plan",
+    "再接 real run 摘要回写",
+    "再接 artifact links",
+    "再接 handoff / resume",
+    "最后接预算 / approval / 高层治理联动"
+  ],
+  "notes_for_agent_execution": {
+    "implementation_style": [
+      "优先薄适配层，不做大重构",
+      "Paperclip 侧尽量新增 adapter / panel / route，而不是修改核心对象",
+      "Dark Factory 侧尽量新增 paperclip adapter，而不是改 runner 核心"
+    ],
+    "anti_patterns": [
+      "把 executionSummary 直接塞进 Paperclip 核心 task schema",
+      "让 bridge 负责 model routing 或 verification policy",
+      "第一版就做双向实时同步",
+      "第一版就内嵌完整 verification UI"
+    ]
+  }
+}

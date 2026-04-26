@@ -1,0 +1,326 @@
+openapi: 3.1.0
+info:
+  title: Paperclip × Dark Factory V2.9 External Runs API
+  version: 2.9-impl.1
+  description: Starter OpenAPI contract bound to v2.9-companion-bound-r1.
+servers:
+  - url: https://example.invalid
+paths:
+  /api/external-runs:
+    post:
+      summary: Create an external run
+      operationId: createExternalRun
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExternalRunCreateRequest'
+      responses:
+        '202':
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalRunView'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/external-runs/{runId}:
+    get:
+      summary: Get external run
+      operationId: getExternalRun
+      parameters:
+        - in: path
+          name: runId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Current run view
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalRunView'
+  /api/external-runs/{runId}:park:
+    post:
+      summary: Park a run into manual mode and release compute resources
+      operationId: parkExternalRun
+      parameters:
+        - in: path
+          name: runId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ParkRequest'
+      responses:
+        '202':
+          description: Run parked
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalRunView'
+  /api/external-runs/{runId}:rehydrate:
+    post:
+      summary: Rehydrate a parked run
+      operationId: rehydrateExternalRun
+      parameters:
+        - in: path
+          name: runId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RehydrateRequest'
+      responses:
+        '202':
+          description: Run rehydrated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalRunView'
+  /api/artifacts/{artifactId}:
+    get:
+      summary: Get artifact certification and lineage summary
+      operationId: getArtifact
+      parameters:
+        - in: path
+          name: artifactId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Artifact view
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArtifactView'
+  /api/artifacts/{artifactId}:waive-consumption:
+    post:
+      summary: Create a consumption waiver
+      operationId: createConsumptionWaiver
+      parameters:
+        - in: path
+          name: artifactId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConsumptionWaiverRequest'
+      responses:
+        '202':
+          description: Waiver accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArtifactView'
+  /api/lineage/artifacts/{artifactId}:
+    get:
+      summary: Query lineage consumers of an artifact
+      operationId: getArtifactLineage
+      parameters:
+        - in: path
+          name: artifactId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Lineage view
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LineageView'
+components:
+  schemas:
+    ExternalRunCreateRequest:
+      type: object
+      required:
+        - taskId
+        - workflowId
+        - policyProfileId
+        - protocolReleaseTag
+      properties:
+        taskId:
+          type: string
+        workflowId:
+          type: string
+        policyProfileId:
+          type: string
+        protocolReleaseTag:
+          type: string
+          enum: [v2.9-companion-bound-r1]
+        deadlineSensitive:
+          type: boolean
+        requestedCapabilities:
+          type: array
+          items:
+            type: string
+        providerModelId:
+          type: string
+        capsuleHash:
+          type: string
+        metadata:
+          type: object
+          additionalProperties: true
+    ExternalRunView:
+      type: object
+      required:
+        - runId
+        - runState
+        - protocolReleaseTag
+      properties:
+        runId:
+          type: string
+        runState:
+          type: string
+        attemptId:
+          type: string
+        manualGateType:
+          type: string
+        capsuleHealth:
+          type: string
+          enum: [healthy, preflight_red, poisoned]
+        profileConformanceStatus:
+          type: string
+          enum: [conformant, exceeded_declared, broker_bypass_attempted, unverifiable]
+        deadlineSensitive:
+          type: boolean
+        protocolReleaseTag:
+          type: string
+        artifactIds:
+          type: array
+          items:
+            type: string
+    ParkRequest:
+      type: object
+      required:
+        - manualGateType
+        - reasonCode
+      properties:
+        manualGateType:
+          type: string
+          enum:
+            - manual_approval_required
+            - manual_input_required
+            - manual_adjudication_required
+            - manual_risk_acceptance_required
+            - manual_recovery_required
+            - manual_external_followup_required
+        reasonCode:
+          type: string
+        preserveEvidenceRefs:
+          type: array
+          items:
+            type: string
+    RehydrateRequest:
+      type: object
+      required:
+        - rehydrateTokenRef
+      properties:
+        rehydrateTokenRef:
+          type: string
+        requestedBy:
+          type: string
+        notes:
+          type: string
+    ArtifactView:
+      type: object
+      required:
+        - artifactId
+        - artifactCertificationState
+      properties:
+        artifactId:
+          type: string
+        artifactCertificationState:
+          type: string
+          enum: [tentative, certified, reopened, revoked, quarantined, superseded]
+        revocationEpoch:
+          type: integer
+        traceId:
+          type: string
+        lineageParentArtifactIds:
+          type: array
+          items:
+            type: string
+        impactedConsumerRunIds:
+          type: array
+          items:
+            type: string
+    ConsumptionWaiverRequest:
+      type: object
+      required:
+        - allowedConsumerScope
+        - allowedConsumptionPolicy
+        - allowedEffectSafetyCeiling
+        - maxFanOut
+        - reasonCode
+      properties:
+        allowedConsumerScope:
+          type: string
+        allowedConsumptionPolicy:
+          type: string
+          enum: [tentative_allowed_with_waiver, tentative_allowed_internal]
+        allowedEffectSafetyCeiling:
+          type: string
+        maxFanOut:
+          type: integer
+          minimum: 1
+        expiresAt:
+          type: string
+          format: date-time
+        reasonCode:
+          type: string
+    LineageView:
+      type: object
+      required:
+        - artifactId
+        - consumers
+      properties:
+        artifactId:
+          type: string
+        consumers:
+          type: array
+          items:
+            type: object
+            required: [consumerRunId, inputDependencyState, dependencyConsumptionPolicy]
+            properties:
+              consumerRunId:
+                type: string
+              inputDependencyState:
+                type: string
+                enum: [clean, tentative_upstream, reopened_upstream, revoked_upstream, manually_waived]
+              dependencyConsumptionPolicy:
+                type: string
+                enum: [certified_only, tentative_allowed_internal, tentative_allowed_with_waiver]
+    ErrorResponse:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        details:
+          type: object
+          additionalProperties: true
