@@ -154,3 +154,13 @@ V3.0 要求以下位置显式携带 `protocolReleaseTag`，不允许只靠服务
 5. bundle manifest 中的文件摘要与实际产物一致
 
 未满足上述条件时，本包最多只能算 development bundle，不得宣称完成发布。
+
+---
+
+## 7. V3.0 开发入口与运行层参考
+
+`3.0/V3_IMPLEMENTATION_ENTRYPOINT.md` 是推荐开发入口，用于把当前 V3.0 binding artifacts、V2.9 companion-bound 历史资料、Hermes GPT-5.5 workflow、Scheme B、Phoenix V2 / 不死鸟材料统一分类到可执行开发路径。
+
+`3.0/runtime_policy.md` 是运行层策略文档，收敛 provider role、failure_class、retry、fallback、circuit breaker 与 degraded mode；它不把具体模型名写成协议合同。
+
+`3.0/memory_sidecar.md` 是 Agent Runtime 记忆 sidecar 文档，定义 AutoExtractor、SessionMemory、MemorySync、LongTermMemory、KnowledgeGraph、DiaryStore、PromptContextBuilder 与 PhoenixRecover 的边界；它不覆盖现有 binding protocol artifacts，不改变 Paperclip Task 主模型，也不改变 Dark Factory Journal 的事实来源地位。
