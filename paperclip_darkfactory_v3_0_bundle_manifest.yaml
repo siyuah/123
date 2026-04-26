@@ -94,15 +94,15 @@ files:
   normativity: binding-on-covered-obligations
 - path: paperclip_darkfactory_v3_0_consistency_report.md
   sha256: SELF_HASH_EXCLUDED
-  bytes: 2086
+  bytes: 2170
   normativity: release-gate-report
 - path: paperclip_darkfactory_v3_0_bundle_manifest.yaml
   sha256: SELF_HASH_EXCLUDED
-  bytes: 12381
+  bytes: 12419
   normativity: release-gate-input
 - path: paperclip_darkfactory_v3_0_consistency_report.json
   sha256: SELF_HASH_EXCLUDED
-  bytes: 3316
+  bytes: 3368
   normativity: release-gate-report
 - path: tools/validate_v3_bundle.py
   sha256: 0ec6049acb4970d947c06aefde03f0eda6a27e1cdea058f667881092727873f0
@@ -272,6 +272,7 @@ informativeOutOfBundle:
 - 3.0/V3_IMPLEMENTATION_ENTRYPOINT.md
 - 3.0/hermes-80315662261f.md
 - 3.0/hermes_gpt55_v3_0_segmented_workflow.md
+- 3.0/hermes_gpt55_handoff_command.md
 - 3.0/memory_sidecar.md
 - 3.0/V3_1_BACKLOG_AND_IMPLEMENTATION_ROADMAP.md
 - 3.0/paperclip_darkfactory_optimized_review (1).md
