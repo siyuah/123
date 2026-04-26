@@ -21,8 +21,8 @@ releaseGateChecks:
 - manifest path existence and sha256 equality
 files:
 - path: README.md
-  sha256: 5f592c4a54bbf04fdfd84a2ef7ad8c04c7d03668cb0bfbcd038fa7626a5f1371
-  bytes: 7485
+  sha256: 7c97f28540fc85d9acbb1c9ce4c96f6637f650b81d3ed3a748860407b0802fbc
+  bytes: 7805
   normativity: binding
 - path: DARK_FACTORY_V3_0_开工文档.md
   sha256: 243bc11a94646718e4ac7a0a8f78531d6c4bad32cc4996a60506e989fdd5aedf
@@ -94,15 +94,15 @@ files:
   normativity: binding-on-covered-obligations
 - path: paperclip_darkfactory_v3_0_consistency_report.md
   sha256: SELF_HASH_EXCLUDED
-  bytes: 2178
+  bytes: 2086
   normativity: release-gate-report
 - path: paperclip_darkfactory_v3_0_bundle_manifest.yaml
   sha256: SELF_HASH_EXCLUDED
-  bytes: 12332
+  bytes: 12381
   normativity: release-gate-input
 - path: paperclip_darkfactory_v3_0_consistency_report.json
   sha256: SELF_HASH_EXCLUDED
-  bytes: 3376
+  bytes: 3316
   normativity: release-gate-report
 - path: tools/validate_v3_bundle.py
   sha256: 0ec6049acb4970d947c06aefde03f0eda6a27e1cdea058f667881092727873f0
@@ -273,6 +273,7 @@ informativeOutOfBundle:
 - 3.0/hermes-80315662261f.md
 - 3.0/hermes_gpt55_v3_0_segmented_workflow.md
 - 3.0/memory_sidecar.md
+- 3.0/V3_1_BACKLOG_AND_IMPLEMENTATION_ROADMAP.md
 - 3.0/paperclip_darkfactory_optimized_review (1).md
 - 3.0/paperclip_darkfactory_optimized_review.md
 - 3.0/paperclip_darkfactory_revised_framework.md

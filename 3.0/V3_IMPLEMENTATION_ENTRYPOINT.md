@@ -195,7 +195,7 @@ Phoenix Runtime Capabilities 是 Agent Runtime 能力层，可被 Bridge / Dark 
 
 ## 8. 进入 V3.1 backlog 的候选方向
 
-以下方向适合进入 V3.1 backlog，而不是在 V3.0 agent-control-r1 中破坏合同：
+以下方向适合进入 V3.1 backlog，而不是在 V3.0 agent-control-r1 中破坏合同。完整拆解见 `3.0/V3_1_BACKLOG_AND_IMPLEMENTATION_ROADMAP.md`，该文件是 informative roadmap / backlog，不覆盖 V3.0 binding artifacts。
 
 - provider health 与 circuit breaker 的可观测性 schema；
 - RunAttempt provider role / model role / failure_class 字段的正式合同化；
