@@ -1,0 +1,302 @@
+# Next Development Tasks
+
+状态: Informative / Non-binding / Out-of-bundle execution plan
+适用基线: Paperclip × Dark Factory V3.0 `agent-control-r1`
+protocolReleaseTag: `v3.0-agent-control-r1`
+所在目录: `3.0/future_development/`
+是否进入 V3.0 binding: 否
+
+> **For Hermes:** Use subagent-driven-development skill when executing implementation-heavy phases. Execute task-by-task, verify after each phase, and do not modify V3.0 binding artifacts unless explicitly authorized.
+
+**Goal:** 将 Paperclip × Dark Factory / Phoenix Runtime 的下一阶段工作拆成可执行开发任务，同时保持当前 V3.0 `agent-control-r1` 合同不被干扰。
+
+**Architecture:** 采用四层边界：Paperclip control plane、Bridge / Adapter projection、Dark Factory execution plane、Phoenix Runtime capabilities。123 仓库先沉淀 informative 文档与验收计划；Paperclip upstream 先做 plugin POC，不改 core。
+
+**Tech Stack:** Markdown docs、V3 manifest/validation scripts、Paperclip plugin system、TypeScript/Node/Pnpm（Paperclip 侧）、Python unittest/Makefile（123 侧）。
+
+---
+
+## Phase 0 — 123 文档整理与安全分类
+
+### Task 0.1: 确认仓库与基线
+
+**Objective:** 确认 123 当前分支、远端差异、V3.0 binding baseline 与新增文件不会覆盖用户改动。
+
+**Files:**
+- Read: `README.md`
+- Read: `3.0/V3_IMPLEMENTATION_ENTRYPOINT.md`
+- Read: `paperclip_darkfactory_v3_0_bundle_manifest.yaml`
+
+**Commands:**
+
+```bash
+cd /home/siyuah/workspace/123
+git status -sb
+git log --oneline --decorate --max-count=5
+```
+
+**Expected:** 工作树无未解释改动；如果有本地 ahead commit，记录但不 push。
+
+**DoD:** 明确当前 HEAD、origin/main、是否 dirty。
+
+### Task 0.2: 新增 future_development 隔离目录
+
+**Objective:** 将新增/缺失的下一阶段文档放在隔离目录，不干扰 release-gated bundle。
+
+**Files:**
+- Create: `3.0/future_development/README.md`
+- Create: `3.0/future_development/PAPERCLIP_UPSTREAM_INTEGRATION_PLAN.md`
+- Create: `3.0/future_development/NEXT_DEVELOPMENT_TASKS.md`
+- Create: `3.0/future_development/HERMES_GPT55_EXECUTION_COMMANDS.md`
+
+**Validation:**
+
+```bash
+cd /home/siyuah/workspace/123
+git status --short
+```
+
+**Expected:** 只出现新增文档与必要的 manifest/README 改动。
+
+### Task 0.3: 更新 informative out-of-bundle 分类
+
+**Objective:** 让 V3 validator 知道新目录是 informative out-of-bundle。
+
+**Files:**
+- Modify: `paperclip_darkfactory_v3_0_bundle_manifest.yaml`
+- Modify: `README.md`
+- Optional Modify: `3.0/V3_IMPLEMENTATION_ENTRYPOINT.md`
+
+**Required manifest entries:**
+
+```yaml
+- 3.0/future_development/README.md
+- 3.0/future_development/PAPERCLIP_UPSTREAM_INTEGRATION_PLAN.md
+- 3.0/future_development/NEXT_DEVELOPMENT_TASKS.md
+- 3.0/future_development/HERMES_GPT55_EXECUTION_COMMANDS.md
+```
+
+**Validation:**
+
+```bash
+cd /home/siyuah/workspace/123
+make manifest-v3
+make validate-v3
+```
+
+**DoD:** validate-v3 通过；新增文件不进入 manifest `files` release-gated 清单。
+
+### Task 0.4: 清理验证副产物
+
+**Objective:** 删除 `__pycache__`，避免提交临时缓存；如果 consistency report 只有 checkedAt 变化，按项目惯例恢复。
+
+**Commands:**
+
+```bash
+cd /home/siyuah/workspace/123
+find . -type d -name __pycache__ -prune -exec rm -rf {} +
+git status -sb
+git diff -- paperclip_darkfactory_v3_0_consistency_report.md paperclip_darkfactory_v3_0_consistency_report.json
+```
+
+**DoD:** status 中没有 `__pycache__`；报告变更若只是 timestamp，需要恢复。
+
+---
+
+## Phase 1 — Paperclip plugin POC 设计
+
+### Task 1.1: 只读确认 Paperclip plugin 能力
+
+**Objective:** 阅读 Paperclip upstream 的 plugin 示例与 host service，不修改 upstream。
+
+**Files:**
+- Read: `/home/siyuah/workspace/paperclip_upstream/packages/plugins/examples/plugin-hello-world-example/src/manifest.ts`
+- Read: `/home/siyuah/workspace/paperclip_upstream/packages/plugins/examples/plugin-orchestration-smoke-example/src/manifest.ts`
+- Read: `/home/siyuah/workspace/paperclip_upstream/server/src/services/plugin-host-services.ts`
+- Read: `/home/siyuah/workspace/paperclip_upstream/ui/src/api/plugins.ts`
+
+**Commands:**
+
+```bash
+cd /home/siyuah/workspace/paperclip_upstream
+git status -sb
+git log --oneline --decorate --max-count=3
+```
+
+**DoD:** 输出 plugin manifest、route、dashboard/detail tab、namespace DB 是否可用。
+
+### Task 1.2: 创建 plugin POC 分支或隔离工作区
+
+**Objective:** 避免污染 upstream master；所有实验在分支或 fork 工作区进行。
+
+**Commands:**
+
+```bash
+cd /home/siyuah/workspace/paperclip_upstream
+git status -sb
+git switch -c dark-factory-bridge-plugin-poc
+```
+
+**DoD:** 新分支创建成功；无未提交外部改动被覆盖。
+
+### Task 1.3: 最小 plugin manifest
+
+**Objective:** 新增 `paperclip-dark-factory-bridge-plugin` manifest，先注册 UI/API 扩展点，不实现真实 Dark Factory 调用。
+
+**Files:**
+- Create under Paperclip plugin examples or packages plugin area, following existing convention.
+
+**Acceptance:**
+
+- manifest 名称清楚表达 bridge/projection，不暗示 truth source；
+- capabilities 只声明 dashboard/detail/API/namespace DB；
+- 没有修改 Paperclip Task 主模型。
+
+### Task 1.4: Mock projection API
+
+**Objective:** 用 mock data 跑通 projection/cursor/provider-health API。
+
+**Routes:**
+
+```text
+GET  /issues/:issueId/dark-factory/projection
+GET  /issues/:issueId/dark-factory/journal-cursor
+GET  /issues/:issueId/dark-factory/provider-health
+POST /issues/:issueId/dark-factory/rehydrate-request
+```
+
+**Acceptance:**
+
+- 返回对象含 `source: "projection"` 或等价说明；
+- cursor 单调字段存在；
+- rehydrate request 只创建请求/意图，不直接改 truth；
+- 响应不含 token/secret。
+
+### Task 1.5: UI 最小展示
+
+**Objective:** 在 dashboard widget 与 task detail tab 展示 mock projection。
+
+**UI fields:**
+
+- linked Run id；
+- journal cursor；
+- projection status；
+- callback receipt；
+- degraded / blocked / needs approval；
+- provider health summary。
+
+**Acceptance:** UI 明确显示 `projection` / `stale` / `lastUpdatedAt`，避免误认为 Paperclip 原生 truth。
+
+---
+
+## Phase 2 — Bridge / Adapter 一致性测试
+
+### Task 2.1: 定义 bridge projection contract proposal
+
+**Objective:** 在 123 informative 文档或 Paperclip POC docs 中定义 projection/cursor/receipt 的最小字段。
+
+**Fields:**
+
+- `projectionId`
+- `issueId` / `taskId`
+- `runId`
+- `journalCursor`
+- `lastJournalSequenceNo`
+- `projectionVersion`
+- `projectionStatus`
+- `staleReason`
+- `callbackReceiptId`
+- `sourceJournalRef`
+
+**Non-goal:** 不把这些字段加入 Paperclip Task 主模型。
+
+### Task 2.2: 写 replay idempotency test
+
+**Objective:** 同一 journal replay 多次，projection 输出一致。
+
+**Expected:** same input journal → same projection hash / state / cursor。
+
+### Task 2.3: 写 duplicate callback receipt test
+
+**Objective:** 同一 callback 重复到达不会重复推进 terminal state。
+
+**Expected:** 第二次 callback 返回 existing receipt / idempotent no-op。
+
+### Task 2.4: 写 out-of-order callback test
+
+**Objective:** 乱序 callback 不得让 cursor 回退或跳过缺失 journal record。
+
+**Expected:** projection 标记 stale / gap，不升级为 success。
+
+### Task 2.5: 写 rebuild from zero test
+
+**Objective:** 删除 projection cache 后能从 journal 重新构建同等 projection。
+
+**Expected:** rebuild result equals cached result except rebuild timestamp。
+
+---
+
+## Phase 3 — Runtime observability proposal
+
+### Task 3.1: Provider health schema proposal
+
+**Objective:** 编写 V3.1-alpha 候选 schema proposal，先不改 V3.0 binding。
+
+**Fields:** provider role、task type、breaker state、last success/failure、failure_class histogram、open reason、cooldownUntil、probe policy。
+
+### Task 3.2: Degraded mode operator projection proposal
+
+**Objective:** 定义 degraded mode 的 operator-visible projection 和 audit trail。
+
+**Fields:** degraded reason、scope、affected run/attempt、fallback chain、operator acknowledgement、report disclaimer。
+
+---
+
+## Phase 4 — MemorySidecar 独立化
+
+### Task 4.1: MemorySidecar storage profile proposal
+
+**Objective:** 定义 sidecar metadata、KG edge、DiaryStore retention、PromptContextBuilder receipt。
+
+**Hard rules:** revoked/expired/low-confidence/sensitive memory 不得注入；memory 不覆盖 system/developer/user latest instruction；memory 不覆盖 Journal。
+
+### Task 4.2: PhoenixRecover smoke timeline proposal
+
+**Objective:** 描述 runtime restart 后 sidecar reload、journal replay、projection consistency check、安全降级恢复。
+
+**Expected:** 损坏 sidecar 进入 conservative recovery；journal truth 优先。
+
+---
+
+## Phase 5 — 提交与汇报
+
+### Task 5.1: 123 文档提交
+
+**Commands:**
+
+```bash
+cd /home/siyuah/workspace/123
+git status -sb
+git diff --stat
+git add README.md paperclip_darkfactory_v3_0_bundle_manifest.yaml 3.0/future_development/
+git commit -m "docs: add future development integration workspace"
+```
+
+**DoD:** commit 后 `git status -sb` 显示 ahead，工作树干净。
+
+### Task 5.2: Paperclip POC 提交
+
+**Commands:**
+
+```bash
+cd /home/siyuah/workspace/paperclip_upstream
+pnpm -r typecheck
+pnpm test:run
+pnpm build
+git status -sb
+git diff --stat
+git add <plugin files>
+git commit -m "feat: add dark factory bridge plugin poc"
+```
+
+**DoD:** typecheck/test/build 通过；POC 不改 core Task model。

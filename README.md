@@ -166,3 +166,5 @@ V3.0 要求以下位置显式携带 `protocolReleaseTag`，不允许只靠服务
 `3.0/runtime_policy.md` 是运行层策略文档，收敛 provider role、failure_class、retry、fallback、circuit breaker 与 degraded mode；它不把具体模型名写成协议合同。
 
 `3.0/memory_sidecar.md` 是 Agent Runtime 记忆 sidecar 文档，定义 AutoExtractor、SessionMemory、MemorySync、LongTermMemory、KnowledgeGraph、DiaryStore、PromptContextBuilder 与 PhoenixRecover 的边界；它不覆盖现有 binding protocol artifacts，不改变 Paperclip Task 主模型，也不改变 Dark Factory Journal 的事实来源地位。
+
+`3.0/future_development/` 是新增的下一阶段开发隔离区，承接 Paperclip upstream 集成计划、未来开发任务拆解和 Hermes + GPT-5.5 执行命令。该目录整体属于 **informative / out-of-bundle**，不进入 V3.0 release-gated `files` 清单，不改变 `v3.0-agent-control-r1`，也不直接修改 Paperclip upstream core。

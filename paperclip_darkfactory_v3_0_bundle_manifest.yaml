@@ -21,8 +21,8 @@ releaseGateChecks:
 - manifest path existence and sha256 equality
 files:
 - path: README.md
-  sha256: 7c97f28540fc85d9acbb1c9ce4c96f6637f650b81d3ed3a748860407b0802fbc
-  bytes: 7805
+  sha256: 20fa7c735615a3360993b5b766f0dd426fed6a8406510e8bdc30d2f416fae809
+  bytes: 8159
   normativity: binding
 - path: DARK_FACTORY_V3_0_开工文档.md
   sha256: 243bc11a94646718e4ac7a0a8f78531d6c4bad32cc4996a60506e989fdd5aedf
@@ -94,15 +94,15 @@ files:
   normativity: binding-on-covered-obligations
 - path: paperclip_darkfactory_v3_0_consistency_report.md
   sha256: SELF_HASH_EXCLUDED
-  bytes: 2170
+  bytes: 2086
   normativity: release-gate-report
 - path: paperclip_darkfactory_v3_0_bundle_manifest.yaml
   sha256: SELF_HASH_EXCLUDED
-  bytes: 12419
+  bytes: 12629
   normativity: release-gate-input
 - path: paperclip_darkfactory_v3_0_consistency_report.json
   sha256: SELF_HASH_EXCLUDED
-  bytes: 3368
+  bytes: 3316
   normativity: release-gate-report
 - path: tools/validate_v3_bundle.py
   sha256: 0ec6049acb4970d947c06aefde03f0eda6a27e1cdea058f667881092727873f0
@@ -294,6 +294,10 @@ informativeOutOfBundle:
 - 3.0/paperclip_darkfactory_v2_9_impl_pack.md
 - 3.0/paperclip_darkfactory_v2_9_runtime_config_registry.yaml
 - 3.0/runtime_policy.md
+- 3.0/future_development/README.md
+- 3.0/future_development/PAPERCLIP_UPSTREAM_INTEGRATION_PLAN.md
+- 3.0/future_development/NEXT_DEVELOPMENT_TASKS.md
+- 3.0/future_development/HERMES_GPT55_EXECUTION_COMMANDS.md
 selfHashMode: excluded-from-own-digest
 excludedFromDigest:
 - paperclip_darkfactory_v3_0_bundle_manifest.yaml

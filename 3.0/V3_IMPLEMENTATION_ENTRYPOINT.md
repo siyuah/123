@@ -149,6 +149,11 @@ Phoenix Runtime Capabilities 是 Agent Runtime 能力层，可被 Bridge / Dark 
 - `3.0/hermes_gpt55_v3_0_segmented_workflow.md`
 - `3.0/hermes-80315662261f.md`
 
+- `3.0/future_development/README.md`
+- `3.0/future_development/PAPERCLIP_UPSTREAM_INTEGRATION_PLAN.md`
+- `3.0/future_development/NEXT_DEVELOPMENT_TASKS.md`
+- `3.0/future_development/HERMES_GPT55_EXECUTION_COMMANDS.md`
+
 ---
 
 ## 5. 建议阅读顺序
