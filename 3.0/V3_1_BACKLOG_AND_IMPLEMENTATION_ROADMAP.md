@@ -25,6 +25,8 @@ protocolReleaseTag: `v3.0-agent-control-r1`
 
 V3.0 `agent-control-r1` **保持不变**。任何进入 V3.1 的候选事项，必须先明确是否触及 binding artifacts；如果触及，需要在独立 V3.1 设计、测试和 release gate 中同步推进，不能在 V3.0 文档中暗改合同。
 
+额外边界：Phoenix Runtime 不是第二套 Paperclip control plane；MemorySidecar 字段不得塞进 Paperclip Task 主模型；Bridge / Adapter 不得成为第二 truth source；具体模型名不得写成协议 MUST。
+
 ---
 
 ## 2. 优先级与阶段定义
