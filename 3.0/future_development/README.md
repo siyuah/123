@@ -26,6 +26,8 @@ protocolReleaseTag: `v3.0-agent-control-r1`
 | `PAPERCLIP_UPSTREAM_INTEGRATION_PLAN.md` | Paperclip upstream 与 Dark Factory / Phoenix Runtime 的集成方向、层边界、风险与验收 | informative plan |
 | `NEXT_DEVELOPMENT_TASKS.md` | 下一阶段开发文档，按 Phase / 子任务 / DoD 拆解 | informative execution plan |
 | `HERMES_GPT55_EXECUTION_COMMANDS.md` | 可直接复制给 Hermes + GPT-5.5 的分阶段执行命令 | informative handoff commands |
+| `DEVELOPMENT_HANDOFF_2026-04-27.md` | V3.0/V3.1 文档整理与 upstream PR #4591 阶段性交接 | informative handoff |
+| `AI_EXECUTION_HANDOFF_2026-04-28.md` | 面向下一位 AI 的产品主线执行交接，覆盖已完成事项、当前状态、后续任务与复制命令 | informative execution handoff |
 
 ## 3. 阅读顺序
 
