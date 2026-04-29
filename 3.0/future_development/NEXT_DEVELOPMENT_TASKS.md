@@ -268,6 +268,65 @@ POST /issues/:issueId/dark-factory/rehydrate-request
 
 ---
 
+## Runtime Adapter Integration Next Tasks
+
+状态: Informative / Out-of-bundle task list for V3.1+ product-main planning.
+是否修改 V3.0 binding artifacts: 否。
+是否授权 Paperclip Task/Issue 主模型修改: 否；如需触碰，必须单独架构评审并获得用户授权。
+是否授权 push/tag/release: 否。
+
+### P0 — CI visibility / runtime blocker unblock
+
+**Objective:** 先解决 product-main 可验证性，避免把 fork CI 不可见或本机 embedded PostgreSQL blocker 误判为产品完成。
+
+**Tasks:**
+
+- 复核 `siyuah/paperclip` Actions/workflows；当前必须报告：fork 当前 CI 不可见或未触发。
+- 明确 root `pnpm run test:run` 的 embedded PostgreSQL/native dependency blocker。
+- 让用户二选一授权：安装/provision PostgreSQL native dependencies，或采用 Docker/Compose canonical smoke。
+
+### P0 — adapter contract design doc
+
+**Objective:** 在 fork product-main 内定义 Dark Factory runtime adapter 的最小合同，不直接改 Issue/Task 主模型。
+
+**Required fields:** request ID/idempotency key、Paperclip run ID、Dark Factory run ID、Journal cursor、last sequence、receipt ID、projection status、secret redaction policy。
+
+**DoD:** 明确哪些字段进入 `AdapterExecutionResult.resultJson` / run event metadata，哪些字段只进入 plugin namespace DB，哪些触点需要单独架构评审。
+
+### P1 — mock adapter skeleton
+
+**Objective:** 在 `siyuah/paperclip` fork only 新增 mock Journal-backed runtime adapter skeleton。
+
+**Hard rules:** 不连接真实 Dark Factory；不读取或打印 secrets；不写 Paperclip Task/Issue 主模型；只返回 receipt/cursor/projection metadata。
+
+### P1 — Journal receipt simulator
+
+**Objective:** 提供 fixture simulator，覆盖 normal receipt、duplicate request、out-of-order callback、missing cursor gap、projection rebuild。
+
+**DoD:** same Journal replay → same projection；duplicate callback → idempotent existing receipt；cursor gap → stale/gap，不升级 terminal success。
+
+### P1 — smoke harness
+
+**Objective:** 将 bridge plugin、mock adapter、Journal simulator 串成本地 smoke。
+
+**Validation:** targeted plugin test/typecheck/build；mock adapter unit tests；root typecheck/build；root `test:run` 在 blocker 解除后运行；Docker/Compose smoke 需用户授权。
+
+### P2 — UI operator workflow
+
+**Objective:** 在 projection-only UI 上逐步展示 runtime adapter state。
+
+**Fields:** provider health、degraded/blocked/stale、receipt/cursor、rehydrate request status、operator disclaimer。
+
+**Boundary:** UI 仍显示 `Projection only — Dark Factory Journal remains truth source`，不暗示 Paperclip DB 是 truth source。
+
+### P2 — upstream contribution assessment
+
+**Objective:** 评估哪些通用 adapter/plugin 改进适合 upstream `paperclipai/paperclip`。
+
+**Boundary:** 这是可选上游贡献路径；不作为 `siyuah/paperclip` 产品主线默认阻塞项。
+
+---
+
 ## Phase 5 — 提交与汇报
 
 ### Task 5.1: 123 文档提交

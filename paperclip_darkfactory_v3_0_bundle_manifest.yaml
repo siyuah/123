@@ -98,7 +98,7 @@ files:
   normativity: release-gate-report
 - path: paperclip_darkfactory_v3_0_bundle_manifest.yaml
   sha256: SELF_HASH_EXCLUDED
-  bytes: 12748
+  bytes: 12832
   normativity: release-gate-input
 - path: paperclip_darkfactory_v3_0_consistency_report.json
   sha256: SELF_HASH_EXCLUDED
@@ -296,6 +296,7 @@ informativeOutOfBundle:
 - 3.0/runtime_policy.md
 - 3.0/future_development/README.md
 - 3.0/future_development/PAPERCLIP_UPSTREAM_INTEGRATION_PLAN.md
+- 3.0/future_development/PAPERCLIP_DARK_FACTORY_RUNTIME_ADAPTER_INTEGRATION_PLAN.md
 - 3.0/future_development/NEXT_DEVELOPMENT_TASKS.md
 - 3.0/future_development/HERMES_GPT55_EXECUTION_COMMANDS.md
 - 3.0/future_development/DEVELOPMENT_HANDOFF_2026-04-27.md
