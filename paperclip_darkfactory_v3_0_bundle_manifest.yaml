@@ -301,6 +301,7 @@ informativeOutOfBundle:
 - 3.0/future_development/HERMES_GPT55_EXECUTION_COMMANDS.md
 - 3.0/future_development/DEVELOPMENT_HANDOFF_2026-04-27.md
 - 3.0/future_development/AI_EXECUTION_HANDOFF_2026-04-28.md
+- 3.0/future_development/DARK_FACTORY_BRIDGE_DEVELOPMENT_ARCHIVE_2026-05-02.md
 selfHashMode: excluded-from-own-digest
 excludedFromDigest:
 - paperclip_darkfactory_v3_0_bundle_manifest.yaml
