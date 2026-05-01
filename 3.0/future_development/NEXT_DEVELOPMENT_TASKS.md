@@ -400,3 +400,34 @@ Next candidate tasks:
 - P0: adapter contract design doc (fork-internal mapping of `AdapterExecutionContext` to Dark Factory request envelope)
 - P1: Journal receipt simulator fixtures
 - P1: smoke harness connecting bridge plugin + mock adapter + Journal simulator
+
+### 2026-05-02 - Adapter contract + Journal simulator + smoke harness
+
+Completed in `siyuah/paperclip` fork `fork-master-product` branch:
+
+1. **P0 adapter contract design doc** - Created `docs/dark-factory/DARK_FACTORY_ADAPTER_CONTRACT_DESIGN.md` (289 lines) defining field-level mapping between Paperclip `PluginEnvironmentExecuteParams` / `AdapterExecutionContext` and Dark Factory request/response envelopes. Covers idempotency, error mapping, resultJson/run event metadata allocation, and boundary constraints.
+
+2. **P1 Journal receipt simulator fixtures** - Added `journal-receipt-simulator.ts` with deterministic normal, gap, out-of-order, duplicate, and empty Journal sequences. Added `simulateCallbackSequence` and `JournalReceiptSimulator` class API. Added 9 simulator tests; all 49 plugin tests passed after this step.
+
+3. **P1 smoke harness** - Added `smoke-harness.spec.ts` connecting bridge plugin API routes, environment lifecycle hooks, and Journal receipt simulator in process. Covers happy path, deterministic execution, Journal anomaly fixtures, lease resume/release/destroy, projection-only API state, non-mock config rejection, and unknown route handling. No network, database, Docker, or real Paperclip instance required. All 54 plugin tests pass.
+
+Commits:
+
+- `bffa1aa6` docs: add adapter contract design for Dark Factory request/response mapping
+- `32c4609d` feat: add journal receipt simulator fixtures and tests
+- `cb8e834a` test: add Dark Factory bridge smoke harness
+
+Boundary compliance:
+
+- Dark Factory Journal remains truth source: yes
+- `authoritative: false` on all outputs: yes
+- `terminalStateAdvanced: false` on all outputs: yes
+- No Paperclip Task/Issue main model changes: yes
+- No Plugin SDK or Paperclip core/server/ui changes: yes
+- No real Dark Factory connection: yes
+- No secrets read/printed/committed: yes
+
+Next candidate tasks:
+
+- P1: projection-only UI operator workflow for provider health, stale/degraded/blocked, receipt/cursor, and rehydrate request status
+- P2: upstream contribution assessment
