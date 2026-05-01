@@ -32,6 +32,7 @@ PROTOCOL_RELEASE_TAG = "v3.0-agent-control-r1"
 IGNORED_GENERATED_STATUS_PREFIXES = (
     " M paperclip_darkfactory_v3_0_consistency_report.json",
     " M paperclip_darkfactory_v3_0_consistency_report.md",
+    "?? __pycache__/",
     "?? dark_factory_v3/__pycache__/",
     "?? tests/__pycache__/",
     "?? tools/__pycache__/",
@@ -181,6 +182,7 @@ def check_git_clean(git: dict[str, Any], *, require_clean: bool) -> dict[str, An
         "ignoredPatterns": [
             "paperclip_darkfactory_v3_0_consistency_report.json checkedAt-only changes",
             "paperclip_darkfactory_v3_0_consistency_report.md checkedAt-only changes",
+            "__pycache__/",
             "dark_factory_v3/__pycache__/",
             "tests/__pycache__/",
             "tools/__pycache__/",

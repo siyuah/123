@@ -1,0 +1,8 @@
+.git
+.pytest_cache
+.venv
+.venv312
+__pycache__
+**/__pycache__
+*.pyc
+.dark_factory_http

@@ -12,7 +12,11 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import json
+import logging
+import os
 import sys
+import time
 import uuid
 from dataclasses import asdict
 from datetime import UTC, datetime
@@ -21,6 +25,7 @@ from typing import Any, Callable, Iterable, Optional
 
 from fastapi import FastAPI, Header, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
 ROOT = Path(__file__).resolve().parent
@@ -35,6 +40,7 @@ from dark_factory_v3.protocol import PROTOCOL_RELEASE_TAG  # noqa: E402
 DEFAULT_PORT = 9701
 DEFAULT_JOURNAL_PATH = ROOT / ".dark_factory_http" / "journal.jsonl"
 DEFAULT_ROUTE_POLICY_REF = "policy://routing/v3/default"
+SERVER_VERSION = "3.0.0-local-mvp.1"
 DEFAULT_EXECUTOR_BY_WORKLOAD = {
     "chat": "general_chat_executor",
     "code": "code_executor",
@@ -47,10 +53,90 @@ DEFAULT_EXECUTOR_BY_WORKLOAD = {
 
 
 Clock = Callable[[], str]
+LOGGER = logging.getLogger("dark_factory_v3.http")
+SENSITIVE_FIELD_MARKERS = ("api_key", "apikey", "authorization", "password", "secret", "token", "x-api-key")
+REDACTED = "***REDACTED***"
 
 
 def utc_now() -> str:
     return datetime.now(UTC).isoformat(timespec="milliseconds").replace("+00:00", "Z")
+
+
+class JsonLogFormatter(logging.Formatter):
+    def format(self, record: logging.LogRecord) -> str:
+        payload = {
+            "timestamp": utc_now(),
+            "level": record.levelname,
+            "message": record.getMessage(),
+        }
+        structured = getattr(record, "structured", None)
+        if isinstance(structured, dict):
+            payload.update(structured)
+        return json.dumps(payload, ensure_ascii=False, sort_keys=True)
+
+
+def configure_logging() -> None:
+    if LOGGER.handlers:
+        return
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setFormatter(JsonLogFormatter())
+    LOGGER.addHandler(handler)
+    LOGGER.setLevel(logging.INFO)
+    LOGGER.propagate = False
+
+
+def log_event(level: int, message: str, **fields: Any) -> None:
+    LOGGER.log(level, message, extra={"structured": fields})
+
+
+def redact_sensitive(value: Any) -> Any:
+    if isinstance(value, dict):
+        redacted: dict[str, Any] = {}
+        for key, nested in value.items():
+            normalized_key = key.replace("-", "_").lower()
+            if any(marker in normalized_key for marker in SENSITIVE_FIELD_MARKERS):
+                redacted[key] = REDACTED
+            else:
+                redacted[key] = redact_sensitive(nested)
+        return redacted
+    if isinstance(value, list):
+        return [redact_sensitive(item) for item in value]
+    if isinstance(value, str) and len(value) > 2048:
+        return value[:2048] + "...[truncated]"
+    return value
+
+
+def parse_request_body(raw_body: bytes) -> Any:
+    if not raw_body:
+        return None
+    try:
+        return json.loads(raw_body.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError):
+        return {"unparsedBodyBytes": len(raw_body)}
+
+
+def trace_id_from_request(request: Request, body: Any = None) -> str:
+    header_trace_id = request.headers.get("x-trace-id")
+    if header_trace_id:
+        return header_trace_id
+    if isinstance(body, dict):
+        trace_id = body.get("traceId") or body.get("trace_id")
+        if isinstance(trace_id, str) and trace_id:
+            return trace_id
+    return f"trace-{uuid.uuid4().hex}"
+
+
+def mask_client_ip(host: str | None) -> str:
+    if not host:
+        return "unknown"
+    if "." in host:
+        parts = host.split(".")
+        if len(parts) >= 4:
+            return ".".join(parts[:2] + ["x", "x"])
+    if ":" in host:
+        parts = host.split(":")
+        return ":".join(parts[:2] + ["x", "x"])
+    return "unknown"
 
 
 def stable_projection_value(value: Any) -> Any:
@@ -206,10 +292,12 @@ class HealthView(BaseModel):
 
 
 class ServerState:
-    def __init__(self, *, root: Path, journal_path: Path, clock: Clock = utc_now) -> None:
+    def __init__(self, *, root: Path, journal_path: Path, clock: Clock = utc_now, api_key: str | None = None, auth_enabled: bool = True) -> None:
         self.root = root
         self.journal_path = journal_path
         self.clock = clock
+        self.api_key = api_key
+        self.auth_enabled = auth_enabled
 
     def plane(self) -> ControlPlane:
         return ControlPlane.from_jsonl_path(self.root, self.journal_path, clock=self.clock)
@@ -368,8 +456,9 @@ def activate_attempt_if_needed(plane: ControlPlane, *, run_id: str, attempt_id: 
         )
 
 
-def create_app(*, journal_path: Path = DEFAULT_JOURNAL_PATH, root: Path = ROOT) -> FastAPI:
-    state = ServerState(root=root, journal_path=journal_path)
+def create_app(*, journal_path: Path = DEFAULT_JOURNAL_PATH, root: Path = ROOT, api_key: str | None = None, auth_enabled: bool = True) -> FastAPI:
+    configure_logging()
+    state = ServerState(root=root, journal_path=journal_path, api_key=api_key, auth_enabled=auth_enabled)
     app = FastAPI(
         title="Paperclip Dark Factory V3.0 External Runs API",
         version="3.0.0",
@@ -383,10 +472,69 @@ def create_app(*, journal_path: Path = DEFAULT_JOURNAL_PATH, root: Path = ROOT) 
         allow_headers=["*"],
     )
 
+    @app.middleware("http")
+    async def security_and_logging_middleware(request: Request, call_next):
+        start = time.perf_counter()
+        raw_body = await request.body()
+        parsed_body = parse_request_body(raw_body)
+        trace_id = trace_id_from_request(request, parsed_body)
+        redacted_body = redact_sensitive(parsed_body)
+        status_code = 500
+        response: Response
+        try:
+            is_health_check = request.method == "GET" and request.url.path in {"/api/health", "/health"}
+            if state.auth_enabled and not is_health_check:
+                provided_key = request.headers.get("x-api-key")
+                if not state.api_key or provided_key != state.api_key:
+                    response = JSONResponse(
+                        status_code=401,
+                        content={
+                            "protocolReleaseTag": PROTOCOL_RELEASE_TAG,
+                            "error": "unauthorized",
+                            "message": "Invalid or missing API key",
+                        },
+                    )
+                    status_code = response.status_code
+                    return response
+            response = await call_next(request)
+            status_code = response.status_code
+            return response
+        except Exception as exc:
+            status_code = 500
+            log_event(
+                logging.ERROR,
+                "request_exception",
+                trace_id=trace_id,
+                exception_type=type(exc).__name__,
+                exception_message=str(exc),
+                method=request.method,
+                path=request.url.path,
+            )
+            return JSONResponse(
+                status_code=500,
+                content=ErrorResponse(
+                    errorCode="internal_server_error",
+                    message="Internal server error",
+                    traceId=trace_id,
+                    retryable=True,
+                ).model_dump(),
+            )
+        finally:
+            duration_ms = round((time.perf_counter() - start) * 1000, 2)
+            log_event(
+                logging.INFO,
+                "request",
+                method=request.method,
+                path=request.url.path,
+                status_code=status_code,
+                duration_ms=duration_ms,
+                trace_id=trace_id,
+                client_ip=mask_client_ip(request.client.host if request.client else None),
+                request_body=redacted_body,
+            )
+
     @app.exception_handler(HTTPException)
     async def http_exception_handler(_request: Request, exc: HTTPException) -> Response:
-        from fastapi.responses import JSONResponse
-
         detail = exc.detail
         if isinstance(detail, dict) and detail.get("protocolReleaseTag") == PROTOCOL_RELEASE_TAG:
             return JSONResponse(status_code=exc.status_code, content=detail)
@@ -637,6 +785,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--host", default="127.0.0.1", help="Bind host. Defaults to 127.0.0.1.")
     parser.add_argument("--port", default=DEFAULT_PORT, type=int, help=f"Bind port. Defaults to {DEFAULT_PORT}.")
     parser.add_argument("--journal", default=str(DEFAULT_JOURNAL_PATH), help="JSONL journal file path.")
+    parser.add_argument("--no-auth", action="store_true", help="Disable API key authentication for local development only.")
     parser.add_argument("--reload", action="store_true", help="Enable uvicorn reload for local development.")
     return parser
 
@@ -645,8 +794,30 @@ def main(argv: Iterable[str] | None = None) -> int:
     args = build_parser().parse_args(list(argv) if argv is not None else None)
     import uvicorn
 
+    configure_logging()
     journal_path = Path(args.journal).expanduser().resolve()
-    app = create_app(journal_path=journal_path)
+    auth_enabled = not args.no_auth
+    api_key = os.environ.get("DF_API_KEY")
+    generated_key = False
+    if auth_enabled and not api_key:
+        api_key = str(uuid.uuid4())
+        generated_key = True
+    if not auth_enabled:
+        print("WARNING: Authentication disabled. Do not use in production.", flush=True)
+    elif generated_key:
+        print(f"API key authentication enabled. Generated key: {api_key}", flush=True)
+    else:
+        print(f"API key authentication enabled. Key: {api_key}", flush=True)
+    log_event(
+        logging.WARNING if not auth_enabled else logging.INFO,
+        "server_startup",
+        server_version=SERVER_VERSION,
+        port=args.port,
+        auth_mode="disabled" if not auth_enabled else ("api_key_generated" if generated_key else "api_key_env"),
+        journal_mode="file-jsonl",
+        journal_path=str(journal_path),
+    )
+    app = create_app(journal_path=journal_path, api_key=api_key, auth_enabled=auth_enabled)
     uvicorn.run(app, host=args.host, port=args.port, reload=args.reload)
     return 0
 

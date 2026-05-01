@@ -34,6 +34,7 @@ REQUIRED_WORKFLOW_STRINGS = [
 IGNORED_GENERATED_STATUS_PREFIXES = (
     " M paperclip_darkfactory_v3_0_consistency_report.json",
     " M paperclip_darkfactory_v3_0_consistency_report.md",
+    "?? __pycache__/",
     "?? dark_factory_v3/__pycache__/",
     "?? tests/__pycache__/",
     "?? tools/__pycache__/",
@@ -135,6 +136,7 @@ def check_git_clean(root: Path, *, require_clean: bool, include_development: boo
         "ignoredPatterns": [
             "paperclip_darkfactory_v3_0_consistency_report.json checkedAt-only changes",
             "paperclip_darkfactory_v3_0_consistency_report.md checkedAt-only changes",
+            "__pycache__/",
             "dark_factory_v3/__pycache__/",
             "tests/__pycache__/",
             "tools/__pycache__/",

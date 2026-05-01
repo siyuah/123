@@ -1,15 +1,58 @@
 from __future__ import annotations
 
 import json
+import sys
+import time
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import List, Optional, Set
 
 from .protocol import EventEnvelope
 
+try:
+    import fcntl  # type: ignore[import-not-found]
+except ImportError:  # pragma: no cover - exercised only on non-POSIX runtimes.
+    fcntl = None  # type: ignore[assignment]
+
 
 class JournalAppendError(ValueError):
     """Raised when an append-only journal invariant would be violated."""
+
+
+class JournalLockTimeoutError(JournalAppendError):
+    """Raised when the JSONL journal file lock cannot be acquired in time."""
+
+
+_FLOCK_WARNING_EMITTED = False
+
+
+def _warn_unlocked_once() -> None:
+    global _FLOCK_WARNING_EMITTED
+    if _FLOCK_WARNING_EMITTED:
+        return
+    print("WARNING: fcntl is unavailable; FileBackedJsonlJournal is running without file locks.", file=sys.stderr)
+    _FLOCK_WARNING_EMITTED = True
+
+
+def _acquire_lock(handle, lock_type: int, *, timeout_seconds: float = 5.0) -> bool:
+    if fcntl is None:
+        _warn_unlocked_once()
+        return False
+
+    deadline = time.monotonic() + timeout_seconds
+    while True:
+        try:
+            fcntl.flock(handle.fileno(), lock_type | fcntl.LOCK_NB)
+            return True
+        except BlockingIOError as exc:
+            if time.monotonic() >= deadline:
+                raise JournalLockTimeoutError("timed out acquiring journal file lock") from exc
+            time.sleep(0.05)
+
+
+def _release_lock(handle, locked: bool) -> None:
+    if locked and fcntl is not None:
+        fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
 
 
 @dataclass
@@ -77,11 +120,29 @@ class FileBackedJsonlJournal(InMemoryAppendOnlyJournal):
         self.path = Path(path)
 
     def append(self, event: EventEnvelope) -> EventEnvelope:
-        appended = super().append(event)
         self.path.parent.mkdir(parents=True, exist_ok=True)
-        with self.path.open("a", encoding="utf-8") as handle:
-            handle.write(json.dumps(appended.to_dict(), ensure_ascii=False, sort_keys=True))
-            handle.write("\n")
+        with self.path.open("a+", encoding="utf-8") as handle:
+            locked = _acquire_lock(handle, fcntl.LOCK_EX if fcntl is not None else 0)
+            try:
+                disk_journal = InMemoryAppendOnlyJournal()
+                handle.seek(0)
+                for line_number, line in enumerate(handle.read().splitlines(), start=1):
+                    if not line.strip():
+                        continue
+                    try:
+                        existing = EventEnvelope.from_dict(json.loads(line))
+                    except (TypeError, ValueError, json.JSONDecodeError) as exc:
+                        raise JournalAppendError(f"invalid journal line {line_number}: {exc}") from exc
+                    disk_journal.append(existing.as_replay())
+                appended = disk_journal.append(event)
+                self._events = disk_journal.read_all()
+                self._event_ids = {journal_event.eventId for journal_event in self._events}
+                handle.seek(0, 2)
+                handle.write(json.dumps(appended.to_dict(), ensure_ascii=False, sort_keys=True))
+                handle.write("\n")
+                handle.flush()
+            finally:
+                _release_lock(handle, locked)
         return appended
 
     @classmethod
@@ -89,12 +150,17 @@ class FileBackedJsonlJournal(InMemoryAppendOnlyJournal):
         journal = cls(path)
         if not journal.path.exists():
             return journal
-        for line_number, line in enumerate(journal.path.read_text(encoding="utf-8").splitlines(), start=1):
-            if not line.strip():
-                continue
+        with journal.path.open("r", encoding="utf-8") as handle:
+            locked = _acquire_lock(handle, fcntl.LOCK_SH if fcntl is not None else 0)
             try:
-                event = EventEnvelope.from_dict(json.loads(line))
-            except (TypeError, ValueError, json.JSONDecodeError) as exc:
-                raise JournalAppendError(f"invalid journal line {line_number}: {exc}") from exc
-            InMemoryAppendOnlyJournal.append(journal, event.as_replay())
+                for line_number, line in enumerate(handle.read().splitlines(), start=1):
+                    if not line.strip():
+                        continue
+                    try:
+                        event = EventEnvelope.from_dict(json.loads(line))
+                    except (TypeError, ValueError, json.JSONDecodeError) as exc:
+                        raise JournalAppendError(f"invalid journal line {line_number}: {exc}") from exc
+                    InMemoryAppendOnlyJournal.append(journal, event.as_replay())
+            finally:
+                _release_lock(handle, locked)
         return journal

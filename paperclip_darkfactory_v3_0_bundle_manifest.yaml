@@ -98,7 +98,7 @@ files:
   normativity: release-gate-report
 - path: paperclip_darkfactory_v3_0_bundle_manifest.yaml
   sha256: SELF_HASH_EXCLUDED
-  bytes: 12832
+  bytes: 14093
   normativity: release-gate-input
 - path: paperclip_darkfactory_v3_0_consistency_report.json
   sha256: SELF_HASH_EXCLUDED
@@ -114,18 +114,18 @@ files:
   normativity: release-gate-tool
 - path: tools/v3_release_readiness.py
   role: release readiness aggregator
-  sha256: 5733551d1332c46c5892f58764bca3c109c67cdf9000f319f1538d5dfe04a088
-  bytes: 16610
+  sha256: 31735102279ee7c53a380dee19af01442bd14aff532344fd34889fefbf5ef401
+  bytes: 16661
   normativity: release-gate-tool
 - path: tools/v3_release_dry_run.py
   role: release dry-run checker
-  sha256: 0f67687848ad21c968bf93ae58241e6027fda9682810e0bc84f260fac9c92029
-  bytes: 17576
+  sha256: 135559aec5fac6959d08b7985241c03f5666170102a1d2ec702d940255556558
+  bytes: 17627
   normativity: release-gate-tool
 - path: tools/v3_release_evidence.py
   role: release evidence package checker
-  sha256: 3e27cfc2ea6653dd484738a83fa9d96906fabdb839f9e9038a688b27e24039e4
-  bytes: 17118
+  sha256: 8cc6cda4a370405c9f02c559e220128db82e2cc38010d2a1c25cda532a3043de
+  bytes: 17169
   normativity: release-gate-tool
 - path: tools/v3_remote_ci.py
   role: optional GitHub Actions release gate helper
@@ -166,8 +166,8 @@ files:
   sha256: 2a9598f485352ccc4e0860031f484848f47a8e5167c59a31b67c53ccb40b20b2
   bytes: 14512
 - path: dark_factory_v3/journal.py
-  sha256: c3476c09edee1dcaedd593aec96a25438e1f1c50f3ecb4e5ac786deb8cbeb733
-  bytes: 3980
+  sha256: 5dc0198729e2fe41d266851fe7af7264ee77943ad4241e49fcef4dddc04066fb
+  bytes: 6573
   normativity: minimal-runtime-skeleton
 - path: dark_factory_v3/control_plane.py
   role: runtime implementation
@@ -207,6 +207,11 @@ files:
   role: journal verification unit tests
   sha256: a9fbe81ef5a1645386580ea9072200b901da41231d4724be267875e2b854d7e2
   bytes: 1572
+  normativity: release-gate-test
+- path: tests/test_v3_http_server_security.py
+  role: HTTP server authentication, redaction, and journal lock tests
+  sha256: 83b64c04127c2b83708674febe73f1909f18fd80609404d51953d11cfec0ed84
+  bytes: 4019
   normativity: release-gate-test
 - path: tests/test_v3_release_dry_run.py
   role: release dry-run unit tests
@@ -261,6 +266,31 @@ files:
   sha256: 5b5528837a46e956cfa4dde4beb095c649a02d8c9962d0cd2548c3223a88090f
   bytes: 1058
   normativity: test-golden-timeline
+- path: server.py
+  role: local HTTP server runtime
+  sha256: 5aacc74d8fc3e88e6b2b15f44f2da77b2e5ab6c058bc0f2c2cf590712d08ee40
+  bytes: 32570
+  normativity: minimal-runtime-skeleton
+- path: start_server.sh
+  role: local HTTP server launcher
+  sha256: d752efacb5b92fab4a9b4d5abcb683dce6ac52d29825659a32598bcf9945a839
+  bytes: 245
+  normativity: runtime-operator-helper
+- path: Dockerfile
+  role: internal preview container packaging
+  sha256: 9fde54acbf04ab5f46c32502ae8a6b1209a7ad77d61ade06a95d6bf65112efad
+  bytes: 809
+  normativity: runtime-operator-helper
+- path: .dockerignore
+  role: internal preview container packaging
+  sha256: 69fa76b4d8d62024d9648af8901987982af6e2ead3bb9b960a2ec653d8936a31
+  bytes: 86
+  normativity: runtime-operator-helper
+- path: requirements-http.txt
+  role: HTTP server dependency lock
+  sha256: 32436dc69ef61f9836b2a211a296baa7376322515631db017bd027cc8d31660b
+  bytes: 47
+  normativity: runtime-operator-helper
 informativeOutOfBundle:
 - 3.0/DEVELOPMENT_SPEC.md
 - 3.0/DEVELOPMENT_SPEC_v1.1.md
