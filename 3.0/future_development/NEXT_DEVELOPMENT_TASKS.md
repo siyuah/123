@@ -431,3 +431,21 @@ Next candidate tasks:
 
 - P1: projection-only UI operator workflow for provider health, stale/degraded/blocked, receipt/cursor, and rehydrate request status
 - P2: upstream contribution assessment
+
+### 2026-05-02 - Upstream sync + root validation + contribution assessment
+
+1. **Upstream sync** - Rebased `fork-master-product` onto latest `origin/master` (`685ee84e`). Zero conflicts. Actual replay set was 8 commits on top of master because fork baseline commit `f53a8f51` was also not present upstream.
+
+2. **Root validation** - `pnpm -r typecheck` passed for all packages (server, ui, cli, all plugins including dark-factory-bridge). `pnpm build` passed. 54/54 bridge plugin tests pass after rebase. Root `pnpm test:run` failed in upstream/environment-dependent cursor-local and live SSH tests, not in Dark Factory bridge code.
+
+3. **Contribution assessment** - Created `docs/dark-factory/DARK_FACTORY_CONTRIBUTION_ASSESSMENT.md` analyzing which commits are suitable for upstream PR. Recommendation: do not open one large upstream PR directly; discuss in upstream Discord first and, if accepted, split into smaller generalized plugin-environment-driver PRs.
+
+4. **Push to fork** - Pushed `fork-master-product` to the fork remote. `git push fork master:master` was rejected as non-fast-forward, so `fork/master` remains on the old fork baseline and was not force-updated.
+
+Current branch state:
+
+- `fork-master-product`: pushed to fork remote, 9 commits ahead of `master` after adding the contribution assessment document
+- `master`: synced with `origin/master` at `685ee84e`
+- `fork/master`: not synced with `master`; normal push rejected as non-fast-forward
+
+Project status: **All development tasks complete. Ready for contribution decision.**
