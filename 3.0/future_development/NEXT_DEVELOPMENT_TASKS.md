@@ -359,3 +359,44 @@ git commit -m "feat: add dark factory bridge plugin poc"
 ```
 
 **DoD:** typecheck/test/build 通过；POC 不改 core Task model。
+
+---
+
+## Progress Log
+
+### 2026-05-02 - Architecture improvements + Environment lifecycle hooks
+
+Completed in `siyuah/paperclip` fork `fork-master-product` branch:
+
+1. **V3 parity guard tests** - Added runtime contract V3 parity guard test suite (7 assertions) to lock TypeScript `runtime-contract.ts` types against V3 `core_enums.yaml`. 4 runtime-level types (`ProjectionStatus`, `FailureClass`, `BreakerState`, `ProviderHealthState`) confirmed as not yet in V3.0 binding enums; marked as runtime stability assertions with V3.1 upgrade path comments.
+
+2. **Plugin directory migration** - Moved bridge plugin from `packages/plugins/examples/` to `packages/plugins/integrations/dark-factory-bridge/`. Package renamed to `@paperclipai/plugin-dark-factory-bridge`. `pnpm-workspace.yaml` updated with `integrations/*` glob.
+
+3. **Environment adapter design document** - Created `docs/dark-factory/DARK_FACTORY_ENVIRONMENT_ADAPTER_DESIGN.md` (239 lines, 9 sections) covering Plugin-hosted environment driver approach, SDK interface mapping, mock implementation, manifest changes, AdapterExecutionResult mapping, boundary constraints, verification plan, and step-by-step implementation guide.
+
+4. **Environment lifecycle hooks Step 1-4** - Implemented `onEnvironmentValidateConfig`, `onEnvironmentProbe`, `onEnvironmentAcquireLease`, `onEnvironmentExecute` in `worker.ts` (+129 LOC). Added `environment-lifecycle.spec.ts` (+162 LOC, 5 tests). All 36 tests pass.
+
+5. **Environment lifecycle hooks Step 5-6** - Implemented `onEnvironmentResumeLease`, `onEnvironmentReleaseLease`, `onEnvironmentDestroyLease`. Added resume, release, destroy, and full lifecycle smoke tests. All 40 tests pass.
+
+Commits:
+
+- `f90562fa` docs: add Dark Factory environment adapter design document
+- `ccdfec5d` refactor: move dark-factory bridge plugin to integrations
+- `d705bb16` feat: add environment lifecycle hooks Step 1-4
+- `71c417f6` feat: add environment lifecycle hooks Step 5-6
+
+Boundary compliance:
+
+- Dark Factory Journal remains truth source: yes
+- `authoritative: false` on all outputs: yes
+- `terminalStateAdvanced: false` on all outputs: yes
+- No Paperclip Task/Issue main model changes: yes
+- No real Dark Factory connection: yes
+- No secrets read/printed/committed: yes
+- Plugin DB limited to projection/cache/cursor/receipt/request metadata: yes
+
+Next candidate tasks:
+
+- P0: adapter contract design doc (fork-internal mapping of `AdapterExecutionContext` to Dark Factory request envelope)
+- P1: Journal receipt simulator fixtures
+- P1: smoke harness connecting bridge plugin + mock adapter + Journal simulator
