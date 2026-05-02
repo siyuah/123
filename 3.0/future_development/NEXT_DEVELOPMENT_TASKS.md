@@ -912,6 +912,49 @@ Next candidate tasks:
 - Feed host-collected observations and previous breaker/readiness evidence from runtime storage.
 - Persist breaker state before using it to gate remote execution decisions.
 
+### 2026-05-03 - Remote provider alpha hardening batch 22
+
+1. **Host context bridge boundary** - Added a Paperclip bridge plugin data
+   surface, `remote-provider-host-context-bridge`, that composes normalized
+   active context, readiness report, host context summary, and archive hints.
+
+2. **Supported input envelopes** - The bridge accepts `activeContext`,
+   `hostActiveContext`, and `remoteProviderActiveContext`, while preserving
+   direct top-level override behavior and recording whether the final input was
+   params-only, host-context-only, or merged.
+
+3. **Archive-ready summary** - The result includes checked/evaluated time,
+   expected Journal sequence, sampled observation count, credential status,
+   breaker state, readiness status, next safe hook, alert count, readiness
+   receipt id, and `doesAuthorizeRemoteExecution: false`.
+
+4. **Boundary semantics** - The data surface is intake/review only. It does not
+   invoke lifecycle hooks, contact a provider, persist state, authorize remote
+   execution, or advance Paperclip terminal state.
+
+Validation:
+
+- `pnpm typecheck` passed.
+- targeted `remote-provider-host-context-bridge.spec.ts` passed: 4 tests.
+
+Boundary compliance:
+
+- Host context bridge is in-process only: yes
+- No real provider request: yes
+- No persistence introduced: yes
+- Does not authorize remote execution: yes
+- Does not expose resolved credential values: yes
+- `authoritative: false` remains on bridge output: yes
+- `terminalStateAdvanced: false` remains on bridge output: yes
+- Dark Factory Journal remains truth source: yes
+
+Next candidate tasks:
+
+- Feed actual host settings context into `remote-provider-host-context-bridge`
+  when Paperclip exposes a stable settings/runtime context envelope.
+- Add durable storage design for previous breaker/readiness evidence before any
+  execution-path gating.
+
 ### 2026-05-03 - Remote provider alpha hardening batch 15
 
 1. **Active context ingestion** - Added a Paperclip bridge plugin
