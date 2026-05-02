@@ -832,3 +832,36 @@ Next candidate tasks:
 - Feed active environment driver config into readiness inputs when host settings context is available.
 - Feed host-collected observations and previous breaker state into readiness inputs.
 - Persist breaker state before using it to gate remote execution decisions.
+
+### 2026-05-02 - Remote provider alpha hardening batch 13
+
+1. **Readiness transition summary** - Extended `remote-provider-readiness` with optional `previousReadiness` input and `readinessTransition` output.
+
+2. **Transition states** - The transition summary reports `new`, `unchanged`, `improved`, `regressed`, or `changed` by comparing previous/current readiness status, next safe hook, and receipt digest.
+
+3. **Settings UI** - Updated the Remote Provider Readiness panel to show transition kind, summary, previous/current status, previous/current hook, and receipt-changed state.
+
+4. **Tests and docs** - Added readiness unit and plugin harness coverage for improved transitions. Updated the remote provider operator runbook and alpha archive.
+
+Validation:
+
+- `pnpm typecheck` passed.
+- `pnpm build` passed.
+- `pnpm test` passed: 11 files passed, 1 gated file skipped, 98 tests passed, 1 skipped.
+
+Boundary compliance:
+
+- Transition summary is advisory only: yes
+- No persistence introduced: yes
+- No real provider request: yes
+- No hook invocation from transition report: yes
+- Does not authorize remote execution: yes
+- `authoritative: false` on transition outputs: yes
+- `terminalStateAdvanced: false` on transition outputs: yes
+- Dark Factory Journal remains truth source: yes
+
+Next candidate tasks:
+
+- Feed active environment driver config into readiness inputs when host settings context is available.
+- Feed host-collected observations and previous breaker/readiness evidence into readiness inputs.
+- Persist breaker state before using it to gate remote execution decisions.
