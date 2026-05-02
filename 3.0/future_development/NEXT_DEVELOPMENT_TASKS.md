@@ -866,6 +866,52 @@ Next candidate tasks:
 - Feed host-collected observations and previous breaker/readiness evidence into readiness inputs.
 - Persist breaker state before using it to gate remote execution decisions.
 
+### 2026-05-03 - Remote provider alpha hardening batch 21
+
+1. **Repeatable live browser smoke runner** - Added a Paperclip bridge plugin
+   command, `pnpm smoke:ui:browser`, that generates the standalone UI smoke
+   preview HTML and drives Chromium directly through Chrome DevTools Protocol.
+
+2. **Scenario validation** - The runner switches through `healthy`,
+   `warning_latency`, `blocked_failures`, and `stale_readiness`, then asserts
+   preview status, next safe hook, breaker state, Journal truth source,
+   `authoritative: false`, and `terminalStateAdvanced: false`.
+
+3. **Playwright package dependency avoided** - The runner locates Chromium via
+   `DARK_FACTORY_UI_SMOKE_CHROMIUM`, Playwright's local browser cache, or
+   common system browser names. It does not require importing the Playwright
+   npm package at runtime.
+
+4. **Docs and archive** - Updated the Paperclip remote provider operator
+   runbook and alpha archive with the repeatable command, output location, and
+   successful live Chromium result.
+
+Validation:
+
+- `pnpm typecheck` passed.
+- `pnpm build` passed.
+- `pnpm test` passed: 16 files passed, 1 gated file skipped, 120 tests passed,
+  1 skipped.
+- `pnpm smoke:ui:browser -- --no-screenshots` passed against local Chromium.
+- V3 bundle validation remains 12/12 pass.
+
+Boundary compliance:
+
+- Browser smoke remains local preview only: yes
+- No real provider request: yes
+- No persistence introduced: yes
+- Does not authorize remote execution: yes
+- Does not expose resolved credential values: yes
+- `authoritative: false` remains visible: yes
+- `terminalStateAdvanced: false` remains visible: yes
+- Dark Factory Journal remains truth source: yes
+
+Next candidate tasks:
+
+- Wire actual SDK/host settings context into the `activeContext` envelope when the host exposes it.
+- Feed host-collected observations and previous breaker/readiness evidence from runtime storage.
+- Persist breaker state before using it to gate remote execution decisions.
+
 ### 2026-05-03 - Remote provider alpha hardening batch 15
 
 1. **Active context ingestion** - Added a Paperclip bridge plugin
