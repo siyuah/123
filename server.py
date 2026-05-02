@@ -16,12 +16,13 @@ import json
 import logging
 import os
 import sys
+import threading
 import time
 import uuid
 from dataclasses import asdict
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Callable, Iterable, Optional
+from typing import Any, Callable, Iterable, Mapping, Optional
 
 from fastapi import FastAPI, Header, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
@@ -56,6 +57,8 @@ Clock = Callable[[], str]
 LOGGER = logging.getLogger("dark_factory_v3.http")
 SENSITIVE_FIELD_MARKERS = ("api_key", "apikey", "authorization", "password", "secret", "token", "x-api-key")
 REDACTED = "***REDACTED***"
+_JOURNAL_LOCKS: dict[str, threading.Lock] = {}
+_JOURNAL_LOCKS_GUARD = threading.Lock()
 
 
 def utc_now() -> str:
@@ -298,6 +301,9 @@ class ServerState:
         self.clock = clock
         self.api_key = api_key
         self.auth_enabled = auth_enabled
+        lock_key = str(journal_path.expanduser().resolve())
+        with _JOURNAL_LOCKS_GUARD:
+            self.journal_lock = _JOURNAL_LOCKS.setdefault(lock_key, threading.Lock())
 
     def plane(self) -> ControlPlane:
         return ControlPlane.from_jsonl_path(self.root, self.journal_path, clock=self.clock)
@@ -588,35 +594,36 @@ def create_app(*, journal_path: Path = DEFAULT_JOURNAL_PATH, root: Path = ROOT, 
         attempt_id = body.attemptId or f"attempt-{uuid.uuid4().hex}"
         route_decision_id = f"rd-{run_id}"
         correlation_id = correlation_id_for(run_id, body.correlationId)
-        plane = state.plane()
-        if plane.get_run(run_id) is not None:
-            return run_view(plane, run_id, trace_id=trace_id)
+        with state.journal_lock:
+            plane = state.plane()
+            if plane.get_run(run_id) is not None:
+                return run_view(plane, run_id, trace_id=trace_id)
 
-        try:
-            plane.request_run(run_id=run_id, correlation_id=correlation_id, trace_id=trace_id)
-            plane.record_route_decision(
-                run_id=run_id,
-                attempt_id=attempt_id,
-                route_decision_id=route_decision_id,
-                workload_class=body.workloadClass,
-                route_policy_ref=body.routePolicyRef or DEFAULT_ROUTE_POLICY_REF,
-                selected_executor_class=body.selectedExecutorClass or DEFAULT_EXECUTOR_BY_WORKLOAD.get(body.workloadClass, "general_executor"),
-                fallback_depth=0,
-                decision_reason=body.decisionReason or f"external_run_requested_by:{body.requestedBy}",
-                correlation_id=correlation_id,
-                trace_id=trace_id,
-            )
-            plane.transition_run(
-                run_id=run_id,
-                old_state="validating",
-                new_state="planning",
-                transition_trigger="validation_passed",
-                correlation_id=correlation_id,
-                trace_id=trace_id,
-            )
-            return run_view(plane, run_id, trace_id=trace_id)
-        except ControlPlaneError as exc:
-            raise http_error(409, "control_plane_rejected", str(exc), trace_id=trace_id) from exc
+            try:
+                plane.request_run(run_id=run_id, correlation_id=correlation_id, trace_id=trace_id)
+                plane.record_route_decision(
+                    run_id=run_id,
+                    attempt_id=attempt_id,
+                    route_decision_id=route_decision_id,
+                    workload_class=body.workloadClass,
+                    route_policy_ref=body.routePolicyRef or DEFAULT_ROUTE_POLICY_REF,
+                    selected_executor_class=body.selectedExecutorClass or DEFAULT_EXECUTOR_BY_WORKLOAD.get(body.workloadClass, "general_executor"),
+                    fallback_depth=0,
+                    decision_reason=body.decisionReason or f"external_run_requested_by:{body.requestedBy}",
+                    correlation_id=correlation_id,
+                    trace_id=trace_id,
+                )
+                plane.transition_run(
+                    run_id=run_id,
+                    old_state="validating",
+                    new_state="planning",
+                    transition_trigger="validation_passed",
+                    correlation_id=correlation_id,
+                    trace_id=trace_id,
+                )
+                return run_view(plane, run_id, trace_id=trace_id)
+            except ControlPlaneError as exc:
+                raise http_error(409, "control_plane_rejected", str(exc), trace_id=trace_id) from exc
 
     @app.get("/external-runs/{run_id}", response_model=RunView)
     @app.get("/api/external-runs/{run_id}", response_model=RunView)
@@ -635,44 +642,45 @@ def create_app(*, journal_path: Path = DEFAULT_JOURNAL_PATH, root: Path = ROOT, 
         trace_id = request_trace_id(request, body.traceId)
         require_protocol_header(x_protocol_release_tag, trace_id=trace_id)
         ensure_protocol(body.protocolReleaseTag, trace_id=trace_id)
-        plane = state.plane()
-        projection = plane.projection()
-        run = projection.get_run(run_id)
-        if run is None:
-            raise http_error(404, "run_not_found", f"run {run_id!r} was not found", trace_id=trace_id)
-        if run.currentState == "planning":
-            plane.transition_run(
-                run_id=run_id,
-                old_state="planning",
-                new_state="executing",
-                transition_trigger="execution_starts",
-                correlation_id=correlation_id_for(run_id, body.correlationId),
-                trace_id=trace_id,
-            )
+        with state.journal_lock:
+            plane = state.plane()
             projection = plane.projection()
-        attempt_id = require_existing_attempt(projection, run_id, body.attemptId, trace_id=trace_id)
-        try:
-            correlation_id = correlation_id_for(run_id, body.correlationId)
-            activate_attempt_if_needed(
-                plane,
-                run_id=run_id,
-                attempt_id=attempt_id,
-                correlation_id=correlation_id,
-                trace_id=trace_id,
-            )
-            plane.park_manual(
-                run_id=run_id,
-                attempt_id=attempt_id,
-                park_id=body.parkId or f"park-{uuid.uuid4().hex}",
-                manual_gate_type=body.manualGateType,
-                execution_suspension_state=body.executionSuspensionState,
-                rehydration_token_id=body.rehydrationTokenId or f"rt-{uuid.uuid4().hex}",
-                correlation_id=correlation_id,
-                trace_id=trace_id,
-            )
-            return run_view(plane, run_id, trace_id=trace_id)
-        except ControlPlaneError as exc:
-            raise http_error(409, "control_plane_rejected", str(exc), trace_id=trace_id) from exc
+            run = projection.get_run(run_id)
+            if run is None:
+                raise http_error(404, "run_not_found", f"run {run_id!r} was not found", trace_id=trace_id)
+            if run.currentState == "planning":
+                plane.transition_run(
+                    run_id=run_id,
+                    old_state="planning",
+                    new_state="executing",
+                    transition_trigger="execution_starts",
+                    correlation_id=correlation_id_for(run_id, body.correlationId),
+                    trace_id=trace_id,
+                )
+                projection = plane.projection()
+            attempt_id = require_existing_attempt(projection, run_id, body.attemptId, trace_id=trace_id)
+            try:
+                correlation_id = correlation_id_for(run_id, body.correlationId)
+                activate_attempt_if_needed(
+                    plane,
+                    run_id=run_id,
+                    attempt_id=attempt_id,
+                    correlation_id=correlation_id,
+                    trace_id=trace_id,
+                )
+                plane.park_manual(
+                    run_id=run_id,
+                    attempt_id=attempt_id,
+                    park_id=body.parkId or f"park-{uuid.uuid4().hex}",
+                    manual_gate_type=body.manualGateType,
+                    execution_suspension_state=body.executionSuspensionState,
+                    rehydration_token_id=body.rehydrationTokenId or f"rt-{uuid.uuid4().hex}",
+                    correlation_id=correlation_id,
+                    trace_id=trace_id,
+                )
+                return run_view(plane, run_id, trace_id=trace_id)
+            except ControlPlaneError as exc:
+                raise http_error(409, "control_plane_rejected", str(exc), trace_id=trace_id) from exc
 
     @app.post("/external-runs/{run_id}:rehydrate", response_model=RunView)
     @app.post("/api/external-runs/{run_id}:rehydrate", response_model=RunView)
@@ -685,24 +693,25 @@ def create_app(*, journal_path: Path = DEFAULT_JOURNAL_PATH, root: Path = ROOT, 
         trace_id = request_trace_id(request, body.traceId)
         require_protocol_header(x_protocol_release_tag, trace_id=trace_id)
         ensure_protocol(body.protocolReleaseTag, trace_id=trace_id)
-        plane = state.plane()
-        projection = plane.projection()
-        run = projection.get_run(run_id)
-        if run is None:
-            raise http_error(404, "run_not_found", f"run {run_id!r} was not found", trace_id=trace_id)
-        previous_attempt_id = require_existing_attempt(projection, run_id, body.previousAttemptId, trace_id=trace_id)
-        try:
-            plane.rehydrate_manual(
-                run_id=run_id,
-                previous_attempt_id=previous_attempt_id,
-                new_attempt_id=body.newAttemptId or f"attempt-{uuid.uuid4().hex}",
-                rehydration_token_id=body.rehydrationTokenId,
-                correlation_id=correlation_id_for(run_id, body.correlationId),
-                trace_id=trace_id,
-            )
-            return run_view(plane, run_id, trace_id=trace_id)
-        except ControlPlaneError as exc:
-            raise http_error(409, "control_plane_rejected", str(exc), trace_id=trace_id) from exc
+        with state.journal_lock:
+            plane = state.plane()
+            projection = plane.projection()
+            run = projection.get_run(run_id)
+            if run is None:
+                raise http_error(404, "run_not_found", f"run {run_id!r} was not found", trace_id=trace_id)
+            previous_attempt_id = require_existing_attempt(projection, run_id, body.previousAttemptId, trace_id=trace_id)
+            try:
+                plane.rehydrate_manual(
+                    run_id=run_id,
+                    previous_attempt_id=previous_attempt_id,
+                    new_attempt_id=body.newAttemptId or f"attempt-{uuid.uuid4().hex}",
+                    rehydration_token_id=body.rehydrationTokenId,
+                    correlation_id=correlation_id_for(run_id, body.correlationId),
+                    trace_id=trace_id,
+                )
+                return run_view(plane, run_id, trace_id=trace_id)
+            except ControlPlaneError as exc:
+                raise http_error(409, "control_plane_rejected", str(exc), trace_id=trace_id) from exc
 
     @app.get("/external-runs/{run_id}/route-decisions", response_model=list[RouteDecisionView])
     @app.get("/api/external-runs/{run_id}/route-decisions", response_model=list[RouteDecisionView])
@@ -785,9 +794,31 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--host", default="127.0.0.1", help="Bind host. Defaults to 127.0.0.1.")
     parser.add_argument("--port", default=DEFAULT_PORT, type=int, help=f"Bind port. Defaults to {DEFAULT_PORT}.")
     parser.add_argument("--journal", default=str(DEFAULT_JOURNAL_PATH), help="JSONL journal file path.")
+    parser.add_argument("--api-key-file", default=None, help="Read the API key from a file. Defaults to DF_API_KEY_FILE when set.")
     parser.add_argument("--no-auth", action="store_true", help="Disable API key authentication for local development only.")
     parser.add_argument("--reload", action="store_true", help="Enable uvicorn reload for local development.")
     return parser
+
+
+def read_api_key_file(path: Path) -> str:
+    key = path.expanduser().read_text(encoding="utf-8").strip()
+    if not key:
+        raise ValueError(f"API key file is empty: {path}")
+    return key
+
+
+def api_key_from_environment(
+    *,
+    api_key_file: str | None = None,
+    env: Mapping[str, str] = os.environ,
+) -> tuple[str, str, bool]:
+    configured_file = api_key_file or env.get("DF_API_KEY_FILE")
+    if configured_file:
+        return read_api_key_file(Path(configured_file)), "file", False
+    configured_key = env.get("DF_API_KEY")
+    if configured_key:
+        return configured_key, "environment", False
+    return str(uuid.uuid4()), "generated", True
 
 
 def main(argv: Iterable[str] | None = None) -> int:
@@ -797,23 +828,23 @@ def main(argv: Iterable[str] | None = None) -> int:
     configure_logging()
     journal_path = Path(args.journal).expanduser().resolve()
     auth_enabled = not args.no_auth
-    api_key = os.environ.get("DF_API_KEY")
+    api_key: str | None = None
+    api_key_source = "disabled"
     generated_key = False
-    if auth_enabled and not api_key:
-        api_key = str(uuid.uuid4())
-        generated_key = True
+    if auth_enabled:
+        api_key, api_key_source, generated_key = api_key_from_environment(api_key_file=args.api_key_file)
     if not auth_enabled:
         print("WARNING: Authentication disabled. Do not use in production.", flush=True)
     elif generated_key:
         print(f"API key authentication enabled. Generated key: {api_key}", flush=True)
     else:
-        print(f"API key authentication enabled. Key: {api_key}", flush=True)
+        print(f"API key authentication enabled. Key source: {api_key_source}", flush=True)
     log_event(
         logging.WARNING if not auth_enabled else logging.INFO,
         "server_startup",
         server_version=SERVER_VERSION,
         port=args.port,
-        auth_mode="disabled" if not auth_enabled else ("api_key_generated" if generated_key else "api_key_env"),
+        auth_mode="disabled" if not auth_enabled else f"api_key_{api_key_source}",
         journal_mode="file-jsonl",
         journal_path=str(journal_path),
     )

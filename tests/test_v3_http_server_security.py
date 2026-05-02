@@ -10,7 +10,7 @@ fcntl = pytest.importorskip("fcntl")
 from fastapi.testclient import TestClient
 
 from dark_factory_v3.journal import JournalLockTimeoutError, _acquire_lock
-from server import PROTOCOL_RELEASE_TAG, create_app, redact_sensitive
+from server import PROTOCOL_RELEASE_TAG, api_key_from_environment, create_app, redact_sensitive
 
 
 def make_client(tmpdir: str, *, api_key: str = "test-api-key") -> TestClient:
@@ -66,6 +66,20 @@ def test_create_run_succeeds_with_api_key():
 
     assert response.status_code == 201
     assert response.json()["runState"] == "planning"
+
+
+def test_api_key_file_takes_precedence_over_inline_environment():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        key_file = Path(tmpdir) / "df_api_key.txt"
+        key_file.write_text("file-secret\n", encoding="utf-8")
+
+        key, source, generated = api_key_from_environment(
+            env={"DF_API_KEY": "inline-secret", "DF_API_KEY_FILE": str(key_file)},
+        )
+
+    assert key == "file-secret"
+    assert source == "file"
+    assert generated is False
 
 
 def test_redacts_sensitive_fields_recursively():

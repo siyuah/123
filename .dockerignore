@@ -6,3 +6,7 @@ __pycache__
 **/__pycache__
 *.pyc
 .dark_factory_http
+backups
+secrets
+caddy_data
+caddy_config

@@ -1,0 +1,21 @@
+https://localhost:9702, https://127.0.0.1:9702 {
+    tls internal
+
+    encode zstd gzip
+
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+        Referrer-Policy "no-referrer"
+    }
+
+    @health path /health /api/health
+    reverse_proxy @health dark-factory:9701
+
+    reverse_proxy dark-factory:9701 {
+        header_up X-Forwarded-Proto https
+        header_up X-Forwarded-Host {host}
+        header_up X-Real-IP {remote_host}
+    }
+}

@@ -8,8 +8,10 @@ WORKDIR /app
 
 COPY requirements-http.txt ./
 RUN pip install --no-cache-dir -r requirements-http.txt
+RUN mkdir -p /app/tools
 
 COPY dark_factory_v3 ./dark_factory_v3
+COPY tools/journal_admin.py ./tools/journal_admin.py
 COPY paperclip_darkfactory_v3_0_event_contracts.yaml ./
 COPY paperclip_darkfactory_v3_0_state_transition_matrix.csv ./
 COPY paperclip_darkfactory_v3_0_external_runs.openapi.yaml ./

@@ -1,0 +1,5 @@
+secrets/
+backups/
+caddy_data/
+caddy_config/
+.dark_factory_http/
