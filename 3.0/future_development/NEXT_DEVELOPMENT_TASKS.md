@@ -1040,6 +1040,48 @@ Next candidate tasks:
 - Add host settings/runtime context adapter once Paperclip exposes a stable
   host context input.
 
+### 2026-05-03 - Remote provider alpha hardening batch 25
+
+1. **Host settings/runtime context adapter** - Added a Paperclip bridge plugin
+   compatibility adapter that maps future host settings and runtime context
+   envelopes into the existing `activeContext` shape.
+
+2. **Supported envelope names** - The adapter accepts settings-style envelopes
+   (`hostSettingsContext`, `settingsContext`, `environmentSettingsContext`) and
+   runtime-style envelopes (`hostRuntimeContext`, `runtimeContext`,
+   `environmentRuntimeContext`).
+
+3. **Bridge compatibility** - The adapter output can be passed directly into
+   `remote-provider-host-context-bridge`, preserving readiness, breaker,
+   observation, Journal cursor, and credential diagnostic behavior.
+
+4. **Boundary semantics** - The adapter does not call lifecycle hooks, contact a
+   provider, resolve credential values, persist state, authorize remote
+   execution, or advance terminal state.
+
+Validation:
+
+- `pnpm typecheck` passed.
+- targeted `remote-provider-host-context-adapter.spec.ts` passed: 4 tests.
+
+Boundary compliance:
+
+- Adapter is in-process compatibility glue only: yes
+- No SDK/core/server/ui changes: yes
+- No database write path introduced: yes
+- No real provider request: yes
+- Does not authorize remote execution: yes
+- Does not expose resolved credential values: yes
+- `authoritative: false` remains on adapter output: yes
+- `terminalStateAdvanced: false` remains on adapter output: yes
+- Dark Factory Journal remains truth source: yes
+
+Next candidate tasks:
+
+- Add end-to-end adapter -> bridge -> evidence replay smoke coverage.
+- Decide whether/when previous evidence SQL contract should become an active
+  migration.
+
 ### 2026-05-03 - Remote provider alpha hardening batch 15
 
 1. **Active context ingestion** - Added a Paperclip bridge plugin
