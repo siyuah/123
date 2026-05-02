@@ -865,3 +865,45 @@ Next candidate tasks:
 - Feed active environment driver config into readiness inputs when host settings context is available.
 - Feed host-collected observations and previous breaker/readiness evidence into readiness inputs.
 - Persist breaker state before using it to gate remote execution decisions.
+
+### 2026-05-02 - Remote provider alpha hardening batch 14
+
+1. **Operator preflight plan** - Extended `remote-provider-readiness` with a
+   `preflightPlan` for `onEnvironmentValidateConfig`, `onEnvironmentProbe`,
+   `onEnvironmentAcquireLease`, and `onEnvironmentExecute`.
+
+2. **Preflight statuses** - Each preflight step reports `allowed`,
+   `review_required`, or `blocked`, plus a stable step code, operator message,
+   and blocking readiness signal/checklist codes.
+
+3. **Settings UI** - Updated the Paperclip bridge settings panel to render the
+   preflight plan alongside readiness receipt, transition, checklist, and
+   signals.
+
+4. **Tests and docs** - Added readiness unit and plugin harness coverage for
+   ready, blocked, warning, and deterministic preflight-plan behavior. Updated
+   the remote provider operator runbook and alpha archive.
+
+Validation:
+
+- `pnpm typecheck` passed.
+- `pnpm build` passed.
+- `pnpm test` passed: 11 files passed, 1 gated file skipped, 98 tests passed, 1 skipped.
+
+Boundary compliance:
+
+- Preflight plan is advisory only: yes
+- No real provider request: yes
+- No hook invocation from readiness report: yes
+- No execution-path gating introduced: yes
+- No persistence introduced: yes
+- Does not authorize remote execution: yes
+- `authoritative: false` on preflight outputs: yes
+- `terminalStateAdvanced: false` on preflight outputs: yes
+- Dark Factory Journal remains truth source: yes
+
+Next candidate tasks:
+
+- Feed active environment driver config into readiness inputs when host settings context is available.
+- Feed host-collected observations and previous breaker/readiness evidence into readiness inputs.
+- Persist breaker state before using it to gate remote execution decisions.
