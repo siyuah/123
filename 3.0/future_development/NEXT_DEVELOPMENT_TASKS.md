@@ -679,3 +679,28 @@ Next candidate tasks:
 - Persist and feed previous breaker state before wiring evaluator into remote execution decisions.
 - Surface breaker state in the settings page next to observability.
 - Add remediation hints for credential diagnostic codes.
+
+### 2026-05-02 - Remote provider alpha hardening batch 8
+
+1. **Breaker data surface** - Exposed `remote-breaker-evaluation` in the Paperclip bridge plugin. The data key accepts sampled observations, optional previous breaker state, evaluated-at timestamp, and policy thresholds.
+
+2. **Settings UI** - Added a Remote Circuit Breaker panel to the bridge settings page, showing breaker state, previous state, consecutive failures, half-open successes, open reason, opened-at/cooldown-until timestamps, runtime impact, and operator action.
+
+3. **Honest empty-state behavior** - Empty sampled input evaluates to closed/monitor as an explicit local default, not a claim that a real remote provider was checked.
+
+4. **Tests and docs** - Added plugin harness tests for default closed evaluation and sampled-failure open evaluation. Updated the operator runbook and remote provider alpha archive.
+
+Boundary compliance:
+
+- No real provider request from breaker data/UI surface: yes
+- No execution-path blocking introduced yet: yes
+- No persistence or second control plane added: yes
+- `authoritative: false` on breaker outputs: yes
+- `terminalStateAdvanced: false` on breaker outputs: yes
+- Dark Factory Journal remains truth source: yes
+
+Next candidate tasks:
+
+- Feed host-collected observations and previous breaker state into `remote-breaker-evaluation`.
+- Persist breaker state before using it to gate remote execution decisions.
+- Add remediation hints for credential diagnostic codes.
