@@ -704,3 +704,33 @@ Next candidate tasks:
 - Feed host-collected observations and previous breaker state into `remote-breaker-evaluation`.
 - Persist breaker state before using it to gate remote execution decisions.
 - Add remediation hints for credential diagnostic codes.
+
+### 2026-05-02 - Remote provider alpha hardening batch 9
+
+1. **Credential remediation hints** - Added structured `remediation` hints to every `remote-credential-diagnostics` diagnostic entry in the Paperclip bridge plugin.
+
+2. **Settings UI guidance** - Updated the bridge settings page to render operator-facing remediation hints below each credential diagnostic while still hiding resolved credential values.
+
+3. **Diagnostic coverage** - Covered config-not-supplied, missing credential, unsupported secret reference, unresolved env reference, and ready credential states.
+
+4. **Tests and docs** - Extended plugin harness assertions for remediation hints. Updated the remote provider operator runbook and alpha archive.
+
+Validation:
+
+- `pnpm typecheck` passed.
+- `pnpm build` passed.
+- `pnpm test` passed: 10 files passed, 1 gated file skipped, 90 tests passed, 1 skipped.
+
+Boundary compliance:
+
+- No real provider request from remediation hints: yes
+- No resolved credential values returned or rendered: yes
+- `authoritative: false` on diagnostics outputs: yes
+- `terminalStateAdvanced: false` on diagnostics outputs: yes
+- Dark Factory Journal remains truth source: yes
+
+Next candidate tasks:
+
+- Feed active environment driver config into `remote-credential-diagnostics` when host settings context is available.
+- Replace the alpha `env:` resolver with a Paperclip host secret resolver once available.
+- Persist breaker state before using it to gate remote execution decisions.
