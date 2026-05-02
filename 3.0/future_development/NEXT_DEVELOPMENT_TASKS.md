@@ -505,3 +505,30 @@ Next candidate tasks:
 - Remote provider error mapping fixtures for auth, quota, transient provider, timeout, and invalid JSON cases.
 - Host secret resolver integration for `apiKeySecretRef`.
 - Metrics/alerts and circuit breaker design before broader production exposure.
+
+### 2026-05-02 - Remote provider alpha hardening batch 1
+
+1. **Remote provider error mapping** - Added runtime failure classification for remote provider errors. 401/403 map to `runtime_blocked`, 429 maps to `quota_exceeded`, 5xx/timeout/unreachable map to `transient_provider`, and invalid JSON maps to `provider_unavailable`.
+
+2. **Execution failure metadata** - Remote execution failures now return non-authoritative metadata containing `errorCode`, `errorStatus`, `failureClass`, `retryable`, `runtimeImpact`, and `terminalStateAdvanced: false`.
+
+3. **Gated remote integration harness** - Added `remote-gated-integration.spec.ts`, skipped by default. It only runs when `DARK_FACTORY_REMOTE_INTEGRATION=1`, `DARK_FACTORY_REMOTE_ENDPOINT`, and `DARK_FACTORY_REMOTE_API_KEY` are explicitly provided by an operator.
+
+4. **Validation** - Bridge plugin validation passed: `pnpm typecheck`, `pnpm build`, and `pnpm test` (8 files passed, 1 gated file skipped, 69 passed, 1 skipped).
+
+5. **Archive updated** - Updated `docs/dark-factory/DARK_FACTORY_REMOTE_PROVIDER_ALPHA_ARCHIVE_2026-05-02.md` with hardening batch 1 details and the remaining next tasks.
+
+Boundary compliance:
+
+- No default real-provider network call: yes
+- Gated test requires explicit operator opt-in: yes
+- No real secrets committed: yes
+- Dark Factory Journal remains truth source: yes
+- Paperclip terminal state remains unchanged: yes
+
+Next candidate tasks:
+
+- Host secret resolver integration for `apiKeySecretRef`.
+- Remote provider operator runbook.
+- Metrics/alerts for remote latency, error rate, retry count, and cursor lag.
+- Circuit breaker design and implementation.
