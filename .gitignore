@@ -3,3 +3,8 @@ backups/
 caddy_data/
 caddy_config/
 .dark_factory_http/
+
+# Journal data (runtime, not version controlled)
+journal_data/*.jsonl
+journal_data/*.jsonl.bak
+journal_data/backups/
