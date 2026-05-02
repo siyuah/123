@@ -367,6 +367,7 @@ informativeOutOfBundle:
 - 3.0/future_development/DEVELOPMENT_HANDOFF_2026-04-27.md
 - 3.0/future_development/AI_EXECUTION_HANDOFF_2026-04-28.md
 - 3.0/future_development/DARK_FACTORY_BRIDGE_DEVELOPMENT_ARCHIVE_2026-05-02.md
+- docs/phoenix_v48_inspired_optimization_plan.md
 - QUICKSTART.md
 - journal_data/.gitkeep
 selfHashMode: excluded-from-own-digest
