@@ -1050,6 +1050,51 @@ Next candidate tasks:
 - Wire actual SDK/host settings context into the `activeContext` envelope when the host exposes it.
 - Feed host-collected observations and previous breaker/readiness evidence from runtime storage.
 
+### 2026-05-03 - Remote provider alpha hardening batch 19
+
+1. **Settings UI preview panel** - Wired the `remote-provider-ui-smoke-preview`
+   data surface into the Dark Factory Bridge settings page with a scenario
+   selector for `healthy`, `warning_latency`, `blocked_failures`, and
+   `stale_readiness`.
+
+2. **Displayed preview fields** - The panel renders preview status, host
+   context id, readiness status, next safe hook, breaker state, sampled
+   observation count, max latency, cursor lag, alert count, credential source,
+   truth source, authoritative flag, terminal-state flag, and stable UI badges.
+
+3. **Boundary-preserving UI** - The panel is still local preview only. It does
+   not contact a real provider, does not persist state, does not authorize
+   remote execution, and does not advance Paperclip terminal state.
+
+4. **Tests and docs** - Added `ui-smoke-preview-panel.spec.ts` to lock the
+   settings page wiring to the preview data key, scenario selector, and
+   boundary fields. Updated the operator runbook and alpha archive.
+
+Validation:
+
+- `pnpm typecheck` passed.
+- `pnpm build` passed.
+- `pnpm test` passed: 15 files passed, 1 gated file skipped, 117 tests passed, 1 skipped.
+- V3 bundle validation remains 12/12 pass.
+
+Boundary compliance:
+
+- Settings preview panel is local UI/data preview only: yes
+- No real provider request: yes
+- No persistence introduced: yes
+- No execution-path gating introduced: yes
+- Does not authorize remote execution: yes
+- Does not expose resolved credential values: yes
+- `authoritative: false` surfaced in the panel: yes
+- `terminalStateAdvanced: false` surfaced in the panel: yes
+- Dark Factory Journal remains truth source: yes
+
+Next candidate tasks:
+
+- Run browser-level internal UI smoke against the settings-page preview panel.
+- Wire actual SDK/host settings context into the `activeContext` envelope when the host exposes it.
+- Feed host-collected observations and previous breaker/readiness evidence from runtime storage.
+
 ### 2026-05-02 - Remote provider alpha hardening batch 14
 
 1. **Operator preflight plan** - Extended `remote-provider-readiness` with a
