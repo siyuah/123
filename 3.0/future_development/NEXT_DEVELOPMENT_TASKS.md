@@ -1095,6 +1095,54 @@ Next candidate tasks:
 - Wire actual SDK/host settings context into the `activeContext` envelope when the host exposes it.
 - Feed host-collected observations and previous breaker/readiness evidence from runtime storage.
 
+### 2026-05-03 - Remote provider alpha hardening batch 20
+
+1. **Standalone browser smoke harness** - Added a Paperclip bridge plugin
+   generator that builds a self-contained HTML page from
+   `buildAllUiSmokePreviews()`. The page exposes the same four preview
+   scenarios as the settings panel and can be opened by Playwright or a human
+   operator without a full Paperclip host.
+
+2. **Browser-visible boundary fields** - The generated page renders preview
+   status, readiness, next safe hook, breaker state, sampled observation count,
+   max latency, cursor lag, alert count, credential source, truth source,
+   authoritative flag, terminal-state flag, and UI badges.
+
+3. **Tests** - Added `ui-smoke-preview-browser-harness.spec.ts` covering
+   standalone HTML generation, scenario payloads, boundary fields,
+   deterministic output, and resolved credential value redaction.
+
+4. **Live browser attempt** - A Playwright CLI live run was attempted against
+   the generated HTML. The WSL environment lacked Google Chrome for the CLI
+   default channel, and `install-browser chrome` timed out. The harness and
+   automated validation are committed; live browser smoke should be rerun once
+   Chrome/Chromium is available in the operator environment.
+
+Validation:
+
+- `pnpm typecheck` passed.
+- `pnpm build` passed.
+- `pnpm test` passed: 16 files passed, 1 gated file skipped, 119 tests passed, 1 skipped.
+- V3 bundle validation remains 12/12 pass.
+
+Boundary compliance:
+
+- Browser harness is local preview only: yes
+- No real provider request: yes
+- No persistence introduced: yes
+- No execution-path gating introduced: yes
+- Does not authorize remote execution: yes
+- Does not expose resolved credential values: yes
+- `authoritative: false` remains visible: yes
+- `terminalStateAdvanced: false` remains visible: yes
+- Dark Factory Journal remains truth source: yes
+
+Next candidate tasks:
+
+- Rerun live browser-level UI smoke after Chrome/Chromium is available.
+- Wire actual SDK/host settings context into the `activeContext` envelope when the host exposes it.
+- Feed host-collected observations and previous breaker/readiness evidence from runtime storage.
+
 ### 2026-05-02 - Remote provider alpha hardening batch 14
 
 1. **Operator preflight plan** - Extended `remote-provider-readiness` with a
