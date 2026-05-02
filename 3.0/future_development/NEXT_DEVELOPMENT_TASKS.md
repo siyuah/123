@@ -799,3 +799,36 @@ Next candidate tasks:
 - Feed active environment driver config into readiness inputs when host settings context is available.
 - Feed host-collected observations and previous breaker state into readiness inputs.
 - Persist breaker state before using it to gate remote execution decisions.
+
+### 2026-05-02 - Remote provider alpha hardening batch 12
+
+1. **Readiness receipt** - Extended `remote-provider-readiness` with deterministic `readinessReceipt` output using `df-readiness-{digest}` ids.
+
+2. **Evidence digest** - Added a compact FNV-1a evidence digest over checked-at time, readiness status, next safe hook, credential status, breaker state, sampled observation count, alert count, signal codes, and checklist statuses.
+
+3. **Non-authorization semantics** - The receipt explicitly carries `doesAuthorizeRemoteExecution: false`; it records readiness evidence but does not grant permission or invoke any lifecycle hook.
+
+4. **Settings UI + tests** - Updated the Remote Provider Readiness panel to render receipt id, digest, and authorization flag. Extended readiness unit tests and plugin harness tests.
+
+Validation:
+
+- `pnpm typecheck` passed.
+- `pnpm build` passed.
+- `pnpm test` passed: 11 files passed, 1 gated file skipped, 96 tests passed, 1 skipped.
+
+Boundary compliance:
+
+- Readiness receipt is evidence only: yes
+- Does not authorize remote execution: yes
+- No real provider request: yes
+- No execution-path blocking introduced: yes
+- No breaker state persistence introduced: yes
+- `authoritative: false` on readiness receipt outputs: yes
+- `terminalStateAdvanced: false` on readiness receipt outputs: yes
+- Dark Factory Journal remains truth source: yes
+
+Next candidate tasks:
+
+- Feed active environment driver config into readiness inputs when host settings context is available.
+- Feed host-collected observations and previous breaker state into readiness inputs.
+- Persist breaker state before using it to gate remote execution decisions.
