@@ -957,6 +957,52 @@ Next candidate tasks:
 - Feed host-collected observations and previous breaker/readiness evidence from runtime storage.
 - Persist breaker state before using it to gate remote execution decisions.
 
+### 2026-05-03 - Remote provider alpha hardening batch 17
+
+1. **Host observation fixtures** - Added deterministic Paperclip bridge plugin
+   fixtures that produce host-style active context envelopes for `healthy`,
+   `warning_latency`, `blocked_failures`, and `stale_readiness` scenarios.
+
+2. **Replay helper** - Added a replay helper that feeds fixture envelopes
+   through `buildRemoteProviderActiveContext`, producing active context output
+   that can drive readiness reports, preflight plans, breaker behavior, and UI
+   state previews.
+
+3. **Scenario coverage** - The fixtures include environment config with secret
+   reference only, expected Journal sequence number, sampled observations,
+   previous breaker evidence, previous readiness evidence, alert thresholds,
+   and circuit breaker policy.
+
+4. **Tests and docs** - Added
+   `remote-provider-host-observation-fixtures.spec.ts` covering deterministic
+   fixture creation, healthy readiness, warning latency, blocked failures/open
+   breaker behavior, stale readiness/cursor lag transition, and direct override
+   precedence. Updated the operator runbook and alpha archive.
+
+Validation:
+
+- `pnpm typecheck` passed.
+- `pnpm build` passed.
+- `pnpm test` passed: 13 files passed, 1 gated file skipped, 109 tests passed, 1 skipped.
+
+Boundary compliance:
+
+- Fixture replay is in-process only: yes
+- No real provider request: yes
+- No persistence introduced: yes
+- No execution-path gating introduced: yes
+- Does not authorize remote execution: yes
+- Does not expose resolved credential values: yes
+- `authoritative: false` on fixture/replay outputs: yes
+- `terminalStateAdvanced: false` on fixture/replay outputs: yes
+- Dark Factory Journal remains truth source: yes
+
+Next candidate tasks:
+
+- Add UI smoke preview harness using host observation fixtures.
+- Wire actual SDK/host settings context into the `activeContext` envelope when the host exposes it.
+- Feed host-collected observations and previous breaker/readiness evidence from runtime storage.
+
 ### 2026-05-02 - Remote provider alpha hardening batch 14
 
 1. **Operator preflight plan** - Extended `remote-provider-readiness` with a
