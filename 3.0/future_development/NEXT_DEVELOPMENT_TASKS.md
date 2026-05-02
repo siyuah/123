@@ -655,3 +655,27 @@ Next candidate tasks:
 - Feed active environment driver config into `remote-credential-diagnostics` when host settings context is available.
 - Add remediation hints for each credential diagnostic code.
 - Design and implement the real circuit breaker state machine.
+
+### 2026-05-02 - Remote provider alpha hardening batch 7
+
+1. **Circuit breaker evaluator** - Added `remote-provider-circuit-breaker.ts` in the Paperclip bridge plugin. It evaluates sampled remote provider observations into deterministic `closed`, `open`, and `half_open` breaker states.
+
+2. **State transitions** - Implemented consecutive failure threshold -> open, cooldown expiry -> half-open, half-open success threshold -> closed, and half-open failure -> open.
+
+3. **Runtime impact** - Breaker output includes `runtimeImpact` with Paperclip terminal state unchanged. Open maps to blocked/critical, half-open maps to degraded/warning, and closed maps to available/info.
+
+4. **Tests and docs** - Added `remote-provider-circuit-breaker.spec.ts` covering success, threshold open, cooldown half-open, recovery close, half-open failure reopen, and deterministic output. Updated the operator runbook and remote provider alpha archive.
+
+Boundary compliance:
+
+- No real provider request from breaker evaluation: yes
+- No persistence or second control plane added: yes
+- `authoritative: false` on breaker outputs: yes
+- `terminalStateAdvanced: false` on breaker outputs: yes
+- Dark Factory Journal remains truth source: yes
+
+Next candidate tasks:
+
+- Persist and feed previous breaker state before wiring evaluator into remote execution decisions.
+- Surface breaker state in the settings page next to observability.
+- Add remediation hints for credential diagnostic codes.
