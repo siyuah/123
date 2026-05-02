@@ -559,3 +559,26 @@ Next candidate tasks:
 - Add missing-resolved-env diagnostic before remote probe/acquire/execute.
 - Add metrics/alerts for remote provider operations.
 - Design and implement a real circuit breaker.
+
+### 2026-05-02 - Remote provider alpha hardening batch 3
+
+1. **Early credential diagnostics** - Added local diagnostics for remote credential configuration before provider network calls: missing credential, unsupported secret-ref scheme, and unresolved env ref.
+
+2. **Lifecycle behavior** - `onEnvironmentValidateConfig` now returns clear validation errors. If validation is skipped, probe and execute still fail locally with non-authoritative metadata, while acquire/resume throw before remote run creation or lookup.
+
+3. **Operator docs** - Updated `DARK_FACTORY_REMOTE_PROVIDER_OPERATOR_RUNBOOK.md` with diagnostic codes, messages, and failure triage guidance. Updated the remote provider alpha archive with batch 3 details.
+
+4. **Validation** - Bridge plugin validation passed: `pnpm typecheck`, `pnpm build`, and `pnpm test` (8 files passed, 1 gated file skipped, 73 passed, 1 skipped).
+
+Boundary compliance:
+
+- No real provider request for local credential misconfiguration: yes
+- No resolved secret values in diagnostics: yes
+- Paperclip terminal state unchanged: yes
+- Dark Factory Journal remains truth source: yes
+
+Next candidate tasks:
+
+- Add remote credential diagnostic display to the bridge settings UI.
+- Add metrics/alerts for remote provider latency, retries, and failure classes.
+- Design and implement the real circuit breaker state machine.
