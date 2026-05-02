@@ -449,3 +449,31 @@ Current branch state:
 - `fork/master`: not synced with `master`; normal push rejected as non-fast-forward
 
 Project status: **All development tasks complete. Ready for contribution decision.**
+
+### 2026-05-02 - Internal preview deployment validated
+
+1. **MVP hardening Batch 1** - API key auth, journal file locking, structured logging, HTTP retry with backoff, Docker packaging, security tests.
+
+2. **MVP hardening Batch 2** - TLS reverse proxy (Caddy), Docker secrets, secret management docs, journal admin tool (backup/restore/retain), load and concurrency tests.
+
+3. **Production readiness updated** - Assessment upgraded from NO to CONDITIONAL YES for MVP internal preview.
+
+4. **Internal preview deployed and validated**:
+   - Dark Factory HTTP server started on localhost:9701
+   - createRun returned valid runId with journal persistence
+   - API key authentication working (401 on missing/wrong key)
+   - Journal persisted to JSONL file (4.8KB, entries validated)
+   - journal_admin.py tools (backup/retain) working
+   - Bridge plugin 58/58 tests pass including real HTTP integration
+   - QUICKSTART.md created with one-click startup guide
+
+Final project metrics:
+- paperclip_upstream: 15 commits on fork-master-product
+- 123 repo: synced with origin/main after deployment commits
+- Bridge plugin: 58 tests, 7 test files, ~2,800 LOC source + tests
+- Dark Factory server: ~850 LOC Python
+- Design docs + assessment: ~1,200 LOC
+- Total project: ~7,000+ LOC across both repos
+
+**Status: MVP INTERNAL PREVIEW READY. CONDITIONAL YES for deployment.**
+
