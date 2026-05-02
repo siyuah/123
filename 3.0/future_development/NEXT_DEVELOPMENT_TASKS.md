@@ -477,3 +477,31 @@ Final project metrics:
 
 **Status: MVP INTERNAL PREVIEW READY. CONDITIONAL YES for deployment.**
 
+### 2026-05-02 - Remote provider alpha started
+
+1. **Remote mode added to bridge plugin** - Paperclip Dark Factory bridge now accepts `mode: "remote"` as the product-facing real-provider alpha mode. It reuses the hardened HTTP adapter path while keeping live-local `mode: "http"` for internal preview compatibility.
+
+2. **Remote metadata boundary** - Remote outputs now preserve distinct metadata: `runtimeMode: "remote"`, `df-remote-lease-*` provider lease ids, `df-remote-cursor-*` cursor ids, `remote:*` receipt idempotency keys, and `dark-factory-remote` source journal fallback.
+
+3. **Remote provider contract tests** - Added in-process fetch-mocked remote provider alpha tests covering validate, probe, acquire, execute, resume, API-key header behavior, log redaction, non-authoritative outputs, and `terminalStateAdvanced: false`.
+
+4. **Validation** - Bridge plugin validation passed: `pnpm typecheck`, `pnpm build`, and `pnpm test` (8 test files, 60 tests).
+
+5. **Archive** - Created `docs/dark-factory/DARK_FACTORY_REMOTE_PROVIDER_ALPHA_ARCHIVE_2026-05-02.md` in the Paperclip fork.
+
+Boundary compliance:
+
+- Dark Factory Journal remains truth source: yes
+- `authoritative: false` on projection-boundary outputs: yes
+- `terminalStateAdvanced: false` on bridge outputs: yes
+- No Paperclip Task/Issue main model changes: yes
+- No Plugin SDK changes: yes
+- No real external Dark Factory endpoint contacted by the new tests: yes
+- No real secrets read/printed/committed: yes
+
+Next candidate tasks:
+
+- Gated remote integration test using operator-provided endpoint and host-resolved credential reference.
+- Remote provider error mapping fixtures for auth, quota, transient provider, timeout, and invalid JSON cases.
+- Host secret resolver integration for `apiKeySecretRef`.
+- Metrics/alerts and circuit breaker design before broader production exposure.

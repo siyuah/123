@@ -148,8 +148,8 @@ files:
   normativity: release-gate-tool
 - path: .gitignore
   role: internal preview local secret and runtime artifact ignore rules
-  sha256: e5afbe6f0f428be28b77a69325cacc022d7d1c73caafe3d6f1fc924fff19e77b
-  bytes: 64
+  sha256: 10d9b73ed71fd02ec3009415aba3ecf6626de33801818c3fce03f4bc5a79615f
+  bytes: 182
   normativity: runtime-operator-helper
 - path: .github/workflows/v3-bundle-validate.yml
   sha256: 1713723b9a78b03bc58cb3d180998cf18909d59049f0920a463e26bc44181a07
@@ -367,6 +367,8 @@ informativeOutOfBundle:
 - 3.0/future_development/DEVELOPMENT_HANDOFF_2026-04-27.md
 - 3.0/future_development/AI_EXECUTION_HANDOFF_2026-04-28.md
 - 3.0/future_development/DARK_FACTORY_BRIDGE_DEVELOPMENT_ARCHIVE_2026-05-02.md
+- QUICKSTART.md
+- journal_data/.gitkeep
 selfHashMode: excluded-from-own-digest
 excludedFromDigest:
 - paperclip_darkfactory_v3_0_bundle_manifest.yaml
