@@ -866,6 +866,56 @@ Next candidate tasks:
 - Feed host-collected observations and previous breaker/readiness evidence into readiness inputs.
 - Persist breaker state before using it to gate remote execution decisions.
 
+### 2026-05-03 - Remote provider alpha hardening batch 26
+
+1. **Pre-execution dry-run guard** - Added
+   `remote-provider-dry-run-guard` to the Paperclip bridge plugin. The guard
+   composes host settings/runtime context adapter output, host active context
+   bridge output, readiness report, preflight plan, and a deterministic guard
+   receipt.
+
+2. **Advisory decision surface** - The guard evaluates the intended lifecycle
+   `targetHook` and returns `allowed`, `review_required`, or `blocked`, plus
+   blocking signal/checklist codes and an operator summary.
+
+3. **Safety boundaries** - The guard is dry-run only. It does not contact a
+   real provider, does not invoke lifecycle hooks, does not persist state, and
+   does not authorize remote execution. It keeps `authoritative: false`,
+   `doesAuthorizeRemoteExecution: false`, `shouldContactRemoteProvider: false`,
+   and `terminalStateAdvanced: false`.
+
+4. **Tests and docs** - Added `remote-provider-dry-run-guard.spec.ts` covering
+   ready/allowed, settings-only review, breaker-blocked execute, deterministic
+   receipts, plugin data access, and resolved credential redaction. Updated the
+   remote provider operator runbook and alpha archive.
+
+Validation:
+
+- `pnpm typecheck` passed.
+- `pnpm build` passed.
+- `pnpm test` passed: 21 files passed, 1 gated file skipped, 141 tests passed, 1 skipped.
+- V3 bundle validation remains 12/12 pass.
+
+Boundary compliance:
+
+- Dry-run guard is advisory only: yes
+- No real provider request from the guard: yes
+- No lifecycle hook invocation from the guard: yes
+- No persistence introduced: yes
+- Does not authorize remote execution: yes
+- Does not expose resolved credential values: yes
+- `authoritative: false` on guard outputs: yes
+- `terminalStateAdvanced: false` on guard outputs: yes
+- Dark Factory Journal remains truth source: yes
+
+Next candidate tasks:
+
+- Surface `remote-provider-dry-run-guard` in the internal operator UI panel.
+- Add a runbook-driven manual dry-run checklist for the first real provider
+  gated attempt.
+- Keep real remote execution behind explicit operator gating until host secret
+  resolver and evidence persistence are available.
+
 ### 2026-05-03 - Remote provider alpha hardening batch 21
 
 1. **Repeatable live browser smoke runner** - Added a Paperclip bridge plugin
