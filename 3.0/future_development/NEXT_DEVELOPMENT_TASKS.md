@@ -734,3 +734,35 @@ Next candidate tasks:
 - Feed active environment driver config into `remote-credential-diagnostics` when host settings context is available.
 - Replace the alpha `env:` resolver with a Paperclip host secret resolver once available.
 - Persist breaker state before using it to gate remote execution decisions.
+
+### 2026-05-02 - Remote provider alpha hardening batch 10
+
+1. **Readiness report** - Added `remote-provider-readiness` in the Paperclip bridge plugin. It aggregates credential diagnostics, observability snapshots, alert candidates, and circuit breaker evaluation into an advisory readiness status.
+
+2. **Readiness states** - The report returns `ready`, `needs_attention`, or `blocked`, plus summary text, recommended action, credential status, breaker state, sampled observation count, alert count, and per-signal remediation hints.
+
+3. **Settings UI** - Added a Remote Provider Readiness panel to the bridge settings page so operators can see whether the remote alpha path is ready for a controlled probe, needs attention, or is blocked.
+
+4. **Tests and docs** - Added pure readiness tests and plugin harness coverage. Updated the remote provider operator runbook and alpha archive.
+
+Validation:
+
+- `pnpm typecheck` passed.
+- `pnpm build` passed.
+- `pnpm test` passed: 11 files passed, 1 gated file skipped, 96 tests passed, 1 skipped.
+
+Boundary compliance:
+
+- Readiness report is advisory only: yes
+- No real provider request from readiness report: yes
+- No execution-path blocking introduced yet: yes
+- No breaker state persistence introduced yet: yes
+- `authoritative: false` on readiness outputs: yes
+- `terminalStateAdvanced: false` on readiness outputs: yes
+- Dark Factory Journal remains truth source: yes
+
+Next candidate tasks:
+
+- Feed active environment driver config into `remote-provider-readiness` when host settings context is available.
+- Feed host-collected observations and previous breaker state into readiness inputs.
+- Persist breaker state before using it to gate remote execution decisions.
