@@ -582,3 +582,27 @@ Next candidate tasks:
 - Add remote credential diagnostic display to the bridge settings UI.
 - Add metrics/alerts for remote provider latency, retries, and failure classes.
 - Design and implement the real circuit breaker state machine.
+
+### 2026-05-02 - Remote provider alpha hardening batch 4
+
+1. **Observability helper** - Added `remote-provider-observability.ts` in the Paperclip bridge plugin. It consumes in-process remote provider observations and builds deterministic metrics snapshots without contacting a provider.
+
+2. **Metrics covered** - Snapshot includes request count, success/failure count, retry count, retryable failure count, average/max latency, failure-class counts, latest error code, latest Journal cursor, latest sequence number, and optional cursor lag.
+
+3. **Alert candidates** - Added local alert-candidate generation for high remote provider error rate, high latency, and Journal cursor lag. Alerts remain projection metadata only and do not advance Paperclip terminal state.
+
+4. **Tests and docs** - Added `remote-provider-observability.spec.ts` covering successful snapshots, failure summaries, alert generation, empty input, and deterministic output. Updated the remote provider operator runbook and alpha archive.
+
+Boundary compliance:
+
+- No real provider request for observability calculations: yes
+- No secrets read, stored, or printed: yes
+- `authoritative: false` on all observability outputs: yes
+- `terminalStateAdvanced: false` on all observability outputs: yes
+- Dark Factory Journal remains truth source: yes
+
+Next candidate tasks:
+
+- Wire observability snapshot into an operator-facing UI or metrics exporter.
+- Add remote credential diagnostic display to the bridge settings UI.
+- Design and implement the real circuit breaker state machine.
