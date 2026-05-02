@@ -955,6 +955,49 @@ Next candidate tasks:
 - Add durable storage design for previous breaker/readiness evidence before any
   execution-path gating.
 
+### 2026-05-03 - Remote provider alpha hardening batch 23
+
+1. **Previous evidence store contract** - Added a Paperclip bridge plugin
+   contract helper that converts `remote-provider-host-context-bridge` output
+   into a deterministic previous evidence record for breaker and readiness
+   continuity.
+
+2. **Contract-only storage boundary** - The evidence record is explicitly
+   `contract_only_not_persisted`. It defines what could later be stored in the
+   plugin namespace DB, but does not add a migration, write DB rows, or become a
+   second control plane.
+
+3. **Fixture-backed replay** - Added replay helper that turns the evidence
+   record back into `previousBreaker` and `previousReadiness` seeds for the next
+   active context. Tests verify blocked -> healthy replay produces an
+   `improved` readiness transition.
+
+4. **Boundary semantics** - Evidence records do not store resolved credential
+   values, do not authorize remote execution, and do not advance terminal state.
+
+Validation:
+
+- `pnpm typecheck` passed.
+- targeted `remote-provider-evidence-store-contract.spec.ts` passed: 4 tests.
+
+Boundary compliance:
+
+- Evidence contract is in-process only: yes
+- No database migration or write path introduced: yes
+- No real provider request: yes
+- Does not authorize remote execution: yes
+- Does not expose resolved credential values: yes
+- `authoritative: false` remains on evidence output: yes
+- `terminalStateAdvanced: false` remains on evidence output: yes
+- Dark Factory Journal remains truth source: yes
+
+Next candidate tasks:
+
+- Design actual plugin namespace DB table shape for previous evidence records
+  before implementing persistence.
+- Add host settings/runtime context adapter once Paperclip exposes stable host
+  context input.
+
 ### 2026-05-03 - Remote provider alpha hardening batch 15
 
 1. **Active context ingestion** - Added a Paperclip bridge plugin
