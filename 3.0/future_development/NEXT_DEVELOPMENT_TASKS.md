@@ -1003,6 +1003,53 @@ Next candidate tasks:
 - Wire actual SDK/host settings context into the `activeContext` envelope when the host exposes it.
 - Feed host-collected observations and previous breaker/readiness evidence from runtime storage.
 
+### 2026-05-03 - Remote provider alpha hardening batch 18
+
+1. **UI smoke preview harness** - Added a deterministic Paperclip bridge plugin
+   module that composes host observation fixtures, active context replay,
+   credential diagnostics, observability snapshot, circuit breaker evaluation,
+   readiness report, preflight plan, receipt, and transition into stable UI
+   preview envelopes.
+
+2. **Preview scenarios** - Added preview support for `healthy`,
+   `warning_latency`, `blocked_failures`, and `stale_readiness`. Each preview
+   includes `previewStatus`, `uiBadges`, readiness details, observability
+   details, credential diagnostics, and breaker evaluation.
+
+3. **Plugin data surface** - Registered `remote-provider-ui-smoke-preview`
+   in the bridge worker so UI/data harnesses can request one scenario without
+   contacting a real provider.
+
+4. **Tests and docs** - Added
+   `remote-provider-ui-smoke-preview.spec.ts` covering deterministic previews,
+   ready/warning/blocked/stale semantics, plugin `getData` access, and resolved
+   credential value redaction. Updated the operator runbook and alpha archive.
+
+Validation:
+
+- `pnpm typecheck` passed.
+- `pnpm build` passed.
+- `pnpm test` passed: 14 files passed, 1 gated file skipped, 116 tests passed, 1 skipped.
+- V3 bundle validation remains 12/12 pass.
+
+Boundary compliance:
+
+- UI preview harness is in-process only: yes
+- No real provider request: yes
+- No persistence introduced: yes
+- No execution-path gating introduced: yes
+- Does not authorize remote execution: yes
+- Does not expose resolved credential values: yes
+- `authoritative: false` on preview outputs: yes
+- `terminalStateAdvanced: false` on preview outputs: yes
+- Dark Factory Journal remains truth source: yes
+
+Next candidate tasks:
+
+- Render the UI smoke preview scenarios in an internal settings/detail UI panel.
+- Wire actual SDK/host settings context into the `activeContext` envelope when the host exposes it.
+- Feed host-collected observations and previous breaker/readiness evidence from runtime storage.
+
 ### 2026-05-02 - Remote provider alpha hardening batch 14
 
 1. **Operator preflight plan** - Extended `remote-provider-readiness` with a
