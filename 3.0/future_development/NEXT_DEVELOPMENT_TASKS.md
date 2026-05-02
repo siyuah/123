@@ -532,3 +532,30 @@ Next candidate tasks:
 - Remote provider operator runbook.
 - Metrics/alerts for remote latency, error rate, retry count, and cursor lag.
 - Circuit breaker design and implementation.
+
+### 2026-05-02 - Remote provider alpha hardening batch 2
+
+1. **Secret resolver assessment** - Confirmed Paperclip Plugin SDK does not currently expose a generic host secret resolver for environment lifecycle hooks. Kitchen-sink has a demo action, but not a reusable SDK contract.
+
+2. **Alpha env secret references** - Added bridge support for `apiKeySecretRef` values using `env:NAME` or `env://NAME`. The resolved value is used only for the provider `x-api-key` request header. Normalized config keeps only the reference.
+
+3. **Secret safety tests** - Added tests proving env secret refs resolve at request time, resolved values do not enter normalized config, unsupported schemes are ignored safely, and request logs do not contain resolved values.
+
+4. **Operator runbook** - Created `docs/dark-factory/DARK_FACTORY_REMOTE_PROVIDER_OPERATOR_RUNBOOK.md` with remote config, gated integration commands, failure triage, secret-handling rules, and boundary constraints.
+
+5. **Validation** - Bridge plugin validation passed: `pnpm typecheck`, `pnpm build`, and `pnpm test` (8 files passed, 1 gated file skipped, 71 passed, 1 skipped).
+
+Boundary compliance:
+
+- No Plugin SDK or Paperclip core changes: yes
+- No real secrets committed: yes
+- Resolved secret values not normalized or logged: yes
+- Gated remote test still opt-in only: yes
+- Dark Factory Journal remains truth source: yes
+
+Next candidate tasks:
+
+- Replace alpha `env:` resolver with host-managed secret resolver when SDK support exists.
+- Add missing-resolved-env diagnostic before remote probe/acquire/execute.
+- Add metrics/alerts for remote provider operations.
+- Design and implement a real circuit breaker.
