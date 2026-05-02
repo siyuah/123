@@ -606,3 +606,27 @@ Next candidate tasks:
 - Wire observability snapshot into an operator-facing UI or metrics exporter.
 - Add remote credential diagnostic display to the bridge settings UI.
 - Design and implement the real circuit breaker state machine.
+
+### 2026-05-02 - Remote provider alpha hardening batch 5
+
+1. **Plugin data surface** - Exposed the remote provider observability helper through `remote-observability-snapshot` in the Paperclip bridge plugin. The data key accepts sampled remote observation events, builds deterministic metrics snapshots, and derives alert candidates.
+
+2. **Settings UI** - Updated the bridge settings page to render sampled observation count, request/success/failure/retry counts, latency, cursor lag, latest cursor, latest error code, failure-class counts, and alert candidates.
+
+3. **Empty-state behavior** - When no sampled observations exist, the settings page shows an empty snapshot instead of inventing live provider health. This keeps the UI honest during alpha rollout.
+
+4. **Tests and docs** - Added plugin harness coverage for populated and empty `remote-observability-snapshot` data. Updated the remote provider operator runbook and alpha archive with batch 5 details.
+
+Boundary compliance:
+
+- No real provider request from the UI/data surface: yes
+- No secrets read, stored, or printed: yes
+- `authoritative: false` on observability outputs: yes
+- `terminalStateAdvanced: false` on observability outputs: yes
+- Dark Factory Journal remains truth source: yes
+
+Next candidate tasks:
+
+- Feed host-collected remote observations into the settings snapshot.
+- Add remote credential diagnostic display to the bridge settings UI.
+- Design and implement the real circuit breaker state machine.
