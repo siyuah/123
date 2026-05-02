@@ -866,6 +866,51 @@ Next candidate tasks:
 - Feed host-collected observations and previous breaker/readiness evidence into readiness inputs.
 - Persist breaker state before using it to gate remote execution decisions.
 
+### 2026-05-03 - Remote provider alpha hardening batch 15
+
+1. **Active context ingestion** - Added a Paperclip bridge plugin
+   `remote-provider-active-context.ts` layer that normalizes settings/runtime
+   params into one structured context for readiness-related data surfaces.
+
+2. **Context contents** - The active context now carries checked/evaluated
+   timestamps, expected Journal sequence number, normalized observations,
+   credential diagnostics, metrics snapshot, alert candidates, breaker
+   evaluation, previous readiness evidence, and direct readiness input.
+
+3. **Worker integration** - Updated `remote-observability-snapshot`,
+   `remote-credential-diagnostics`, `remote-breaker-evaluation`, and
+   `remote-provider-readiness` to consume the active context builder rather than
+   re-parsing params independently.
+
+4. **Tests and docs** - Added `remote-provider-active-context.spec.ts` covering
+   normalization, credential value redaction, previous evidence ingestion,
+   readiness input parity, deterministic behavior, and invalid-input defaults.
+   Updated the remote provider operator runbook and alpha archive.
+
+Validation:
+
+- `pnpm typecheck` passed.
+- `pnpm build` passed.
+- `pnpm test` passed: 12 files passed, 1 gated file skipped, 101 tests passed, 1 skipped.
+
+Boundary compliance:
+
+- Active context is in-process only: yes
+- No real provider request: yes
+- No persistence introduced: yes
+- No execution-path gating introduced: yes
+- Does not authorize remote execution: yes
+- Does not expose resolved credential values: yes
+- `authoritative: false` on context outputs: yes
+- `terminalStateAdvanced: false` on context outputs: yes
+- Dark Factory Journal remains truth source: yes
+
+Next candidate tasks:
+
+- Feed host-supplied active environment driver config into the active context when SDK settings context is available.
+- Feed host-collected observations and previous breaker/readiness evidence into the active context from runtime storage.
+- Persist breaker state before using it to gate remote execution decisions.
+
 ### 2026-05-02 - Remote provider alpha hardening batch 14
 
 1. **Operator preflight plan** - Extended `remote-provider-readiness` with a
