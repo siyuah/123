@@ -998,6 +998,48 @@ Next candidate tasks:
 - Add host settings/runtime context adapter once Paperclip exposes stable host
   context input.
 
+### 2026-05-03 - Remote provider alpha hardening batch 24
+
+1. **Previous evidence SQL contract** - Added a contract-only SQL file in the
+   Paperclip bridge plugin docs directory defining the future
+   `remote_provider_previous_evidence` table shape.
+
+2. **Not an active migration** - The SQL file is intentionally outside
+   `migrations/`. It is documentation/test input only and is not applied by the
+   plugin host.
+
+3. **Guarded storage boundary** - Added tests that verify the active migration
+   remains unchanged, the SQL contract has no credential storage columns, and
+   `authoritative`, `does_authorize_remote_execution`, and
+   `terminal_state_advanced` are all constrained false.
+
+4. **Future lookup shape** - The contract defines lookup indexes for
+   `(company_id, storage_key)`, `(company_id, issue_id, environment_id)`, and
+   `(company_id, readiness_receipt_digest)`.
+
+Validation:
+
+- `pnpm typecheck` passed.
+- targeted `remote-provider-previous-evidence-storage-contract.spec.ts`
+  passed: 4 tests.
+
+Boundary compliance:
+
+- Contract-only SQL, no active migration: yes
+- No database write path introduced: yes
+- No real provider request: yes
+- Does not authorize remote execution: yes
+- No credential storage fields: yes
+- `authoritative: false` preserved: yes
+- `terminalStateAdvanced: false` preserved: yes
+- Dark Factory Journal remains truth source: yes
+
+Next candidate tasks:
+
+- Decide whether/when to promote the SQL contract into an actual migration.
+- Add host settings/runtime context adapter once Paperclip exposes a stable
+  host context input.
+
 ### 2026-05-03 - Remote provider alpha hardening batch 15
 
 1. **Active context ingestion** - Added a Paperclip bridge plugin
