@@ -911,6 +911,52 @@ Next candidate tasks:
 - Feed host-collected observations and previous breaker/readiness evidence into the active context from runtime storage.
 - Persist breaker state before using it to gate remote execution decisions.
 
+### 2026-05-03 - Remote provider alpha hardening batch 16
+
+1. **Host active context envelope** - Extended the Paperclip bridge plugin active
+   context ingestion layer to accept nested `activeContext`,
+   `hostActiveContext`, or `remoteProviderActiveContext` inputs.
+
+2. **Nested field mapping** - The host envelope now maps environment config,
+   sampled observations, previous breaker evidence, previous readiness
+   evidence, alert thresholds, circuit breaker policy, and
+   `journal.expectedSequenceNo` into the same readiness input shape.
+
+3. **Override semantics** - Direct top-level params override nested host context
+   fields, allowing tests and future host adapters to override one field
+   without rebuilding the entire envelope. The context records `inputSource` as
+   `params`, `host_active_context`, or `merged`.
+
+4. **Tests and docs** - Extended `remote-provider-active-context.spec.ts` for
+   host envelope normalization, nested previous evidence, threshold/policy
+   mapping, direct override precedence, and credential value redaction. Updated
+   the remote provider operator runbook and alpha archive.
+
+Validation:
+
+- `pnpm typecheck` passed.
+- `pnpm build` passed.
+- `pnpm test` passed: 12 files passed, 1 gated file skipped, 103 tests passed, 1 skipped.
+
+Boundary compliance:
+
+- Host context ingestion is in-process only: yes
+- No real provider request: yes
+- No persistence introduced: yes
+- No execution-path gating introduced: yes
+- Does not authorize remote execution: yes
+- Does not expose resolved credential values: yes
+- Direct override behavior is deterministic: yes
+- `authoritative: false` on context outputs: yes
+- `terminalStateAdvanced: false` on context outputs: yes
+- Dark Factory Journal remains truth source: yes
+
+Next candidate tasks:
+
+- Wire actual SDK/host settings context into the `activeContext` envelope when the host exposes it.
+- Feed host-collected observations and previous breaker/readiness evidence from runtime storage.
+- Persist breaker state before using it to gate remote execution decisions.
+
 ### 2026-05-02 - Remote provider alpha hardening batch 14
 
 1. **Operator preflight plan** - Extended `remote-provider-readiness` with a
