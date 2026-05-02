@@ -630,3 +630,28 @@ Next candidate tasks:
 - Feed host-collected remote observations into the settings snapshot.
 - Add remote credential diagnostic display to the bridge settings UI.
 - Design and implement the real circuit breaker state machine.
+
+### 2026-05-02 - Remote provider alpha hardening batch 6
+
+1. **Credential diagnostics data surface** - Exposed `remote-credential-diagnostics` in the Paperclip bridge plugin. The data key reports remote config presence, endpoint presence, inline key presence, secret-ref presence, secret-ref scheme, readiness, and diagnostic code/message.
+
+2. **Settings UI** - Added a Remote Credential Diagnostics panel to the bridge settings page. It displays only presence/scheme/diagnostic metadata and never shows a resolved credential value.
+
+3. **Diagnostics covered** - Added operator-facing coverage for config-not-supplied, missing credential, unsupported secret-ref scheme, unresolved env ref, and ready credential states.
+
+4. **Tests and docs** - Added plugin harness tests for missing, unsupported, unresolved, ready, and no-config cases. Updated the operator runbook and remote provider alpha archive.
+
+Boundary compliance:
+
+- No real provider request from credential diagnostics: yes
+- No resolved credential value returned by the UI/data surface: yes
+- No secrets read beyond env-ref existence checks already used by remote alpha validation: yes
+- `authoritative: false` on diagnostics outputs: yes
+- `terminalStateAdvanced: false` on diagnostics outputs: yes
+- Dark Factory Journal remains truth source: yes
+
+Next candidate tasks:
+
+- Feed active environment driver config into `remote-credential-diagnostics` when host settings context is available.
+- Add remediation hints for each credential diagnostic code.
+- Design and implement the real circuit breaker state machine.
