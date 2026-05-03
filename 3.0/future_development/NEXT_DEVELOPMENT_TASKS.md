@@ -1058,6 +1058,56 @@ Next candidate tasks:
 
 - Run full `pnpm preflight:first-provider` once per release candidate before
   any real provider gated attempt.
+
+### 2026-05-03 - Remote provider alpha hardening batch 30
+
+1. **First-provider session packet generator** - Added
+   `scripts/generate-first-provider-session-packet.mjs` and the package command
+   `pnpm packet:first-provider` to the Paperclip bridge plugin.
+
+2. **Operator review artifact** - The script reads the local preflight evidence
+   JSON and writes
+   `output/dark-factory-first-provider-session/SESSION_PACKET.md` for human
+   review before any real provider gated attempt.
+
+3. **Packet contents** - The packet records evidence path, branch, commit,
+   readiness assessment, check summary, boundary assertions, dry-run summary,
+   operator fill-in fields, and stop conditions. Raw command output tails are
+   intentionally omitted.
+
+4. **Runbook update** - Updated the first-provider gated attempt runbook and
+   remote provider operator runbook to require the packet after preflight and
+   before setting real-provider environment variables.
+
+Validation:
+
+- targeted session packet script test passed: 4 tests.
+- `pnpm typecheck` passed.
+- `pnpm build` passed.
+- `pnpm test` passed: 24 test files passed, 1 gated file skipped, 153 tests
+  passed, 1 skipped.
+- `pnpm preflight:first-provider` passed and generated local evidence JSON.
+- `pnpm packet:first-provider` passed and generated session packet with
+  `readyForGatedAttempt: true`.
+- V3 bundle validation passed: 12 checks, 0 errors, 0 warnings.
+
+Boundary compliance:
+
+- Session packet is operator review only: yes
+- Does not authorize remote execution: yes
+- No real provider request: yes
+- Raw command output tails omitted from packet: yes
+- Evidence and packet avoid resolved credential values: yes
+- `authoritative: false` boundary recorded: yes
+- `terminalStateAdvanced: false` boundary recorded: yes
+- Dark Factory Journal remains truth source: yes
+
+Next candidate tasks:
+
+- Use `pnpm preflight:first-provider` plus `pnpm packet:first-provider` as the
+  release-candidate checklist before any real provider gated attempt.
+- When an operator-controlled endpoint and shell-only credential reference are
+  available, run the gated integration command and archive the packet outcome.
 - Keep real remote execution behind explicit operator gating until host secret
   resolver and evidence persistence are available.
 
