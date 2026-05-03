@@ -1358,6 +1358,40 @@ Validation:
   secret resolver, and full UI internal beta install flow.
 - V3 bundle validation passed: 12 checks, 0 errors, 0 warnings.
 
+### 2026-05-03 - Remote provider alpha hardening batch 37
+
+1. **Host-managed secret resolver contract** - Added a Paperclip bridge plugin
+   contract for host-managed secret references. It supports `secret://` and
+   `host-secret://` references while preserving legacy `env:` / `env://`
+   references.
+
+2. **Readiness diagnostics** - Remote credential diagnostics now treat
+   host-managed references as readiness-ready evidence, while real provider
+   network calls still require the plugin host to inject a resolved credential
+   at execution time.
+
+3. **Readiness blocker removed** - `pnpm install:readiness` now verifies the
+   resolver contract and no longer reports `host_secret_resolver_pending`.
+
+4. **Scope** - No real provider connection, no credential value reads in
+   diagnostics, no credential persistence, no Paperclip core changes, and no
+   Dark Factory V3 binding artifact changes.
+
+Validation:
+
+- targeted host secret resolver, HTTP adapter, plugin, remote alpha, and
+  install readiness tests passed: 45 tests.
+- `pnpm typecheck` passed.
+- `pnpm build` passed.
+- `pnpm test` passed: 28 test files passed, 1 gated file skipped, 167 tests
+  passed, 1 skipped.
+- `pnpm install:readiness` passed with `installableAlphaReady: true` and
+  `productionReady: false`.
+- `host_secret_resolver_pending` is no longer reported.
+- Remaining production blockers: real provider gated attempt and full UI
+  internal beta install flow.
+- V3 bundle validation passed: 12 checks, 0 errors, 0 warnings.
+
 ### 2026-05-03 - Remote provider alpha hardening batch 21
 
 1. **Repeatable live browser smoke runner** - Added a Paperclip bridge plugin
