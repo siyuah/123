@@ -955,6 +955,46 @@ Next required action:
   supervised verifier with `--include-paperclip-gate`; feed the sanitized JSON
   into Paperclip `pnpm evidence:supervised-shim-gate`.
 
+### 2026-05-03 - Paperclip production deployment plan evidence batch 49
+
+1. **Production plan evidence layer** - Added Paperclip package script
+   `pnpm evidence:production-plan` to generate
+   `packages/plugins/integrations/dark-factory-bridge/docs/production-deployment-plan-evidence.json`.
+
+2. **Plan contents** - Evidence records fork-local bridge install target,
+   LinghuCall systemd user service target, healthcheck/supervised verifier
+   commands, rollback commands, Journal backup/retention commands, and operator
+   checklist. It does not install or start services.
+
+3. **Readiness progression** - Paperclip readiness now supports the full
+   blocker chain:
+   `supervised_shim_gated_attempt_not_recorded` →
+   `production_deployment_plan_not_recorded` →
+   `production_cutover_result_not_recorded`.
+
+4. **Archive update** - Updated Paperclip remote provider operator runbook and
+   alpha archive with production plan evidence instructions.
+
+Validation:
+
+- Paperclip `pnpm typecheck` passed.
+- Paperclip `pnpm build` passed.
+- Paperclip `pnpm test` passed: 181 tests, 1 gated test skipped.
+- Paperclip `pnpm evidence:production-plan` generated boundary-safe evidence.
+- Paperclip `pnpm install:readiness -- --skip-build` still reports
+  `productionReady: false` with current blocker
+  `supervised_shim_gated_attempt_not_recorded`.
+
+Commit:
+
+- `e518471f` feat: add production deployment plan evidence layer
+
+Next required action:
+
+- Operator-supervised service gate is still the live blocker. Once it passes,
+  generate supervised evidence, rerun readiness, and confirm the blocker moves
+  to `production_cutover_result_not_recorded`.
+
 ### 2026-05-03 - Remote provider alpha hardening batch 44
 
 1. **LinghuCall endpoint diagnosis archived** - The operator-provided
