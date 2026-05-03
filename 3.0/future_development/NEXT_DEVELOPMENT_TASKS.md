@@ -1392,6 +1392,36 @@ Validation:
   internal beta install flow.
 - V3 bundle validation passed: 12 checks, 0 errors, 0 warnings.
 
+### 2026-05-03 - Remote provider alpha hardening batch 38
+
+1. **UI beta install evidence** - Added a machine-readable Paperclip bridge
+   plugin UI internal beta evidence generator and checked-in evidence file. The
+   evidence covers dashboard/detail/settings UI slots, smoke preview data
+   wiring, scenario controls, boundary fields, standalone browser harness, and
+   dry-run guard display.
+
+2. **Readiness blocker removed** - `pnpm install:readiness` now requires the UI
+   beta evidence file and no longer reports
+   `ui_full_internal_beta_not_completed`.
+
+3. **Scope** - Offline install evidence only. No real provider request, no
+   credential value reads, no Paperclip core changes, and no Dark Factory V3
+   binding artifact changes.
+
+Validation:
+
+- targeted UI beta evidence, install readiness, browser harness, and settings
+  panel tests passed: 8 tests.
+- `pnpm typecheck` passed.
+- `pnpm build` passed.
+- `pnpm test` passed: 29 test files passed, 1 gated file skipped, 169 tests
+  passed, 1 skipped.
+- `pnpm install:readiness` passed with `installableAlphaReady: true` and
+  `productionReady: false`.
+- `ui_full_internal_beta_not_completed` is no longer reported.
+- Remaining production blocker: real provider gated attempt.
+- V3 bundle validation passed: 12 checks, 0 errors, 0 warnings.
+
 ### 2026-05-03 - Remote provider alpha hardening batch 21
 
 1. **Repeatable live browser smoke runner** - Added a Paperclip bridge plugin
