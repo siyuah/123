@@ -866,6 +866,55 @@ Next candidate tasks:
 - Feed host-collected observations and previous breaker/readiness evidence into readiness inputs.
 - Persist breaker state before using it to gate remote execution decisions.
 
+### 2026-05-03 - Supervised LinghuCall shim gate completed
+
+1. **Supervised service started** - Installed and started the
+   `linghucall-provider-shim.service` systemd user service on the operator
+   machine. The service runs the Dark Factory external-runs shim on
+   `http://127.0.0.1:9791`.
+
+2. **Service health verified** - `tools/check_linghucall_provider_shim_health.py`
+   reported `/api/health` as `ready` with provider kind
+   `linghucall_openai_compatible` and protocol release tag
+   `v3.0-agent-control-r1`.
+
+3. **Supervised verifier passed** -
+   `tools/verify_linghucall_provider_shim_supervised.py --include-paperclip-gate
+   --require-pass` passed all checks: systemd service active, operator env file
+   private, bridge key file private, shim health ready, Paperclip provider-status
+   gate passed, and Paperclip remote gated integration test passed.
+
+4. **Paperclip evidence recorded** - Added sanitized supervised shim gated
+   attempt evidence to the Paperclip fork and pushed commit
+   `cec72bb0 chore: record supervised shim gated attempt evidence` to
+   `siyuah/paperclip` branch `fork-master-product`.
+
+5. **Readiness advanced** - Paperclip install readiness remains alpha-ready and
+   now reports the next production blocker:
+   `production_cutover_result_not_recorded`.
+
+Validation:
+
+- Paperclip bridge `pnpm typecheck` passed.
+- Paperclip bridge `pnpm build` passed.
+- Paperclip bridge `pnpm test` passed: 184 passed, 1 gated test skipped.
+- Paperclip bridge `pnpm install:readiness -- --skip-build` passed with
+  `installableAlphaReady: true` and `productionReady: false`.
+
+Boundary compliance:
+
+- Dark Factory Journal remains truth source: yes
+- Supervised verifier does not read credential values: yes
+- No credential value was printed, stored, or committed: yes
+- Paperclip outputs remain `authoritative: false`: yes
+- Paperclip outputs remain `terminalStateAdvanced: false`: yes
+- No V3.0 binding artifact was modified: yes
+
+Next required action:
+
+- Run and record real production cutover result evidence before declaring
+  `productionReady: true`.
+
 ### 2026-05-03 - LinghuCall supervised service verification batch 47
 
 1. **Supervised verifier** - Added
