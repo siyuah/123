@@ -911,6 +911,50 @@ Next required action:
   `tools/verify_linghucall_provider_shim_supervised.py --include-paperclip-gate --require-pass`
   to generate the supervised gated attempt evidence.
 
+### 2026-05-03 - Paperclip supervised evidence recorder batch 48
+
+1. **Paperclip evidence boundary** - Updated the Paperclip bridge install
+   readiness and alpha handoff scripts to recognize the optional supervised
+   shim gated-attempt evidence file:
+   `packages/plugins/integrations/dark-factory-bridge/docs/supervised-shim-gated-attempt-evidence.json`.
+
+2. **Evidence recorder** - Added
+   `pnpm evidence:supervised-shim-gate -- --input /path/to/SUPERVISED_VERIFIER.json`
+   in the Paperclip bridge plugin. The recorder converts the sanitized
+   supervised verifier JSON into Paperclip-side evidence and fails closed unless
+   service, healthcheck, provider-status gate, and remote gated integration all
+   passed.
+
+3. **Production blocker progression** - Current state remains
+   `productionReady: false` with blocker
+   `supervised_shim_gated_attempt_not_recorded`. Once supervised evidence
+   exists and validates, the next blocker becomes
+   `production_deployment_plan_not_recorded`.
+
+4. **Archive update** - Updated Paperclip operator runbook, real provider gate
+   status, bridge README, and remote provider alpha archive with the supervised
+   recorder flow.
+
+Validation:
+
+- Paperclip `pnpm typecheck` passed.
+- Paperclip `pnpm build` passed.
+- Paperclip `pnpm test` passed: 179 tests, 1 gated test skipped.
+- Paperclip `pnpm install:readiness -- --skip-build` passed with
+  `installableAlphaReady: true`, `productionReady: false`, and blocker
+  `supervised_shim_gated_attempt_not_recorded`.
+
+Commits:
+
+- `6aec980e` chore: add supervised shim gate evidence boundary
+- `4711b1cb` feat: add supervised shim gated attempt evidence recorder
+
+Next required action:
+
+- Start the LinghuCall shim as a supervised user service and run the 123
+  supervised verifier with `--include-paperclip-gate`; feed the sanitized JSON
+  into Paperclip `pnpm evidence:supervised-shim-gate`.
+
 ### 2026-05-03 - Remote provider alpha hardening batch 44
 
 1. **LinghuCall endpoint diagnosis archived** - The operator-provided
