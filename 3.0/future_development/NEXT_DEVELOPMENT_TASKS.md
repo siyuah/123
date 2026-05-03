@@ -1994,6 +1994,42 @@ Next required action:
 
 - Operator-led real provider gated attempt remains the only production blocker.
 
+### 2026-05-03 - Remote provider alpha hardening batch 41
+
+1. **Real provider gate status diagnostic** - Added
+   `scripts/generate-real-provider-gate-status.mjs` and package script
+   `pnpm gate:provider-status` in the Paperclip bridge plugin.
+
+2. **Redacted operator status report** - The command writes
+   `output/dark-factory-real-provider-gate-status/GATE_STATUS.json` with only
+   presence booleans, safe string lengths, and run/skip decisions. It does not
+   print endpoint values or credential values.
+
+3. **Fail-closed mode** - Added `--require-ready` so operator automation can
+   fail locally when the gated integration test would still skip.
+
+4. **Production gate preserved** - The diagnostic does not contact a provider
+   and does not mark production ready. It only tells whether the operator shell
+   is ready to run `tests/remote-gated-integration.spec.ts`.
+
+Validation:
+
+- Targeted real provider gate status tests passed: 4 tests.
+- Default local status reported `gatedTestWillRun: false` and
+  `defaultSkipExpected: true`.
+
+Boundary compliance:
+
+- Dark Factory Journal remains truth source: yes
+- `authoritative: false` remains required on all bridge outputs: yes
+- `terminalStateAdvanced: false` remains required on all bridge outputs: yes
+- No real provider connection was attempted: yes
+- Endpoint and credential values are redacted: yes
+
+Next required action:
+
+- Operator-led real provider gated attempt remains the only production blocker.
+
 ### 2026-05-02 - Remote provider alpha hardening batch 14
 
 1. **Operator preflight plan** - Extended `remote-provider-readiness` with a
