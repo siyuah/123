@@ -72,6 +72,31 @@ pnpm gate:provider-status -- --require-ready
 pnpm test -- tests/remote-gated-integration.spec.ts
 ```
 
+## Operationalized User Service
+
+For repeatable internal alpha usage, install the supervised user service assets
+under `ops/linghucall-provider-shim/`.
+
+```bash
+cd /home/siyuah/workspace/123
+.venv312/bin/python tools/verify_linghucall_provider_shim_ops.py --require-pass
+```
+
+Then follow:
+
+- `ops/linghucall-provider-shim/README.md`
+
+The service template uses:
+
+- `~/.config/dark-factory/linghucall-provider-shim.env` for operator-managed
+  environment values
+- `DF_API_KEY_FILE` for the bridge-facing key
+- `.dark_factory_http/linghucall_provider_shim.jsonl` for the shim Journal
+- `tools/check_linghucall_provider_shim_health.py` for `/api/health`
+
+This verifier and service template do not install anything by themselves and do
+not print resolved credential values.
+
 ## Local Verification Without LinghuCall Key
 
 The unit tests use a fake LinghuCall client and do not contact the real provider:
@@ -79,6 +104,8 @@ The unit tests use a fake LinghuCall client and do not contact the real provider
 ```bash
 cd /home/siyuah/workspace/123
 .venv312/bin/python -m pytest tests/test_linghucall_provider_shim.py -q
+.venv312/bin/python -m pytest tests/test_linghucall_provider_shim_ops.py -q
+.venv312/bin/python tools/verify_linghucall_provider_shim_ops.py --require-pass
 python3 tools/validate_v3_bundle.py
 ```
 

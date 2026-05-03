@@ -369,8 +369,14 @@ informativeOutOfBundle:
 - 3.0/future_development/DARK_FACTORY_BRIDGE_DEVELOPMENT_ARCHIVE_2026-05-02.md
 - docs/linghucall_provider_shim_runbook.md
 - linghucall_provider_shim.py
+- ops/linghucall-provider-shim/README.md
+- ops/linghucall-provider-shim/linghucall-provider-shim.env.example
+- ops/linghucall-provider-shim/linghucall-provider-shim.service
 - tests/test_linghucall_provider_shim.py
+- tests/test_linghucall_provider_shim_ops.py
+- tools/check_linghucall_provider_shim_health.py
 - tools/run_linghucall_provider_shim_gate.sh
+- tools/verify_linghucall_provider_shim_ops.py
 - docs/phoenix_v48_inspired_optimization_plan.md
 - QUICKSTART.md
 - journal_data/.gitkeep

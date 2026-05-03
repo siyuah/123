@@ -950,6 +950,49 @@ Next candidate tasks:
 - Re-run the gated attempt against the operationalized shim endpoint and update
   the production blocker decision.
 
+### 2026-05-03 - Remote provider alpha hardening batch 46
+
+1. **Shim operationalization assets** - Added
+   `ops/linghucall-provider-shim/` with a systemd user service template,
+   placeholder env file, and operator README for supervised local alpha service
+   startup, healthcheck, gated Paperclip bridge test, and rollback.
+
+2. **Healthcheck + verifier** - Added
+   `tools/check_linghucall_provider_shim_health.py` for `/api/health` checks
+   and `tools/verify_linghucall_provider_shim_ops.py` for offline verification
+   of service hardening, placeholder credential handling, runtime artifact
+   ignores, and runbook coverage.
+
+3. **Tests** - Added `tests/test_linghucall_provider_shim_ops.py` to lock the
+   operationalization assets. Existing shim behavior tests continue to pass.
+
+4. **V3 manifest classification** - Classified the new ops assets, verifier,
+   healthcheck, and tests as `informativeOutOfBundle`. No V3.0 binding artifact
+   semantics changed.
+
+Validation:
+
+- `.venv312/bin/python tools/verify_linghucall_provider_shim_ops.py --require-pass`
+  passed.
+- `.venv312/bin/python -m pytest tests/test_linghucall_provider_shim.py tests/test_linghucall_provider_shim_ops.py -q`
+  passed: 7 tests.
+- `python3 tools/validate_v3_bundle.py` passed: 12/12.
+
+Boundary compliance:
+
+- No service was installed or started by the verifier: yes
+- No sudo was used: yes
+- No real provider request was made by offline verification: yes
+- Credential examples use placeholders only: yes
+- Runtime journal/log directory remains ignored: yes
+- Dark Factory Journal remains truth source: yes
+
+Next required action:
+
+- Wire Paperclip install/readiness evidence to these operationalization assets
+  and keep `provider_shim_not_operationalized` active until a live supervised
+  service gated attempt is run and archived.
+
 ### 2026-05-03 - Remote provider alpha hardening batch 26
 
 1. **Pre-execution dry-run guard** - Added

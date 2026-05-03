@@ -1,0 +1,22 @@
+[Unit]
+Description=Dark Factory LinghuCall provider shim
+Documentation=file:/home/siyuah/workspace/123/docs/linghucall_provider_shim_runbook.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/siyuah/workspace/123
+EnvironmentFile=%h/.config/dark-factory/linghucall-provider-shim.env
+ExecStart=/home/siyuah/workspace/123/.venv312/bin/python /home/siyuah/workspace/123/linghucall_provider_shim.py --host ${LINGHUCALL_SHIM_HOST} --port ${LINGHUCALL_SHIM_PORT} --journal ${LINGHUCALL_SHIM_JOURNAL} --bridge-api-key-file ${DF_API_KEY_FILE}
+Restart=on-failure
+RestartSec=5s
+TimeoutStopSec=20s
+KillSignal=SIGTERM
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/home/siyuah/workspace/123/.dark_factory_http
+
+[Install]
+WantedBy=default.target
