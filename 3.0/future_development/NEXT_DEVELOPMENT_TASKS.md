@@ -2071,6 +2071,54 @@ Next required action:
 
 - Operator-led real provider gated attempt remains the only production blocker.
 
+### 2026-05-03 - Remote provider alpha hardening batch 43
+
+1. **Endpoint classification** - Confirmed `https://api.linghucall.net` is an
+   OpenAI-compatible/New API model gateway, not a Dark Factory provider
+   endpoint. Direct bridge probe failed because `/api/health` is not supported
+   by that gateway.
+
+2. **LinghuCall model backend proof** - Operator verified
+   `POST https://api.linghucall.net/v1/chat/completions` with model `gpt-5.5`
+   returns `pong` for a minimal chat completion request.
+
+3. **Provider shim implemented** - Added `linghucall_provider_shim.py`, a
+   Dark Factory external-runs provider shim that exposes `/api/health`,
+   `/api/external-runs`, run lookup, park, rehydrate, and route-decision
+   endpoints while calling LinghuCall chat completions during run creation.
+
+4. **Operator gate script** - Added
+   `tools/run_linghucall_provider_shim_gate.sh` to start the shim locally,
+   configure the Paperclip bridge remote endpoint, run
+   `pnpm gate:provider-status -- --require-ready`, and run
+   `pnpm test -- tests/remote-gated-integration.spec.ts`.
+
+5. **Runbook** - Added `docs/linghucall_provider_shim_runbook.md` with
+   operator commands, boundary rules, one-command gated test flow, and local
+   fake-upstream verification.
+
+Validation:
+
+- `python -m py_compile linghucall_provider_shim.py` passed.
+- `.venv312/bin/python -m pytest tests/test_linghucall_provider_shim.py -q`
+  passed: 5 tests.
+- `python3 tools/validate_v3_bundle.py` passed: 12/12.
+- `tools/run_linghucall_provider_shim_gate.sh` fails closed when
+  `LINGHUCALL_API_KEY` is absent.
+
+Boundary compliance:
+
+- Dark Factory Journal remains truth source: yes
+- LinghuCall key is read only from operator shell: yes
+- No credential value is logged, returned, or committed: yes
+- The bridge-facing key is separate from the LinghuCall provider key: yes
+- No V3.0 binding artifact was modified: yes
+
+Next required action:
+
+- Run `tools/run_linghucall_provider_shim_gate.sh` from the operator shell that
+  contains `LINGHUCALL_API_KEY`, then archive the gated-test result.
+
 ### 2026-05-02 - Remote provider alpha hardening batch 14
 
 1. **Operator preflight plan** - Extended `remote-provider-readiness` with a
