@@ -1012,6 +1012,55 @@ Next candidate tasks:
 - Keep real remote execution behind explicit operator gating until host secret
   resolver and evidence persistence are available.
 
+### 2026-05-03 - Remote provider alpha hardening batch 29
+
+1. **Preflight evidence script** - Added
+   `scripts/run-first-provider-preflight.mjs` and the package command
+   `pnpm preflight:first-provider` to the Paperclip bridge plugin.
+
+2. **Evidence JSON output** - The script writes
+   `output/dark-factory-first-provider-preflight/evidence.json` containing
+   branch, commit, command status, UI smoke boundary summary, V3 validation
+   summary, and gated integration default-skip status.
+
+3. **Default-skip verification** - The script runs
+   `tests/remote-gated-integration.spec.ts` with real-provider environment
+   variables scrubbed and verifies the test remains skipped by default before
+   any operator sets `DARK_FACTORY_REMOTE_INTEGRATION=1`.
+
+4. **Runbook update** - Updated the first real provider gated attempt runbook
+   to require `pnpm preflight:first-provider` evidence before setting
+   real-provider environment variables.
+
+Validation:
+
+- targeted preflight script test passed: 4 tests.
+- `pnpm preflight:first-provider -- --skip-heavy` passed and confirmed gated
+  integration default skip.
+- `pnpm typecheck` passed.
+- `pnpm build` passed.
+- `pnpm test` passed: 23 test files passed, 1 gated file skipped, 149 tests
+  passed, 1 skipped.
+- `pnpm smoke:ui:browser -- --no-screenshots` passed.
+- `pnpm preflight:first-provider` passed and generated local evidence JSON.
+- V3 bundle validation passed: 12 checks, 0 errors, 0 warnings.
+
+Boundary compliance:
+
+- No real provider request in default preflight: yes
+- Real-provider environment variables scrubbed for default-skip check: yes
+- Evidence JSON avoids resolved credential values: yes
+- `authoritative: false` boundary recorded: yes
+- `terminalStateAdvanced: false` boundary recorded: yes
+- Dark Factory Journal remains truth source: yes
+
+Next candidate tasks:
+
+- Run full `pnpm preflight:first-provider` once per release candidate before
+  any real provider gated attempt.
+- Keep real remote execution behind explicit operator gating until host secret
+  resolver and evidence persistence are available.
+
 ### 2026-05-03 - Remote provider alpha hardening batch 21
 
 1. **Repeatable live browser smoke runner** - Added a Paperclip bridge plugin
