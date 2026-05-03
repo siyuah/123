@@ -899,6 +899,57 @@ Next required action:
   already contains `LINGHUCALL_API_KEY`; archive the sanitized gated-test result
   after the shim-backed bridge test completes.
 
+### 2026-05-03 - Remote provider alpha hardening batch 45
+
+1. **Shim-backed gated attempt passed** - Operator ran
+   `tools/run_linghucall_provider_shim_gate.sh` from a shell with the
+   LinghuCall credential already present. The script started the local
+   Dark Factory external-runs shim on `127.0.0.1:9791`, generated bridge gate
+   status, and ran the Paperclip bridge gated integration test.
+
+2. **Bridge lifecycle verified against shim** -
+   `pnpm test -- tests/remote-gated-integration.spec.ts` passed: 1 test file,
+   1 test. The observed hook chain covered validate, probe, acquire, execute,
+   resume, and release. Non-sensitive HTTP evidence showed `/health` 200,
+   `/external-runs` 201, run lookup 200, and route-decisions 200.
+
+3. **Paperclip evidence recorded** - Added
+   `packages/plugins/integrations/dark-factory-bridge/docs/real-provider-gated-attempt-evidence.json`
+   in the Paperclip fork and updated gate/readiness scripts so the state moves
+   from `real_provider_gated_attempt_result_not_recorded` to
+   `provider_shim_not_operationalized`.
+
+4. **Production status clarified** - The first real backend path is validated
+   through a local shim, but full production install is still blocked until the
+   shim/provider path has deployment, startup, monitoring, retention, and
+   rollback procedures.
+
+Validation:
+
+- Paperclip bridge `pnpm typecheck` passed.
+- Paperclip bridge `pnpm build` passed.
+- Paperclip bridge `pnpm test` passed: 176 passed, 1 gated test skipped.
+- `pnpm install:readiness -- --skip-build` reported
+  `installableAlphaReady: true`, `productionReady: false`, blocker
+  `provider_shim_not_operationalized`.
+
+Boundary compliance:
+
+- Dark Factory Journal remains truth source: yes
+- All recorded evidence is non-authoritative: yes
+- `terminalStateAdvanced: false`: yes
+- No credential value was read, printed, stored, or committed: yes
+- LinghuCall remains an OpenAI-compatible backend behind the shim, not a direct
+  Dark Factory `/api/*` endpoint: yes
+
+Next candidate tasks:
+
+- Operationalize the LinghuCall provider shim as a supervised local service or
+  deployment unit.
+- Add shim startup/health/retention/rollback runbook and verification script.
+- Re-run the gated attempt against the operationalized shim endpoint and update
+  the production blocker decision.
+
 ### 2026-05-03 - Remote provider alpha hardening batch 26
 
 1. **Pre-execution dry-run guard** - Added
