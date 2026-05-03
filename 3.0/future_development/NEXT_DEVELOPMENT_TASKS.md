@@ -2767,3 +2767,43 @@ Next candidate tasks:
 - Feed active environment driver config into readiness inputs when host settings context is available.
 - Feed host-collected observations and previous breaker/readiness evidence into readiness inputs.
 - Persist breaker state before using it to gate remote execution decisions.
+
+### 2026-05-04 - Browser-harness full-page Chinese localization completion
+
+1. **Full-page browser-harness sweep** - Ran browser-harness against the live
+   Paperclip WebUI at `http://127.0.0.1:3100`, covering shell navigation,
+   dashboard, live runs, company settings, environments, access, invites,
+   agent creation, routines, costs, activity, issue detail, instance profile,
+   general settings, plugins, and adapters.
+
+2. **Remaining host UI localization completed** - Closed the remaining ordinary
+   UI English gaps found by browser-harness: navigation group labels, dashboard
+   counters, company package headings, access grant/action labels, invite copy,
+   routines empty states, cost ledger labels, activity event labels, relative
+   time labels, and adapter model-count labels.
+
+3. **Regression coverage expanded** - Expanded
+   `ui/src/lib/zhCnLocalization.test.ts` with browser-audited assertions for
+   settings, dashboard, costs, adapters, access, company settings, invite flows,
+   routines, mixed Chinese/English dynamic text, and repeated-scan idempotency.
+
+4. **Archive updated** - Updated
+   `docs/dark-factory/DARK_FACTORY_FULL_CHINESE_LOCALIZATION_2026-05-04.md`
+   with final browser-harness evidence, route coverage, remaining allowed
+   English categories, and maintenance notes.
+
+Validation snapshot:
+
+- Browser-harness targeted final sweep: 16/16 high-traffic routes opened,
+  all reported `document.documentElement.lang === "zh-CN"`.
+- Focused UI localization unit test: 8/8 passed.
+- Remaining English is intentionally preserved for protocol IDs, adapter IDs,
+  Journal/receipt/run IDs, package names, command/code/log snippets, bundled
+  skill documentation, and seeded product/provider names.
+
+Project status:
+
+- Paperclip host WebUI and Dark Factory bridge plugin UI are now Chinese-first
+  for ordinary operator-visible surfaces in the fork.
+- Protocol compatibility boundaries remain unchanged.
+- Ready for local full UI internal testing and installation verification.
