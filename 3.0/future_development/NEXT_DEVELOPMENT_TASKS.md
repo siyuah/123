@@ -1331,6 +1331,33 @@ Validation:
 - Keep real remote execution behind explicit operator gating until host secret
   resolver and evidence persistence are available.
 
+### 2026-05-03 - Remote provider alpha hardening batch 36
+
+1. **Fork-local install policy** - Added a machine-readable install
+   distribution policy for the Paperclip bridge plugin. The package remains
+   private and is installed from the maintained fork/workspace during internal
+   alpha, not published to npm.
+
+2. **Readiness blocker removed** - `pnpm install:readiness` now verifies the
+   policy file and no longer reports `package_private_publish_policy_pending`.
+
+3. **Scope** - No package privacy change, no npm publishing, no Paperclip core
+   changes, and no Dark Factory V3 binding artifact changes.
+
+Validation:
+
+- targeted install readiness script test passed: 2 tests.
+- `pnpm typecheck` passed.
+- `pnpm build` passed.
+- `pnpm test` passed: 27 test files passed, 1 gated file skipped, 163 tests
+  passed, 1 skipped.
+- `pnpm install:readiness` passed with `installableAlphaReady: true` and
+  `productionReady: false`.
+- `package_private_publish_policy_pending` is no longer reported.
+- Remaining production blockers: real provider gated attempt, host-managed
+  secret resolver, and full UI internal beta install flow.
+- V3 bundle validation passed: 12 checks, 0 errors, 0 warnings.
+
 ### 2026-05-03 - Remote provider alpha hardening batch 21
 
 1. **Repeatable live browser smoke runner** - Added a Paperclip bridge plugin
