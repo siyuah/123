@@ -916,6 +916,51 @@ Next candidate tasks:
 - Keep real remote execution behind explicit operator gating until host secret
   resolver and evidence persistence are available.
 
+### 2026-05-03 - Remote provider alpha hardening batch 27
+
+1. **Dry-run guard UI preview integration** - Updated the Paperclip bridge
+   UI smoke preview data so each preview scenario carries summarized
+   `remote-provider-dry-run-guard` decisions for validate, probe, acquire, and
+   execute lifecycle boundaries.
+
+2. **Operator panel visibility** - Updated the internal settings preview panel
+   to show each target hook, advisory decision, matched preflight status,
+   blocking codes, guard receipt id, provider-contact flag, and execution
+   authorization flag.
+
+3. **Standalone browser harness coverage** - Updated the generated HTML smoke
+   harness to render dry-run guard decisions and receipts, so browser-level
+   smoke can verify guard visibility without a full Paperclip host.
+
+4. **Boundary-preserving summary** - The UI preview only carries summarized
+   guard fields. It does not embed the full adapter/bridge payload, does not
+   contact a real provider, does not persist state, and does not authorize
+   execution.
+
+Validation:
+
+- `pnpm typecheck` passed.
+- targeted UI preview tests passed: 11 tests across 3 files.
+
+Boundary compliance:
+
+- UI preview is local/advisory only: yes
+- No real provider request: yes
+- No persistence introduced: yes
+- Does not authorize remote execution: yes
+- Provider-contact flag remains false in preview guards: yes
+- `authoritative: false` on preview/guard outputs: yes
+- `terminalStateAdvanced: false` on preview/guard outputs: yes
+- Dark Factory Journal remains truth source: yes
+
+Next candidate tasks:
+
+- Run full bridge validation and browser smoke after this UI guard wiring.
+- Add a manual first-provider-attempt checklist that references the dry-run
+  guard receipt.
+- Keep real remote execution behind explicit operator gating until host secret
+  resolver and evidence persistence are available.
+
 ### 2026-05-03 - Remote provider alpha hardening batch 21
 
 1. **Repeatable live browser smoke runner** - Added a Paperclip bridge plugin
