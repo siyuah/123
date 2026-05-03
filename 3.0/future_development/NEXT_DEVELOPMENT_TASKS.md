@@ -1300,6 +1300,34 @@ Validation:
   policy, real provider gated attempt, host-managed secret resolver, and full
   UI internal beta install flow.
 - V3 bundle validation passed: 12 checks, 0 errors, 0 warnings.
+
+### 2026-05-03 - Remote provider alpha hardening batch 35
+
+1. **Product database namespace** - Updated the Paperclip bridge plugin
+   namespace from `dark_factory_bridge_poc` to `dark_factory_bridge` in the
+   manifest, migration SQL, previous-evidence SQL contract, plugin tests, and
+   install readiness checks.
+
+2. **Readiness blocker removed** - `pnpm install:readiness` no longer reports
+   `database_namespace_contains_poc`.
+
+3. **Scope** - This is plugin namespace cleanup only. No Paperclip core tables
+   and no Dark Factory V3 binding artifacts were modified.
+
+Validation:
+
+- targeted install readiness and plugin manifest tests passed: 24 tests.
+- `pnpm typecheck` passed.
+- `pnpm build` passed.
+- `pnpm test` passed: 27 test files passed, 1 gated file skipped, 163 tests
+  passed, 1 skipped.
+- `pnpm install:readiness` passed with `installableAlphaReady: true` and
+  `productionReady: false`.
+- `database_namespace_contains_poc` is no longer reported.
+- Remaining production blockers: package publish policy, real provider gated
+  attempt, host-managed secret resolver, and full UI internal beta install
+  flow.
+- V3 bundle validation passed: 12 checks, 0 errors, 0 warnings.
 - Keep real remote execution behind explicit operator gating until host secret
   resolver and evidence persistence are available.
 
