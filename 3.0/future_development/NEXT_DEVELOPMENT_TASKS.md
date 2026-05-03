@@ -1162,6 +1162,65 @@ Next candidate tasks:
   checkpoint before the first real provider gated attempt.
 - After an operator-controlled endpoint is supplied, attach the handoff manifest
   hash to the gated integration outcome notes.
+
+### 2026-05-03 - Remote provider alpha hardening batch 32
+
+1. **First-provider handoff verifier** - Added
+   `scripts/verify-first-provider-handoff.mjs` and the package command
+   `pnpm verify:first-provider` to the Paperclip bridge plugin.
+
+2. **Offline artifact verification** - The verifier reads preflight evidence,
+   the operator session packet, and the handoff manifest, then writes
+   `output/dark-factory-first-provider-handoff/VERIFY_REPORT.json`.
+
+3. **Verification coverage** - The report checks manifest schema/type, manifest
+   readiness, evidence and packet SHA-256 hashes, artifact paths, gated
+   integration default skip, required offline command order, session packet
+   readiness/truth markers, absence of raw command output tails in the
+   manifest, operator handoff constraints, and boundary assertions.
+
+4. **Runbook update** - Updated the first-provider gated attempt runbook and
+   remote provider operator runbook to require
+   `preflight:first-provider` -> `packet:first-provider` ->
+   `bundle:first-provider` -> `verify:first-provider` before real-provider
+   environment variables are enabled.
+
+Validation:
+
+- targeted handoff verifier script test passed: 4 tests.
+- `pnpm typecheck` passed.
+- `pnpm build` passed.
+- `pnpm test` passed: 26 test files passed, 1 gated file skipped, 161 tests
+  passed, 1 skipped.
+- `pnpm preflight:first-provider` passed and generated local evidence JSON.
+- `pnpm packet:first-provider` passed and generated session packet with
+  `readyForGatedAttempt: true`.
+- `pnpm bundle:first-provider` passed and generated handoff manifest with
+  `readyForGatedAttempt: true`.
+- `pnpm verify:first-provider` passed and generated verification report with
+  `ok: true`.
+- V3 bundle validation passed: 12 checks, 0 errors, 0 warnings.
+
+Boundary compliance:
+
+- Verification report is offline-only: yes
+- Does not authorize remote execution: yes
+- No real provider request: yes
+- Rechecks artifact SHA-256 bindings: yes
+- Rechecks required command order before gated execution: yes
+- Raw command output tails excluded from manifest/report: yes
+- Resolved credential values excluded from report: yes
+- `authoritative: false` boundary recorded: yes
+- `terminalStateAdvanced: false` boundary recorded: yes
+- Dark Factory Journal remains truth source: yes
+
+Next candidate tasks:
+
+- Treat the four-command offline chain as the mandatory release-candidate gate
+  before the first real provider attempt.
+- Once operator endpoint and shell-only credential reference are available,
+  run the gated integration test and archive the verification report hash with
+  the outcome.
 - Keep real remote execution behind explicit operator gating until host secret
   resolver and evidence persistence are available.
 
