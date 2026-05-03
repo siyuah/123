@@ -2552,6 +2552,58 @@ Next required action:
 - Run `tools/run_linghucall_provider_shim_gate.sh` from the operator shell that
   contains `LINGHUCALL_API_KEY`, then archive the gated-test result.
 
+### 2026-05-03 - Paperclip host UI integration verification
+
+1. **Real host install tested** - Started the real Paperclip host UI at
+   `http://127.0.0.1:3100` and installed the local Dark Factory bridge plugin
+   from `packages/plugins/integrations/dark-factory-bridge`.
+
+2. **Host migration bug fixed** - First install exposed a plugin database
+   migration compatibility issue: active migration SQL used the raw
+   `dark_factory_bridge` schema and standalone `CREATE UNIQUE INDEX`
+   statements. Updated the active migration to use the Paperclip-derived
+   plugin schema `plugin_dark_factory_bridge_a197d0c9b7`, rely on the host to
+   create that schema, and use table-level `UNIQUE` constraints.
+
+3. **Regression guard added** - Added a plugin test that imports Paperclip host
+   `validatePluginMigrationStatement` and `derivePluginDatabaseNamespace` so
+   future migration drift fails before host UI install.
+
+4. **Real Paperclip UI verified** - Browser harness verified plugin status
+   `ready`, UI contribution slots, settings page rendering, dashboard widget
+   rendering, and issue detail tab rendering inside the actual Paperclip host UI
+   rather than the standalone `4178` preview.
+
+Validation:
+
+- `pnpm typecheck` passed.
+- `pnpm build` passed.
+- `pnpm test` passed: 185 tests passed, 1 operator-gated remote test skipped.
+- Paperclip host install returned `200`; plugin status is `ready`; `lastError`
+  is `null`.
+- `/api/plugins/ui-contributions` exposes dashboard, task detail, and settings
+  slots.
+
+Boundary compliance:
+
+- Dark Factory Journal remains truth source: yes
+- `authoritative: false` retained: yes
+- `terminalStateAdvanced: false` retained: yes
+- No Paperclip core/server/ui/SDK changes: yes
+- No V3.0 binding artifact changes: yes
+- No credential values read, printed, stored, or committed: yes
+
+Project status:
+
+- Standalone bridge preview UI verified at `http://127.0.0.1:4178`.
+- Real Paperclip host UI verified at `http://127.0.0.1:3100`.
+- Local fork is installable and host-UI verified.
+
+Next required action:
+
+- Repeat install verification on a clean operator/staging machine before wider
+  internal rollout.
+
 ### 2026-05-02 - Remote provider alpha hardening batch 14
 
 1. **Operator preflight plan** - Extended `remote-provider-readiness` with a
