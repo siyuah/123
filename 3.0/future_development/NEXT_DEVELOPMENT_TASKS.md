@@ -1915,6 +1915,46 @@ Next candidate tasks:
 - Wire actual SDK/host settings context into the `activeContext` envelope when the host exposes it.
 - Feed host-collected observations and previous breaker/readiness evidence from runtime storage.
 
+### 2026-05-03 - Remote provider alpha hardening batch 39
+
+1. **Final real-provider gate status** - Added
+   `docs/dark-factory/DARK_FACTORY_REAL_PROVIDER_GATE_STATUS_2026-05-03.md`
+   in the Paperclip fork to record the remaining production gate.
+
+2. **Safe gate-input check** - Confirmed the current Codex process does not
+   have the operator integration flag, provider endpoint, credential value, or
+   credential reference available. The check printed only boolean presence and
+   string lengths, not real values.
+
+3. **Readiness decision** - Kept `installableAlphaReady: true` and
+   `productionReady: false`. The only remaining production blocker is
+   `real_provider_gated_attempt_not_completed`.
+
+4. **Operator handoff** - The final gate must be completed with
+   `docs/dark-factory/DARK_FACTORY_FIRST_REAL_PROVIDER_GATED_ATTEMPT_RUNBOOK.md`
+   in a short-lived operator shell. The blocker must not be removed until the
+   gated integration test actually runs and passes.
+
+Validation:
+
+- `pnpm install:readiness -- --skip-build` passed with no failed offline checks.
+- Gated provider attempt was not run because required operator inputs were
+  absent.
+
+Boundary compliance:
+
+- Dark Factory Journal remains truth source: yes
+- `authoritative: false` remains required on all bridge outputs: yes
+- `terminalStateAdvanced: false` remains required on all bridge outputs: yes
+- No real provider connection was attempted: yes
+- No credential value was printed, stored, or committed: yes
+
+Next required action:
+
+- Operator-led real provider gated attempt. This cannot be completed honestly
+  from Codex unless the operator supplies the required provider inputs and the
+  gated integration test passes.
+
 ### 2026-05-02 - Remote provider alpha hardening batch 14
 
 1. **Operator preflight plan** - Extended `remote-provider-readiness` with a
