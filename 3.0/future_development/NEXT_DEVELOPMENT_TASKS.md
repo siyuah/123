@@ -961,6 +961,57 @@ Next candidate tasks:
 - Keep real remote execution behind explicit operator gating until host secret
   resolver and evidence persistence are available.
 
+### 2026-05-03 - Remote provider alpha hardening batch 28
+
+1. **First real provider gated attempt runbook** - Added
+   `docs/dark-factory/DARK_FACTORY_FIRST_REAL_PROVIDER_GATED_ATTEMPT_RUNBOOK.md`
+   in the Paperclip fork. The runbook defines the manual gate for the first
+   real Dark Factory provider attempt.
+
+2. **Dry-run receipt requirement** - The runbook requires an execute-boundary
+   dry-run guard receipt before setting `DARK_FACTORY_REMOTE_INTEGRATION=1`.
+   The receipt is operator evidence only, not an authorization token and not a
+   Dark Factory Journal truth event.
+
+3. **Failure and rollback flow** - The runbook documents preconditions,
+   environment variables, gated integration command, validation/probe/acquire/
+   execute failure handling, release failure escalation, rollback commands, and
+   operator evidence template.
+
+4. **Boundary guard test** - Added
+   `remote-provider-first-gated-attempt-runbook.spec.ts` to verify the runbook
+   keeps the real-provider integration test skipped by default, requires
+   operator gating, documents rollback/stop conditions, avoids resolved
+   credential values, and preserves Journal/non-authoritative/terminal-state
+   boundaries.
+
+Validation:
+
+- targeted runbook guard passed: 4 tests.
+- `pnpm typecheck` passed.
+- `pnpm build` passed.
+- `pnpm test` passed: 22 files passed, 1 gated file skipped, 145 tests passed,
+  1 skipped.
+- `pnpm smoke:ui:browser -- --no-screenshots` passed.
+- V3 bundle validation remains 12/12 pass.
+
+Boundary compliance:
+
+- Real provider test remains skipped by default: yes
+- Dry-run receipt required before real attempt: yes
+- No real provider request during this documentation batch: yes
+- No resolved credential values documented: yes
+- `authoritative: false` boundary documented: yes
+- `terminalStateAdvanced: false` boundary documented: yes
+- Dark Factory Journal remains truth source: yes
+
+Next candidate tasks:
+
+- Run the first-provider-attempt checklist in a controlled environment only
+  after operator supplies a trusted endpoint and shell-only credential.
+- Keep real remote execution behind explicit operator gating until host secret
+  resolver and evidence persistence are available.
+
 ### 2026-05-03 - Remote provider alpha hardening batch 21
 
 1. **Repeatable live browser smoke runner** - Added a Paperclip bridge plugin
