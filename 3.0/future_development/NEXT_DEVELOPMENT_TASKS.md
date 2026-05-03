@@ -866,6 +866,71 @@ Next candidate tasks:
 - Feed host-collected observations and previous breaker/readiness evidence into readiness inputs.
 - Persist breaker state before using it to gate remote execution decisions.
 
+### 2026-05-04 - Paperclip host WebUI full Chinese localization
+
+1. **Host WebUI localization layer** - Added a fork-only zh-CN display layer in
+   the Paperclip UI that translates visible text nodes and common visible
+   attributes (`aria-label`, `title`, `placeholder`, `alt`) after React render.
+
+2. **Centralized maintenance model** - Kept localization in
+   `ui/src/lib/zhCnLocalization.ts` instead of editing hundreds of upstream UI
+   components, reducing future rebase conflict risk.
+
+3. **Broad host coverage** - Covered common shell, onboarding, settings,
+   plugin manager, company environments, issue, document, run ledger, routine,
+   workspace, access, invite, approval, cost, and profile surfaces.
+
+4. **Dark Factory plugin Chinese cleanup continued** - Completed visible
+   Chinese cleanup for the Dark Factory bridge plugin smoke preview, readiness,
+   observability, active-context, manifest, and settings surfaces.
+
+5. **Browser-harness verification** - Verified the live Paperclip host page at
+   `http://127.0.0.1:3100/instance/settings/plugins` reports `lang=zh-CN` and
+   shows Chinese plugin manager text, including fixed strings for plugin alpha
+   notice, readiness, configure, command palette, and search placeholder.
+
+6. **Standalone preview verification** - Verified the Dark Factory standalone
+   smoke preview on a temporary browser-harness port with `lang=zh-CN`, Chinese
+   title, Chinese preview fields, and preserved protocol values such as
+   `onEnvironmentExecute`, `ready`, and `dark-factory-journal`.
+
+7. **Archive created** - Added
+   `docs/dark-factory/DARK_FACTORY_FULL_CHINESE_LOCALIZATION_2026-05-04.md`
+   in the Paperclip fork with scope, non-goals, validation, and maintenance
+   strategy.
+
+Validation:
+
+- Paperclip UI `pnpm typecheck` passed.
+- Paperclip UI `pnpm exec vitest run --config ./vitest.config.ts src/lib/zhCnLocalization.test.ts` passed: 4 tests.
+- Paperclip UI `pnpm build` passed with only the existing large-chunk warning.
+- Dark Factory bridge `pnpm typecheck` passed.
+- Dark Factory bridge `pnpm build` passed.
+- Dark Factory bridge `pnpm test` passed: 185 passed, 1 operator-gated remote test skipped.
+
+Boundary compliance:
+
+- Dark Factory Journal remains truth source: yes
+- `authoritative: false` retained: yes
+- `terminalStateAdvanced: false` retained: yes
+- No real provider request introduced by localization: yes
+- No credential values read, printed, stored, or committed: yes
+- Plugin SDK unchanged: yes
+- V3.0 binding artifacts unchanged: yes
+
+Product status:
+
+- Dark Factory plugin UI is Chinese.
+- Paperclip host shell and common product surfaces are Chinese through the
+  fork-only display layer.
+- Protocol identifiers, package names, hook names, schema keys, command names,
+  model names, and raw logs intentionally remain unchanged.
+
+Next required action:
+
+- Continue using browser-harness to add new dictionary entries whenever a new
+  high-traffic English host surface appears during inner testing.
+
 ### 2026-05-03 - Supervised LinghuCall shim gate completed
 
 1. **Supervised service started** - Installed and started the
