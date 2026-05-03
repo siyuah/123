@@ -995,6 +995,46 @@ Next required action:
   generate supervised evidence, rerun readiness, and confirm the blocker moves
   to `production_cutover_result_not_recorded`.
 
+### 2026-05-03 - Paperclip production cutover result recorder batch 50
+
+1. **Final cutover recorder** - Added Paperclip package script
+   `pnpm evidence:production-cutover -- --input /path/to/CUTOVER_RESULT.json`.
+   It converts a sanitized operator cutover report into final production
+   readiness evidence.
+
+2. **Fail-closed gates** - The recorder requires supervised shim gate,
+   production plan validation, install readiness, post-cutover health,
+   rollback-plan verification, and Journal backup evidence to pass. Missing or
+   false gates fail closed.
+
+3. **Readiness final layer** - Paperclip install readiness and alpha handoff now
+   recognize optional `production-cutover-result-evidence.json`. Production
+   readiness becomes true only if supervised evidence, production plan evidence,
+   and production cutover result evidence all validate.
+
+4. **No fake cutover evidence** - No production cutover evidence file was
+   committed. The recorder exists, but the real file must come from a future
+   sanitized operator cutover report.
+
+Validation:
+
+- Paperclip `pnpm typecheck` passed.
+- Paperclip `pnpm build` passed.
+- Paperclip `pnpm test` passed: 184 tests, 1 gated test skipped.
+- Paperclip `pnpm install:readiness -- --skip-build` still reports
+  `productionReady: false` with current blocker
+  `supervised_shim_gated_attempt_not_recorded`.
+
+Commit:
+
+- `e047cfd8` feat: add production cutover result evidence recorder
+
+Next required action:
+
+- Real operator action is now the only blocker chain entry that cannot be
+  completed offline: start supervised shim service, run supervised gate, then
+  perform and record sanitized cutover result.
+
 ### 2026-05-03 - Remote provider alpha hardening batch 44
 
 1. **LinghuCall endpoint diagnosis archived** - The operator-provided
