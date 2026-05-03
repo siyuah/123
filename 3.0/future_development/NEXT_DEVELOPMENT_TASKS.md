@@ -866,6 +866,39 @@ Next candidate tasks:
 - Feed host-collected observations and previous breaker/readiness evidence into readiness inputs.
 - Persist breaker state before using it to gate remote execution decisions.
 
+### 2026-05-03 - Remote provider alpha hardening batch 44
+
+1. **LinghuCall endpoint diagnosis archived** - The operator-provided
+   `https://api.linghucall.net` endpoint was confirmed to reject direct Dark
+   Factory bridge probing because it does not expose `/api/health` or the Dark
+   Factory external-runs contract. The successful
+   `POST /v1/chat/completions` proof identifies it as an OpenAI-compatible
+   model gateway that requires a Dark Factory provider shim.
+
+2. **V3 manifest classification fix** - Classified the LinghuCall shim,
+   shim tests, gate script, and runbook as `informativeOutOfBundle` in
+   `paperclip_darkfactory_v3_0_bundle_manifest.yaml`. This keeps the shim
+   alpha/operator-gated and outside the V3.0 binding artifact digest.
+
+Validation:
+
+- `python3 tools/validate_v3_bundle.py` passed: 12/12.
+- `.venv312/bin/python -m pytest tests/test_linghucall_provider_shim.py -q`
+  passed: 5 tests.
+
+Boundary compliance:
+
+- No V3.0 binding artifact semantics changed: yes
+- Dark Factory Journal remains truth source: yes
+- No credential value read, printed, stored, or committed: yes
+- LinghuCall direct endpoint is not treated as a Dark Factory provider: yes
+
+Next required action:
+
+- Run `tools/run_linghucall_provider_shim_gate.sh` from an operator shell that
+  already contains `LINGHUCALL_API_KEY`; archive the sanitized gated-test result
+  after the shim-backed bridge test completes.
+
 ### 2026-05-03 - Remote provider alpha hardening batch 26
 
 1. **Pre-execution dry-run guard** - Added

@@ -367,6 +367,10 @@ informativeOutOfBundle:
 - 3.0/future_development/DEVELOPMENT_HANDOFF_2026-04-27.md
 - 3.0/future_development/AI_EXECUTION_HANDOFF_2026-04-28.md
 - 3.0/future_development/DARK_FACTORY_BRIDGE_DEVELOPMENT_ARCHIVE_2026-05-02.md
+- docs/linghucall_provider_shim_runbook.md
+- linghucall_provider_shim.py
+- tests/test_linghucall_provider_shim.py
+- tools/run_linghucall_provider_shim_gate.sh
 - docs/phoenix_v48_inspired_optimization_plan.md
 - QUICKSTART.md
 - journal_data/.gitkeep
