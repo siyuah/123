@@ -2604,6 +2604,63 @@ Next required action:
 - Repeat install verification on a clean operator/staging machine before wider
   internal rollout.
 
+### 2026-05-03 - Dark Factory bridge Chinese UI localization
+
+1. **Plugin UI localized** - Localized the Dark Factory bridge plugin-owned UI
+   surfaces to Chinese: Paperclip dashboard widget, issue detail tab, settings
+   page, and standalone UI smoke preview harness.
+
+2. **Boundary labels localized** - Operator-facing labels now use Chinese for
+   projection-only warnings, truth source, authoritative status, terminal-state
+   advancement, provider readiness, observability, circuit breaker, dry-run
+   guard, and rehydrate receipt controls.
+
+3. **Protocol values preserved** - Runtime enum values, hook names, evidence
+   JSON field names, receipt IDs, Journal cursors, `truthSource`,
+   `authoritative`, and `terminalStateAdvanced` remain unchanged so logs and
+   contracts stay compatible.
+
+4. **Evidence and tests updated** - Updated UI smoke preview tests, browser
+   smoke runner assertions, UI beta evidence checks, alpha install handoff, and
+   install readiness checks to accept the Chinese plugin UI while preserving all
+   non-authoritative boundaries.
+
+5. **Archive created** - Added
+   `docs/dark-factory/DARK_FACTORY_BRIDGE_CHINESE_UI_LOCALIZATION_2026-05-03.md`
+   in the Paperclip fork.
+
+Validation:
+
+- `pnpm typecheck` passed.
+- `pnpm build` passed.
+- `pnpm test` passed: 185 tests passed, 1 operator-gated remote test skipped.
+- `pnpm smoke:ui:browser -- --no-screenshots` passed.
+- `pnpm evidence:ui-beta` passed.
+- `pnpm handoff:alpha-install` passed.
+- `pnpm install:readiness -- --skip-build` passed with `productionReady: true`.
+
+Boundary compliance:
+
+- Dark Factory Journal remains truth source: yes
+- `authoritative: false` retained: yes
+- `terminalStateAdvanced: false` retained: yes
+- No real provider request introduced by localization: yes
+- No credential values read, printed, stored, or committed: yes
+- No Paperclip core/server/ui/SDK changes: yes
+- No V3.0 binding artifact changes: yes
+
+Product status:
+
+- Dark Factory plugin surfaces are Chinese.
+- Paperclip host shell/navigation remains upstream English UI.
+- Full Chinese Paperclip host UI would be a separate fork-only localization
+  workstream.
+
+Next required action:
+
+- Re-run real Paperclip host install/browser verification to confirm the
+  installed plugin bundle renders Chinese in the live host UI.
+
 ### 2026-05-02 - Remote provider alpha hardening batch 14
 
 1. **Operator preflight plan** - Extended `remote-provider-readiness` with a
