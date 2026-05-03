@@ -1272,6 +1272,34 @@ Next candidate tasks:
   shell-only credential reference are available.
 - Exercise a full UI internal beta install flow and archive the install
   readiness report.
+
+### 2026-05-03 - Remote provider alpha hardening batch 34
+
+1. **Product manifest identity** - Updated the Paperclip bridge plugin manifest
+   from example identity to product integration identity:
+   `paperclipai.dark-factory-bridge` / `Dark Factory Bridge`.
+
+2. **Readiness blocker removed** - `pnpm install:readiness` no longer reports
+   `manifest_identity_contains_example`.
+
+3. **Namespace blocker preserved** - The database namespace remains
+   `dark_factory_bridge_poc`; this remains a production blocker until a
+   migration plan is designed and validated.
+
+Validation:
+
+- targeted install readiness and plugin manifest tests passed: 24 tests.
+- `pnpm typecheck` passed.
+- `pnpm build` passed.
+- `pnpm test` passed: 27 test files passed, 1 gated file skipped, 163 tests
+  passed, 1 skipped.
+- `pnpm install:readiness` passed with `installableAlphaReady: true` and
+  `productionReady: false`.
+- `manifest_identity_contains_example` is no longer reported.
+- Remaining production blockers: database namespace `poc`, package publish
+  policy, real provider gated attempt, host-managed secret resolver, and full
+  UI internal beta install flow.
+- V3 bundle validation passed: 12 checks, 0 errors, 0 warnings.
 - Keep real remote execution behind explicit operator gating until host secret
   resolver and evidence persistence are available.
 
