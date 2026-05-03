@@ -1221,6 +1221,57 @@ Next candidate tasks:
 - Once operator endpoint and shell-only credential reference are available,
   run the gated integration test and archive the verification report hash with
   the outcome.
+
+### 2026-05-03 - Remote provider alpha hardening batch 33
+
+1. **Install readiness gate** - Added `scripts/run-install-readiness.mjs` and
+   the package command `pnpm install:readiness` to the Paperclip bridge plugin.
+
+2. **Alpha vs production readiness split** - The report distinguishes
+   `installableAlphaReady` from `productionReady`, so controlled internal
+   install checks can pass without claiming full production readiness.
+
+3. **Readiness checks** - The script verifies package identity, private publish
+   state, `paperclipPlugin` manifest/worker/UI pointers, built dist artifacts,
+   manifest schema, entrypoints, environment driver capability, API routes, UI
+   slots, database namespace declaration, migration file presence, and
+   `dark-factory-mock` driver declaration.
+
+4. **Production blockers captured** - Current blockers are preserved in the
+   report: manifest example wording, database `poc` namespace wording, publish
+   policy pending, real provider gated attempt not complete, host-managed
+   secret resolver pending, and full UI internal beta install flow not yet
+   exercised.
+
+Validation:
+
+- targeted install readiness script test passed: 2 tests.
+- `pnpm typecheck` passed.
+- `pnpm build` passed.
+- `pnpm test` passed: 27 test files passed, 1 gated file skipped, 163 tests
+  passed, 1 skipped.
+- `pnpm install:readiness` passed with `installableAlphaReady: true` and
+  `productionReady: false`.
+- V3 bundle validation passed: 12 checks, 0 errors, 0 warnings.
+
+Boundary compliance:
+
+- Install readiness is offline-only: yes
+- Does not contact real provider: yes
+- Does not authorize remote execution: yes
+- Does not read or store resolved credential values: yes
+- `authoritative: false` boundary recorded: yes
+- `terminalStateAdvanced: false` boundary recorded: yes
+- Dark Factory Journal remains truth source: yes
+
+Next candidate tasks:
+
+- Resolve product identity blockers: remove `example` from manifest id/display
+  name and plan database namespace migration away from `poc`.
+- Complete real provider gated attempt once operator-controlled endpoint and
+  shell-only credential reference are available.
+- Exercise a full UI internal beta install flow and archive the install
+  readiness report.
 - Keep real remote execution behind explicit operator gating until host secret
   resolver and evidence persistence are available.
 
