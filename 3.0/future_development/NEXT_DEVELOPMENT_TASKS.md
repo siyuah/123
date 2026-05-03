@@ -957,6 +957,52 @@ Project status:
 - Paperclip + Dark Factory bridge is now installable and production-ready within
   the recorded fork-local deployment boundary.
 
+### 2026-05-03 - Local browser deployment verification completed
+
+1. **Local services verified** - Confirmed the supervised
+   `linghucall-provider-shim.service` is active and the shim health endpoint
+   `http://127.0.0.1:9791/api/health` reports `ready`,
+   `v3.0-agent-control-r1`, and provider kind
+   `linghucall_openai_compatible`.
+
+2. **WebUI preview verified in browser** - Used `browser-harness` to open
+   `http://127.0.0.1:4178/`. The page title, scenario selector, UI smoke
+   preview section, and remote provider dry-run guard section rendered
+   correctly.
+
+3. **All UI scenarios checked** - Browser-side scenario switching passed for
+   `healthy`, `warning_latency`, `blocked_failures`, and `stale_readiness`.
+   All scenarios preserved `truthSource: dark-factory-journal`,
+   `Authoritative: no`, and `Terminal advanced: no`.
+
+4. **Paperclip archive added** - Created
+   `docs/dark-factory/DARK_FACTORY_LOCAL_DEPLOYMENT_BROWSER_VERIFICATION_2026-05-03.md`
+   in the Paperclip fork to record local deployment/browser verification.
+
+5. **Full bridge verification passed** - The bridge plugin passed
+   `pnpm typecheck`, `pnpm build`, `pnpm test`, and
+   `pnpm install:readiness -- --skip-build`.
+
+Validation:
+
+- `pnpm smoke:ui:browser -- --no-screenshots` passed all four UI scenarios.
+- Browser harness DOM checks confirmed 4 scenario options and expected visible
+  sections.
+- Paperclip bridge tests passed: 184 passed, 1 gated test skipped.
+- Install readiness remains `productionReady: true` with no blockers.
+
+Boundary compliance:
+
+- Dark Factory Journal remains truth source: yes
+- No credential value was read, printed, stored, or committed: yes
+- Browser verification did not advance Paperclip terminal state: yes
+- No V3.0 binding artifact was modified: yes
+
+Project status:
+
+- Local browser deployment verification is complete for the current
+  fork-local deployment boundary.
+
 ### 2026-05-03 - LinghuCall supervised service verification batch 47
 
 1. **Supervised verifier** - Added
