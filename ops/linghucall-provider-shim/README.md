@@ -24,6 +24,8 @@ The shim still keeps these boundaries:
   only.
 - `tools/check_linghucall_provider_shim_health.py`: healthcheck helper.
 - `tools/verify_linghucall_provider_shim_ops.py`: offline operations verifier.
+- `tools/verify_linghucall_provider_shim_supervised.py`: supervised service
+  verifier.
 
 ## User Service Install
 
@@ -81,6 +83,31 @@ pnpm gate:provider-status -- --require-ready
 pnpm test -- tests/remote-gated-integration.spec.ts
 ```
 
+## Supervised Service Verification
+
+After the user service is installed and started, run:
+
+```bash
+cd /home/siyuah/workspace/123
+.venv312/bin/python tools/verify_linghucall_provider_shim_supervised.py \
+  --require-pass
+```
+
+The supervised verifier checks that the user service is active, the operator
+env file and bridge key file are private, and `/api/health` reports ready. It
+does not read the contents of either credential-bearing file.
+
+To include the Paperclip gated integration attempt:
+
+```bash
+export DARK_FACTORY_LINGHUCALL_SHIM_BRIDGE_KEY='<same bridge-facing key>'
+.venv312/bin/python tools/verify_linghucall_provider_shim_supervised.py \
+  --include-paperclip-gate \
+  --require-pass
+```
+
+The generated report contains sanitized status only.
+
 ## Rollback
 
 ```bash
@@ -100,6 +127,8 @@ Dark Factory Journal before retrying failed runs.
 ```bash
 cd /home/siyuah/workspace/123
 .venv312/bin/python tools/verify_linghucall_provider_shim_ops.py
+.venv312/bin/python tools/verify_linghucall_provider_shim_supervised.py
 ```
 
-Expected result: all checks pass, with no credential values printed.
+Expected result: offline checks pass before install; supervised checks pass
+after service start. No credential values are printed.

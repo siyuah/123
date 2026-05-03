@@ -97,6 +97,33 @@ The service template uses:
 This verifier and service template do not install anything by themselves and do
 not print resolved credential values.
 
+### Supervised Service Verification
+
+Once the service is installed and started by the operator, verify the live
+service state:
+
+```bash
+cd /home/siyuah/workspace/123
+.venv312/bin/python tools/verify_linghucall_provider_shim_supervised.py \
+  --require-pass
+```
+
+This checks systemd user-service state, private file permissions, and the
+unauthenticated `/api/health` endpoint. It does not read the operator env file
+contents or bridge key contents.
+
+To record a full Paperclip gated attempt against the supervised service:
+
+```bash
+export DARK_FACTORY_LINGHUCALL_SHIM_BRIDGE_KEY="<bridge-facing key only>"
+.venv312/bin/python tools/verify_linghucall_provider_shim_supervised.py \
+  --include-paperclip-gate \
+  --require-pass
+```
+
+The full gate runs Paperclip's provider-status check and
+`tests/remote-gated-integration.spec.ts` against `http://127.0.0.1:9791`.
+
 ## Local Verification Without LinghuCall Key
 
 The unit tests use a fake LinghuCall client and do not contact the real provider:
@@ -105,6 +132,7 @@ The unit tests use a fake LinghuCall client and do not contact the real provider
 cd /home/siyuah/workspace/123
 .venv312/bin/python -m pytest tests/test_linghucall_provider_shim.py -q
 .venv312/bin/python -m pytest tests/test_linghucall_provider_shim_ops.py -q
+.venv312/bin/python -m pytest tests/test_linghucall_provider_shim_supervised.py -q
 .venv312/bin/python tools/verify_linghucall_provider_shim_ops.py --require-pass
 python3 tools/validate_v3_bundle.py
 ```

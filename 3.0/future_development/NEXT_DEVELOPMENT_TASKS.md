@@ -866,6 +866,51 @@ Next candidate tasks:
 - Feed host-collected observations and previous breaker/readiness evidence into readiness inputs.
 - Persist breaker state before using it to gate remote execution decisions.
 
+### 2026-05-03 - LinghuCall supervised service verification batch 47
+
+1. **Supervised verifier** - Added
+   `tools/verify_linghucall_provider_shim_supervised.py` to verify the
+   operator-managed systemd user service without installing anything or reading
+   credential-bearing file contents.
+
+2. **Live service checks** - The verifier checks
+   `systemctl --user is-active linghucall-provider-shim.service`, private file
+   permissions for the operator env file and bridge key file, and the
+   unauthenticated `/api/health` endpoint.
+
+3. **Optional Paperclip gate** - Added `--include-paperclip-gate` mode to run
+   Paperclip provider-status and `tests/remote-gated-integration.spec.ts`
+   against the supervised shim when the operator exports the bridge-facing key
+   environment variable.
+
+4. **Tests and docs** - Added
+   `tests/test_linghucall_provider_shim_supervised.py` and updated the
+   LinghuCall runbook plus `ops/linghucall-provider-shim/README.md` with the
+   supervised verification flow.
+
+Validation:
+
+- `.venv312/bin/python -m pytest tests/test_linghucall_provider_shim.py tests/test_linghucall_provider_shim_ops.py tests/test_linghucall_provider_shim_supervised.py -q`
+  passed: 11 tests.
+- `.venv312/bin/python tools/verify_linghucall_provider_shim_ops.py --require-pass`
+  passed.
+- `python3 tools/validate_v3_bundle.py` passed: 12/12.
+- Live supervised verifier fails closed on this machine until the operator
+  installs and starts the systemd user service.
+
+Boundary compliance:
+
+- Dark Factory Journal remains truth source: yes
+- No credential value is read, printed, or committed: yes
+- The verifier does not install or start the service: yes
+- No V3.0 binding artifact was modified: yes
+
+Next required action:
+
+- Operator installs and starts the user service, then runs
+  `tools/verify_linghucall_provider_shim_supervised.py --include-paperclip-gate --require-pass`
+  to generate the supervised gated attempt evidence.
+
 ### 2026-05-03 - Remote provider alpha hardening batch 44
 
 1. **LinghuCall endpoint diagnosis archived** - The operator-provided
