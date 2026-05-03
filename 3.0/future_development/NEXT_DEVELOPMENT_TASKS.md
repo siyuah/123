@@ -1955,6 +1955,45 @@ Next required action:
   from Codex unless the operator supplies the required provider inputs and the
   gated integration test passes.
 
+### 2026-05-03 - Remote provider alpha hardening batch 40
+
+1. **Alpha install handoff manifest** - Added
+   `scripts/generate-alpha-install-handoff.mjs` and package script
+   `pnpm handoff:alpha-install` in the Paperclip bridge plugin.
+
+2. **Checked-in install evidence** - Generated
+   `packages/plugins/integrations/dark-factory-bridge/docs/alpha-install-handoff-manifest.json`
+   as the machine-readable controlled internal install handoff.
+
+3. **Install readiness integration** - Updated `pnpm install:readiness` to
+   verify the alpha install handoff manifest in addition to package identity,
+   manifest schema, UI beta evidence, fork-local distribution policy, and
+   host-secret resolver contract.
+
+4. **Production gate preserved** - The handoff manifest explicitly keeps
+   `productionReady: false` and the remaining production blocker
+   `real_provider_gated_attempt_not_completed`.
+
+Validation:
+
+- `pnpm handoff:alpha-install` generated the checked-in manifest.
+- Targeted alpha handoff and install readiness tests passed.
+- Full bridge plugin validation passed.
+- `pnpm install:readiness -- --skip-build` passed with
+  `installableAlphaReady: true` and `productionReady: false`.
+
+Boundary compliance:
+
+- Dark Factory Journal remains truth source: yes
+- `authoritative: false` remains required on all bridge outputs: yes
+- `terminalStateAdvanced: false` remains required on all bridge outputs: yes
+- No real provider connection was attempted: yes
+- No credential value was printed, stored, or committed: yes
+
+Next required action:
+
+- Operator-led real provider gated attempt remains the only production blocker.
+
 ### 2026-05-02 - Remote provider alpha hardening batch 14
 
 1. **Operator preflight plan** - Extended `remote-provider-readiness` with a
