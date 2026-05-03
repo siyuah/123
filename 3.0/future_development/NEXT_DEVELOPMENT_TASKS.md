@@ -2030,6 +2030,47 @@ Next required action:
 
 - Operator-led real provider gated attempt remains the only production blocker.
 
+### 2026-05-03 - Remote provider alpha hardening batch 42
+
+1. **Direct WebUI preview entrypoint fixed** - Browser-harness inspection found
+   that `http://127.0.0.1:4178/` served the built plugin bundle as
+   `text/javascript`, which is valid for Paperclip host loading but confusing
+   when opened directly in a browser.
+
+2. **Preview server split** - Updated the Paperclip bridge plugin so
+   `pnpm dev:ui` now serves the standalone HTML WebUI preview at
+   `http://127.0.0.1:4178/`, while `pnpm dev:ui:bundle` preserves the original
+   host bundle server.
+
+3. **Browser verification** - `browser-harness` opened
+   `http://127.0.0.1:4178/` and verified the rendered title, scenario selector,
+   readiness fields, Journal truth source, `Authoritative: no`, and
+   `Terminal advanced: no`. Screenshot evidence:
+   `C:/Users/76914/Desktop/dark-factory-ui-preview-4178-fixed.png`.
+
+Validation:
+
+- `pnpm dev:ui -- --once` generated the standalone preview artifact.
+- `curl -I http://127.0.0.1:4178/` returned `Content-Type:
+  text/html; charset=utf-8`.
+- `pnpm typecheck` passed.
+- `pnpm build` passed.
+- `pnpm test` passed: 176 passed, 1 gated test skipped.
+- `pnpm smoke:ui:browser -- --no-screenshots` passed all four preview
+  scenarios.
+
+Boundary compliance:
+
+- Dark Factory Journal remains truth source: yes
+- `authoritative: false` remains required on preview outputs: yes
+- `terminalStateAdvanced: false` remains required on preview outputs: yes
+- No real provider connection was attempted: yes
+- No credential value was printed, stored, or committed: yes
+
+Next required action:
+
+- Operator-led real provider gated attempt remains the only production blocker.
+
 ### 2026-05-02 - Remote provider alpha hardening batch 14
 
 1. **Operator preflight plan** - Extended `remote-provider-readiness` with a
