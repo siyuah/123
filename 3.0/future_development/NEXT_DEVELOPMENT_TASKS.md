@@ -1108,6 +1108,60 @@ Next candidate tasks:
   release-candidate checklist before any real provider gated attempt.
 - When an operator-controlled endpoint and shell-only credential reference are
   available, run the gated integration command and archive the packet outcome.
+
+### 2026-05-03 - Remote provider alpha hardening batch 31
+
+1. **First-provider handoff manifest generator** - Added
+   `scripts/generate-first-provider-handoff-manifest.mjs` and the package
+   command `pnpm bundle:first-provider` to the Paperclip bridge plugin.
+
+2. **Artifact binding** - The script reads the preflight evidence JSON and
+   operator session packet, then writes
+   `output/dark-factory-first-provider-handoff/MANIFEST.json` with artifact
+   paths and SHA-256 hashes.
+
+3. **Handoff readiness index** - The manifest records source branch, commit,
+   required command order, check summaries, dry-run summary, stop conditions,
+   operator handoff constraints, and boundary assertions. It intentionally does
+   not embed raw command output tails or resolved credential values.
+
+4. **Runbook update** - Updated the first-provider gated attempt runbook and
+   remote provider operator runbook to require the sequence
+   `preflight:first-provider` -> `packet:first-provider` ->
+   `bundle:first-provider` before any real-provider environment variables are
+   set.
+
+Validation:
+
+- targeted handoff manifest script test passed: 4 tests.
+- `pnpm typecheck` passed.
+- `pnpm build` passed.
+- `pnpm test` passed: 25 test files passed, 1 gated file skipped, 157 tests
+  passed, 1 skipped.
+- `pnpm preflight:first-provider` passed and generated local evidence JSON.
+- `pnpm packet:first-provider` passed and generated session packet with
+  `readyForGatedAttempt: true`.
+- `pnpm bundle:first-provider` passed and generated handoff manifest with
+  `readyForGatedAttempt: true`.
+- V3 bundle validation passed: 12 checks, 0 errors, 0 warnings.
+
+Boundary compliance:
+
+- Handoff manifest is an index and readiness summary only: yes
+- Does not authorize remote execution: yes
+- No real provider request: yes
+- Raw command output tails omitted from manifest: yes
+- Resolved credential values excluded from manifest: yes
+- `authoritative: false` boundary recorded: yes
+- `terminalStateAdvanced: false` boundary recorded: yes
+- Dark Factory Journal remains truth source: yes
+
+Next candidate tasks:
+
+- Use the three-command offline chain as the mandatory release-candidate
+  checkpoint before the first real provider gated attempt.
+- After an operator-controlled endpoint is supplied, attach the handoff manifest
+  hash to the gated integration outcome notes.
 - Keep real remote execution behind explicit operator gating until host secret
   resolver and evidence persistence are available.
 
