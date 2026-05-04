@@ -2852,3 +2852,67 @@ Repository status:
 - Paperclip fork local commit: `fd79fb94 feat: redesign UI with minimal geek aesthetic`.
 - Paperclip fork push completed after retrying with Git HTTP/1.1 transport:
   `fork/fork-master-product` now includes `fd79fb94`.
+
+### 2026-05-04 - Whole-project minimal geek theme unification
+
+1. **Paperclip host theme unified** - Updated the main Paperclip WebUI global
+   theme variables to a dark-only minimal geek palette: `oklch(0.11 0 0)`
+   background, `oklch(0.14 0 0)` card surfaces, `oklch(0.20 0 0)` borders,
+   muted gray labels, subtle status accents, and `6px` radius tokens.
+
+2. **Dark-only behavior locked** - Preserved the ThemeContext API shape while
+   forcing runtime theme application and local storage to `dark`, preventing
+   stale local light-mode preferences from restoring the old UI.
+
+3. **Flat visual hardening** - Added global visual constraints to suppress
+   Tailwind shadow/gradient classes and normalize common rounded sizes to
+   the shared `6px` radius. Updated the account menu to remove its gradient
+   header/shadow and changed the theme menu copy to Chinese dark-only text.
+
+4. **Bridge plugin aligned** - Updated the Dark Factory bridge plugin UI token
+   radius from `8px` to `6px` and replaced gradient skeleton loading with a
+   flat gray pulse so the plugin matches the host minimal visual language.
+
+Browser-harness evidence:
+
+- Live page: `http://127.0.0.1:3100/DAR/dashboard`
+- `document.documentElement.classList.contains("dark") === true`
+- `localStorage["paperclip.theme"] === "dark"`
+- `--background === "oklch(0.11 0 0)"`
+- `--card === "oklch(0.14 0 0)"`
+- `--border === "oklch(0.20 0 0)"`
+- `--radius === "6px"`
+- Sample host card: background `oklch(0.14 0 0)`, border
+  `oklch(0.2 0 0)`, radius `6px`, `box-shadow: none`,
+  `background-image: none`
+- Sample bridge card: background `rgb(26, 26, 26)`, border
+  `rgb(34, 34, 34)`, radius `6px`, `box-shadow: none`,
+  `background-image: none`
+
+Validation:
+
+- Paperclip UI `pnpm typecheck` passed.
+- Paperclip UI focused account menu test passed.
+- Paperclip UI `pnpm build` passed. Vite reported the existing large chunk
+  warning only.
+- Dark Factory bridge plugin `pnpm typecheck` passed.
+- Dark Factory bridge plugin `pnpm build` passed.
+- Dark Factory bridge plugin `pnpm test` passed: 185 tests passed, 1
+  operator-gated remote test skipped.
+- Dark Factory bridge plugin `pnpm smoke:ui:browser` passed for healthy,
+  warning_latency, blocked_failures, and stale_readiness scenarios.
+
+Boundary compliance:
+
+- No provider runtime behavior changed.
+- No data fetching or action logic changed.
+- `authoritative: false` retained.
+- `terminalStateAdvanced: false` retained.
+- Dark Factory Journal remains truth source.
+- No credential values read, printed, stored, or committed.
+
+Repository status:
+
+- Paperclip fork local commit: `a5fdc06d feat: apply minimal geek theme across Paperclip UI`.
+- Paperclip fork push completed: `fork/fork-master-product` now includes
+  `a5fdc06d`.
