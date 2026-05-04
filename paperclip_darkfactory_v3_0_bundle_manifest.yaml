@@ -114,18 +114,18 @@ files:
   normativity: release-gate-tool
 - path: tools/v3_release_readiness.py
   role: release readiness aggregator
-  sha256: 31735102279ee7c53a380dee19af01442bd14aff532344fd34889fefbf5ef401
-  bytes: 16661
+  sha256: 53b0a6ceef2afc4d6f4ff914865b2e46a0ffe7ce11aa6946da555e6852bd54ed
+  bytes: 17306
   normativity: release-gate-tool
 - path: tools/v3_release_dry_run.py
   role: release dry-run checker
-  sha256: 135559aec5fac6959d08b7985241c03f5666170102a1d2ec702d940255556558
-  bytes: 17627
+  sha256: 742a112fc81338e936b5808f2bdc29d24d0a81f183ae78304d1e86c3f900b996
+  bytes: 18114
   normativity: release-gate-tool
 - path: tools/v3_release_evidence.py
   role: release evidence package checker
-  sha256: 8cc6cda4a370405c9f02c559e220128db82e2cc38010d2a1c25cda532a3043de
-  bytes: 17169
+  sha256: 4216fe507df55a702d2a8dc669165daf929b01cd36db4590b3017a817707dd1b
+  bytes: 17656
   normativity: release-gate-tool
 - path: tools/v3_remote_ci.py
   role: optional GitHub Actions release gate helper
