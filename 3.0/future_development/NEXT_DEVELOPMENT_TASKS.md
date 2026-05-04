@@ -3240,15 +3240,15 @@ Validation:
 - Dark Factory bridge plugin `pnpm test` passed: 185 tests passed, 1
   operator-gated remote test skipped.
 - Targeted bridge UI preview tests passed: 5/5.
-- V3 bundle validation currently reports 12 checks / 1 error because the
-  already-tracked informative file
+- V3 bundle validation follow-up: the already-tracked informative file
   `3.0/future_development/DARK_FACTORY_GSTACK_WORKFLOW_OPTIMIZATION_PLAN.md`
-  is not classified by the V3 manifest. This QA hardening entry did not
-  modify V3 binding artifacts or manifest classifications.
+  was added to `informativeOutOfBundle` in the V3 manifest. This restored
+  V3 bundle validation to 12/12 pass without changing binding artifacts.
 
 Repository status:
 
 - Paperclip fork commit: `e1f474c6 fix: harden Chinese UI localization QA findings`.
 - Pushed to `fork/fork-master-product`: yes.
 - Paperclip fork now has Batch 1-5 plus the UI QA hardening patch uploaded.
-- 123 archive update status: this entry records the follow-up QA hardening.
+- 123 archive update status: this entry records the follow-up QA hardening
+  and manifest classification repair.
