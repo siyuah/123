@@ -2807,3 +2807,48 @@ Project status:
   for ordinary operator-visible surfaces in the fork.
 - Protocol compatibility boundaries remain unchanged.
 - Ready for local full UI internal testing and installation verification.
+
+### 2026-05-04 - Dark Factory bridge minimal geek UI redesign + latency fix
+
+1. **Click latency fix landed first** - Committed a separate Paperclip fork fix
+   for the Chinese localization MutationObserver performance issue and plugin
+   JSX runtime child-array rendering stability. Live browser-harness timing
+   improved route clicks to roughly 30-40ms in the checked Dashboard/Issues
+   path.
+
+2. **Minimal geek redesign** - Reworked the Dark Factory bridge plugin UI from
+   the prior industrial card style to a Vercel/Linear-inspired minimal dark
+   interface: `#111` root background, `#1a1a1a` cards, `#222` 1px borders,
+   no shadows, compact pill badges, small status dots, monospace values, and
+   generous spacing.
+
+3. **Dashboard 4-card grid** - The live Dashboard widget now renders a
+   two-column grid with Projection, Provider, Readiness, and Guard cards while
+   keeping all outputs projection-only and non-authoritative.
+
+4. **Browser evidence** - Browser-harness verified the live Paperclip page at
+   `http://127.0.0.1:3100/DAR/dashboard`: `.df-root` and `.df-grid` present,
+   4 `.df-card` elements rendered, computed styles match `rgb(17,17,17)`,
+   `rgb(26,26,26)`, `rgb(34,34,34)`, and `box-shadow: none`.
+
+Validation:
+
+- Dark Factory bridge plugin `pnpm typecheck` passed.
+- Dark Factory bridge plugin `pnpm build` passed.
+- Dark Factory bridge plugin `pnpm test` passed: 185 tests passed, 1
+  operator-gated remote test skipped.
+- Browser-harness visual check passed on the live Paperclip WebUI.
+
+Boundary compliance:
+
+- No data fetching or action logic changed.
+- `authoritative: false` retained.
+- `terminalStateAdvanced: false` retained.
+- Dark Factory Journal remains truth source.
+- No credential values read, printed, stored, or committed.
+
+Repository status:
+
+- Paperclip fork local commit: `fd79fb94 feat: redesign UI with minimal geek aesthetic`.
+- Push to `fork/fork-master-product` was attempted but hit transient GitHub TLS
+  failure: `GnuTLS recv error (-110)`. Retry required.
