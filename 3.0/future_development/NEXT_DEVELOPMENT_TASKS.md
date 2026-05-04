@@ -3068,3 +3068,69 @@ Repository status:
 - First push attempt hit a transient GitHub TLS termination error.
 - Retried with Git HTTP/1.1 transport successfully:
   `fork/fork-master-product` now includes `b0c0373b`.
+
+### 2026-05-04 - UI visual overhaul Batch 4/5: settings + plugin management
+
+1. **Company settings refined** - Updated the company settings page to the
+   minimal geek visual language with wider content breathing room, compact
+   section cards, `border-border/60`, `bg-card/40`, 6px corners, muted
+   inputs, and monospace values for generated snippets and data-like fields.
+
+2. **Profile settings simplified** - Removed the large decorative gradient
+   and shadow-heavy profile presentation. Replaced it with a flat fine-line
+   card and subtle avatar controls while preserving upload, remove, and save
+   behavior.
+
+3. **Access management aligned** - Updated company access tables, pending
+   join request cards, grant cards, dialogs, and reassignment lists with
+   fine borders, muted row hover states, and monospace permission/member
+   identifiers.
+
+4. **Plugin manager and plugin settings polished** - Reworked installed and
+   example plugin lists, warning/error panels, status badges, runtime
+   dashboard rows, details, permissions, and config feedback messages to use
+   flat muted surfaces, low-contrast state colors, and monospace package or
+   capability values.
+
+5. **Company settings sidebar aligned** - Updated the settings sub-sidebar
+   to use the shared sidebar tokens, muted divider, 6px navigation hit areas,
+   and low-noise hover state.
+
+Browser-harness evidence:
+
+- Reused the existing browser-harness Chrome tab; no new tab buildup.
+- Checked `http://127.0.0.1:3100/DAR/company/settings`.
+- Checked `http://127.0.0.1:3100/DAR/company/settings/access`.
+- Checked `http://127.0.0.1:3100/instance/settings/plugins`.
+- Checked `http://127.0.0.1:3100/instance/settings/profile`.
+- Confirmed dark mode variables remained active:
+  `--background: oklch(0.105 0 0)`.
+- Confirmed the updated pages loaded with fine-line card/border nodes and
+  monospace data-value nodes.
+
+Validation:
+
+- `git diff --check` passed.
+- Paperclip UI `pnpm typecheck` passed.
+- Paperclip UI `pnpm build` passed. Vite reported the existing large chunk
+  warning only.
+- Dark Factory bridge plugin `pnpm test` passed: 185 tests passed, 1
+  operator-gated remote test skipped.
+
+Boundary compliance:
+
+- Only class names and visual styling were changed.
+- No data fetching, routing, mutations, provider runtime behavior, or Dark
+  Factory binding artifacts changed.
+- No credential values read, printed, stored, or committed.
+
+Repository status:
+
+- Paperclip fork local commit: `b53f0c69 feat: UI visual overhaul Batch 4/5 - settings and plugin management`.
+- Push attempt 1 failed with transient GitHub TLS termination:
+  `GnuTLS recv error (-110)`.
+- Push retry with Git HTTP/1.1 also failed with the same transient TLS
+  termination. Remote `fork/fork-master-product` still points at Batch 3
+  (`b0c0373b`) at the time of this archive entry.
+- Continue development locally; retry pushing Batch 4 together with the next
+  successful network window.
