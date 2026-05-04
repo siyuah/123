@@ -3015,3 +3015,56 @@ Repository status:
 - Paperclip fork local commit: `f6d93abf feat: UI visual overhaul Batch 2/5 - layout shell and navigation`.
 - Paperclip fork push completed: `fork/fork-master-product` now includes
   `f6d93abf`.
+
+### 2026-05-04 - UI visual overhaul Batch 3/5: core pages
+
+1. **Dashboard refined** - Updated metric cards, chart cards, recent
+   activity, recent task lists, empty panels, and alert surfaces to the
+   minimal geek style: fine borders, no shadows, `bg-card/40`, 6px corners,
+   monospace metric values, and softer hover states.
+
+2. **Issue experience tightened** - Updated Issue detail header, pause/hidden
+   notices, attachment drag state, title/description typography, and Issues
+   list toolbar styling. `IssuesList.tsx` was included because `Issues.tsx`
+   is a data container and the actual page chrome lives in that component.
+
+3. **Agents surfaces aligned** - Updated Agents list/org controls, filter
+   popover, view toggle, Live badges, Agent detail header, overview charts,
+   recent issues, cost cards, floating save bar, and cost table surfaces to
+   the same fine-line system.
+
+4. **Reusable core components polished** - Updated `MetricCard`,
+   `ActivityCharts`, `ActivityRow`, and `EntityRow` so shared dashboard,
+   issue, and agent screens inherit the flat card/row treatment.
+
+Browser-harness evidence:
+
+- Checked `http://127.0.0.1:3100/DAR/dashboard` in the existing automation
+  tab: metric and chart cards displayed as fine-line cards with muted surfaces.
+- Checked `http://127.0.0.1:3100/DAR/agents/all`: Agents toolbar, tabs, and
+  empty states remained functional and visually aligned.
+- Checked `http://127.0.0.1:3100/DAR/issues`: Issues toolbar and row list
+  rendered correctly with the new card surface.
+
+Validation:
+
+- `git diff --check` passed.
+- Paperclip UI `pnpm typecheck` passed.
+- Paperclip UI `pnpm build` passed. Vite reported the existing large chunk
+  warning only.
+- Dark Factory bridge plugin `pnpm test` passed: 185 tests passed, 1
+  operator-gated remote test skipped.
+
+Boundary compliance:
+
+- Only class names and visual styling were changed.
+- No data fetching, routing, mutations, provider runtime behavior, or Dark
+  Factory binding artifacts changed.
+- No credential values read, printed, stored, or committed.
+
+Repository status:
+
+- Paperclip fork local commit: `b0c0373b feat: UI visual overhaul Batch 3/5 - core pages`.
+- First push attempt hit a transient GitHub TLS termination error.
+- Retried with Git HTTP/1.1 transport successfully:
+  `fork/fork-master-product` now includes `b0c0373b`.
