@@ -8,7 +8,7 @@ protocolReleaseTag: `v3.0-agent-control-r1`
 - `paperclip_darkfactory_v3_0_core_objects.schema.json`: `832ee119c3909cd4070f036411109977f2f1ac618432fd2488b6f1b1983afa7d` (23358 bytes)
 - `paperclip_darkfactory_v3_0_event_contracts.yaml`: `b8a6ec81c6a1935fdfb2cfd55d0b0e4bb3f6b6d6ba195bc527c9084472a87899` (10208 bytes)
 - `paperclip_darkfactory_v3_0_runtime_config_registry.yaml`: `17e23678a004d2bc8f598088a2af19abfd7d3b13ab92f6fbb12d735f7eab89a1` (12589 bytes)
-- `paperclip_darkfactory_v3_0_bundle_manifest.yaml`: `558ca25944d64a1b60b332ea7abdfeb17d2e3fd8a00b91c49d0af624e791e66a` (19913 bytes)
+- `paperclip_darkfactory_v3_0_bundle_manifest.yaml`: `063664fb204c495ce6d66a42979dc6422f682f1f2e961bcd124bc694cea9d905` (19979 bytes)
 
 ## Counts
 
