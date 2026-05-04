@@ -3190,3 +3190,65 @@ Repository status:
   pushed to `fork/fork-master-product` when GitHub TLS connectivity allows.
 - UI visual overhaul plan status: **5/5 batches implemented locally and
   verified.**
+
+### 2026-05-04 - UI QA hardening: Chinese localization route sweep
+
+1. **Residual localization cleanup** - Added a small follow-up patch after
+   browser-harness review to tighten the fork-only zh-CN display layer and
+   Dark Factory bridge preview UI. Remaining operator-visible `Provider`,
+   `Journal`, `dry-run`, and `receipt` labels were translated where they are
+   plain UI copy.
+
+2. **Protocol-safe display boundary** - Preserved protocol identifiers,
+   hook names, evidence schema keys, receipt IDs, adapter IDs, package names,
+   and `dark-factory-journal` values. The change is display-only and does
+   not modify runtime contracts, provider behavior, or Dark Factory binding
+   artifacts.
+
+3. **Browser-harness route sweep** - Reused a single browser-harness tab and
+   checked:
+   - `http://127.0.0.1:3100/DAR/dashboard`
+   - `http://127.0.0.1:3100/DAR/dashboard/live`
+   - `http://127.0.0.1:3100/DAR/company/settings`
+   - `http://127.0.0.1:3100/DAR/company/settings/access`
+   - `http://127.0.0.1:3100/instance/settings/plugins`
+   - `http://127.0.0.1:3100/instance/settings/adapters`
+   - `http://127.0.0.1:4178/`
+
+4. **Browser QA result** - All checked routes reported `lang=zh-CN`, zero
+   visible error alerts, and no target residual strings for the previously
+   observed fragments:
+   `Configure company identity`, `Provider alpha`, `受控 probe`,
+   `Host 上下文`, `执行 dry-run`, `Dry-run 回执`,
+   `是否联系 Provider`, `Journal remains truth source`,
+   `Built-in Adapters`, and `内置 Adapters`.
+
+5. **Latency note** - The first dashboard navigation took about 4.3s on the
+   local dev server, while subsequent host routes were about 1.5-1.6s and
+   the standalone bridge preview was about 0.8s. The plugin preview scenario
+   selector responded in about 5ms. No click-handler delay regression was
+   observed.
+
+Validation:
+
+- Paperclip UI `pnpm typecheck` passed.
+- Paperclip UI `pnpm build` passed. Vite reported the existing large chunk
+  warning only.
+- Paperclip UI localization unit test passed: 10/10.
+- Dark Factory bridge plugin `pnpm typecheck` passed.
+- Dark Factory bridge plugin `pnpm build` passed.
+- Dark Factory bridge plugin `pnpm test` passed: 185 tests passed, 1
+  operator-gated remote test skipped.
+- Targeted bridge UI preview tests passed: 5/5.
+- V3 bundle validation currently reports 12 checks / 1 error because the
+  already-tracked informative file
+  `3.0/future_development/DARK_FACTORY_GSTACK_WORKFLOW_OPTIMIZATION_PLAN.md`
+  is not classified by the V3 manifest. This QA hardening entry did not
+  modify V3 binding artifacts or manifest classifications.
+
+Repository status:
+
+- Paperclip fork commit: `e1f474c6 fix: harden Chinese UI localization QA findings`.
+- Pushed to `fork/fork-master-product`: yes.
+- Paperclip fork now has Batch 1-5 plus the UI QA hardening patch uploaded.
+- 123 archive update status: this entry records the follow-up QA hardening.
