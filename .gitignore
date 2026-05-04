@@ -4,6 +4,10 @@ caddy_data/
 caddy_config/
 .dark_factory_http/
 
+# Python runtime caches
+__pycache__/
+*.py[cod]
+
 # Journal data (runtime, not version controlled)
 journal_data/*.jsonl
 journal_data/*.jsonl.bak

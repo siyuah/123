@@ -98,7 +98,7 @@ files:
   normativity: release-gate-report
 - path: paperclip_darkfactory_v3_0_bundle_manifest.yaml
   sha256: SELF_HASH_EXCLUDED
-  bytes: 15617
+  bytes: 16889
   normativity: release-gate-input
 - path: paperclip_darkfactory_v3_0_consistency_report.json
   sha256: SELF_HASH_EXCLUDED
@@ -148,8 +148,8 @@ files:
   normativity: release-gate-tool
 - path: .gitignore
   role: internal preview local secret and runtime artifact ignore rules
-  sha256: 10d9b73ed71fd02ec3009415aba3ecf6626de33801818c3fce03f4bc5a79615f
-  bytes: 182
+  sha256: 2b0e056585939c6913f8bf0b228a0544f95a6b8628ad883f9a35277465880996
+  bytes: 230
   normativity: runtime-operator-helper
 - path: .github/workflows/v3-bundle-validate.yml
   sha256: 1713723b9a78b03bc58cb3d180998cf18909d59049f0920a463e26bc44181a07
@@ -326,6 +326,16 @@ files:
   sha256: 37b5222ccbbe93c09043494802523715edc57b5cc280737b572e7dcc367765a5
   bytes: 2004
   normativity: informative
+- path: tools/df_review_readiness.py
+  role: review readiness dashboard aggregator
+  sha256: 63dca69926818745eb85ed9eabcece5ed4663514e0462ca7f274777ec31759cc
+  bytes: 15916
+  normativity: review-gate-tool
+- path: tests/test_df_review_readiness.py
+  role: review readiness dashboard unit tests
+  sha256: e6fe3c8446f360f85610952d72910faef30f88a94359b8769b184ce8af483383
+  bytes: 5620
+  normativity: review-gate-test
 informativeOutOfBundle:
 - 3.0/DEVELOPMENT_SPEC.md
 - 3.0/DEVELOPMENT_SPEC_v1.1.md
@@ -369,6 +379,11 @@ informativeOutOfBundle:
 - 3.0/future_development/DARK_FACTORY_BRIDGE_DEVELOPMENT_ARCHIVE_2026-05-02.md
 - 3.0/future_development/DARK_FACTORY_GSTACK_WORKFLOW_OPTIMIZATION_PLAN.md
 - docs/linghucall_provider_shim_runbook.md
+- AGENTS.md
+- docs/ai_workflows.md
+- docs/progress/README.md
+- docs/generated/README.md
+- docs/runbooks/README.md
 - linghucall_provider_shim.py
 - ops/linghucall-provider-shim/README.md
 - ops/linghucall-provider-shim/linghucall-provider-shim.env.example
