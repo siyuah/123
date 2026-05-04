@@ -37,24 +37,24 @@ files:
   bytes: 8473
   normativity: normative
 - path: paperclip_darkfactory_v3_0_core_enums.yaml
-  sha256: bc57c970923fef7b879940922857c84abd848aa79a68254f5bde6bc5056d80b5
-  bytes: 4585
+  sha256: 485c46a7aa7dc2c9e4542b10ed6b053bef67da668b26b1a899428b07f0a17035
+  bytes: 5420
   normativity: binding
 - path: paperclip_darkfactory_v3_0_core_objects.schema.json
-  sha256: a45ba1a1b78297f62c744f75b776f0587e5958a63f8077149e3ee04173df0137
-  bytes: 16429
+  sha256: ca53568c76bd8b0df640e0c4d09b517b31f7c78e55d8103436453fad2094fbe3
+  bytes: 19784
   normativity: binding
 - path: paperclip_darkfactory_v3_0_event_contracts.yaml
-  sha256: 4b8769d6d7ea6356323d7b61ba01a3fd4c69b732b8953234bb875986fde3fa22
-  bytes: 7721
+  sha256: d951a8d17caf842a39cf4dad117fa180935d7afe34e9352de26bd64f42b7529b
+  bytes: 9158
   normativity: binding
 - path: paperclip_darkfactory_v3_0_state_transition_matrix.csv
   sha256: 2ff614e07d573ba5097862025e23bebb8cb5a59ea46a887bd6b963770a1e2eec
   bytes: 4076
   normativity: binding
 - path: paperclip_darkfactory_v3_0_runtime_config_registry.yaml
-  sha256: 69599af6a628b50b677b07734d992f0f78ef4a325e3c4bc4bcea30ecca2159a6
-  bytes: 11335
+  sha256: 17e23678a004d2bc8f598088a2af19abfd7d3b13ab92f6fbb12d735f7eab89a1
+  bytes: 12589
   normativity: binding
 - path: paperclip_darkfactory_v3_0_impl_pack.md
   sha256: 03b472ec321e3b90d3ba4691c33ebd1c3e025f81de538fda473e983f0f62aac7
@@ -98,7 +98,7 @@ files:
   normativity: release-gate-report
 - path: paperclip_darkfactory_v3_0_bundle_manifest.yaml
   sha256: SELF_HASH_EXCLUDED
-  bytes: 16962
+  bytes: 17638
   normativity: release-gate-input
 - path: paperclip_darkfactory_v3_0_consistency_report.json
   sha256: SELF_HASH_EXCLUDED
@@ -258,6 +258,21 @@ files:
   sha256: d891dab2b3d97db8997c5eadd002184b5d293fcbdd9376df1cc2c11b62583d3a
   bytes: 4079
   normativity: release-gate-test
+- path: tests/test_v3_provider_health.py
+  role: provider health projection and V3 contract tests
+  sha256: e7de02c9187e8eca441ff4ade81b32953909eeada1dc02c3577b6466fa14553b
+  bytes: 2627
+  normativity: release-gate-test
+- path: tests/test_v3_route_decision_reason.py
+  role: route decision reason contract and projection tests
+  sha256: 7e4d99d58fd8ba4c2a9f2f5dfdaab6072adfdcd975141aeb1a9a298869c47a50
+  bytes: 1759
+  normativity: release-gate-test
+- path: tests/test_v3_guardrail.py
+  role: guardrail decision contract and journal delete precheck tests
+  sha256: 2e5b4f28ec413b037756040dbb2404a062805060f9242b6c2c5317f8413871fc
+  bytes: 2599
+  normativity: release-gate-test
 - path: tests/golden_timelines/v3_0/GL-V30-routing-chat.jsonl
   sha256: 06909dfbe69534a7177d3494c7f4f0443b22358ddb696e0f023789dbc49358be
   bytes: 628
@@ -288,8 +303,8 @@ files:
   normativity: test-golden-timeline
 - path: server.py
   role: local HTTP server runtime
-  sha256: 1f81897b281675a9cc0e317831c0f70fd06a74feb774b84dcd7d0b3f4c0eaa61
-  bytes: 34129
+  sha256: 753b5a991985e2ffa2dbf36f827405c8f3b41a3c4c6a3f2e198cacddfd854410
+  bytes: 38370
   normativity: minimal-runtime-skeleton
 - path: Caddyfile
   role: internal preview TLS reverse proxy configuration

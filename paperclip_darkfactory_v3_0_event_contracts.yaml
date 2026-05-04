@@ -191,6 +191,46 @@ events:
       - routeDecisionId
       - recoveryLane
       - cutoverPerformed
+  - name: provider.health.observed
+    version: v1
+    canonicalName: provider.health.observed
+    fullName: provider.health.observed.v1
+    replaySafe: true
+    partitionKey: providerId
+    orderingScope: provider
+    idempotencyKey: eventId
+    requiredPayload:
+      - providerId
+      - status
+      - observedAt
+      - fallbackEligible
+  - name: provider.fallback.activated
+    version: v1
+    canonicalName: provider.fallback.activated
+    fullName: provider.fallback.activated.v1
+    replaySafe: true
+    partitionKey: runId
+    orderingScope: attempt
+    idempotencyKey: routeDecisionId
+    requiredPayload:
+      - providerId
+      - fallbackProviderId
+      - routeDecisionId
+      - recoveryLane
+      - activatedAt
+  - name: provider.recovered
+    version: v1
+    canonicalName: provider.recovered
+    fullName: provider.recovered.v1
+    replaySafe: true
+    partitionKey: providerId
+    orderingScope: provider
+    idempotencyKey: eventId
+    requiredPayload:
+      - providerId
+      - previousStatus
+      - recoveredAt
+      - recoveryLane
   - name: route.cutover.performed
     version: v1
     canonicalName: route.cutover.performed
@@ -285,3 +325,18 @@ events:
       - antibodyPatternRef
       - triggerFaultClass
       - matchThreshold
+  - name: guardrail.decision.recorded
+    version: v1
+    canonicalName: guardrail.decision.recorded
+    fullName: guardrail.decision.recorded.v1
+    replaySafe: true
+    partitionKey: traceId
+    orderingScope: guardrail
+    idempotencyKey: traceId
+    requiredPayload:
+      - operation
+      - level
+      - decision
+      - reason
+      - confirmationRequired
+      - traceId

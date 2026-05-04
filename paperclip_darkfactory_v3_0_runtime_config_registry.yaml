@@ -164,6 +164,30 @@ registry:
     owner: routing-plane
     metric_dependency: provider_retry_attempts_timeout
     source: runtime-design-10.1
+  - key: provider.health.timeoutMs
+    type: integer
+    default: 30000
+    scope: provider
+    reload: hot
+    owner: routing-plane
+    metric_dependency: provider_health_timeout_count
+    source: phoenix-v48-provider-health
+  - key: provider.health.rateLimitWindow.max429Count
+    type: integer
+    default: 3
+    scope: provider
+    reload: hot
+    owner: routing-plane
+    metric_dependency: provider_429_count
+    source: phoenix-v48-provider-health
+  - key: provider.fallback.enabled
+    type: boolean
+    default: true
+    scope: deployment_profile
+    reload: hot
+    owner: routing-plane
+    metric_dependency: provider_fallback_activated_count
+    source: phoenix-v48-provider-health
   - key: routing.retry.maxAttempts.transient_5xx
     type: integer
     default: 1
@@ -196,6 +220,22 @@ registry:
     owner: routing-plane
     metric_dependency: unverifiable_degrade_low_risk_only_invocations
     source: runtime-design-10.1
+  - key: guardrail.approval.defaultHighRiskWriteLevel
+    type: enum(P0_dual_confirm|P1_single_confirm|P2_auto)
+    default: P1_single_confirm
+    scope: env
+    reload: hot
+    owner: governance
+    metric_dependency: guardrail_review_required_count
+    source: phoenix-v48-guardrail
+  - key: guardrail.journalDelete.level
+    type: enum(P0_dual_confirm|P1_single_confirm|P2_auto)
+    default: P0_dual_confirm
+    scope: env
+    reload: hot
+    owner: governance
+    metric_dependency: guardrail_blocked_journal_delete_count
+    source: phoenix-v48-guardrail
   - key: memory.extractor.minConfidence
     type: float
     default: 0.70

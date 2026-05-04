@@ -254,10 +254,23 @@ class RouteDecisionView(BaseModel):
     selectedExecutorClass: str
     fallbackDepth: int
     decisionReason: str
+    routeDecisionReasons: list[dict[str, Any]] = Field(default_factory=list)
     routeDecisionState: str
     attemptId: str
     routePolicyRef: str
     recordedAt: str
+
+
+class ProviderHealthRecordView(BaseModel):
+    protocolReleaseTag: str = PROTOCOL_RELEASE_TAG
+    providerId: str
+    status: str
+    faultClass: Optional[str] = None
+    lastFailureAt: Optional[str] = None
+    recoveryLane: str
+    fallbackEligible: bool
+    authoritative: bool = False
+    truthSource: str = "dark-factory-journal"
 
 
 class ProviderFailureView(BaseModel):
@@ -292,6 +305,18 @@ class HealthView(BaseModel):
     journal: str
     events: int
     projection: dict[str, int]
+
+
+class GuardrailDecisionView(BaseModel):
+    protocolReleaseTag: str = PROTOCOL_RELEASE_TAG
+    operation: str
+    level: str
+    decision: str
+    reason: str
+    confirmationRequired: bool
+    traceId: str
+    authoritative: bool = False
+    truthSource: str = "dark-factory-journal"
 
 
 class ServerState:
@@ -416,10 +441,83 @@ def route_decision_view(value: RouteDecisionProjection) -> RouteDecisionView:
         selectedExecutorClass=decision.selectedExecutorClass,
         fallbackDepth=decision.fallbackDepth,
         decisionReason=decision.decisionReason,
+        routeDecisionReasons=route_decision_reasons_for(decision.workloadClass, decision.selectedExecutorClass, decision.fallbackDepth),
         routeDecisionState=decision.routeDecisionState,
         attemptId=decision.attemptId,
         routePolicyRef=decision.routePolicyRef,
         recordedAt=decision.recordedAt,
+    )
+
+
+def route_decision_reasons_for(workload_class: str, selected_executor_class: str, fallback_depth: int) -> list[dict[str, Any]]:
+    reasons: list[dict[str, Any]] = [
+        {
+            "protocolReleaseTag": PROTOCOL_RELEASE_TAG,
+            "reasonCode": "workload_class_code",
+            "sourceSignal": workload_class,
+            "confidence": 1.0,
+            "humanReadableNote": f"workload class {workload_class} selected executor {selected_executor_class}",
+            "riskLevel": "low",
+            "costLevel": "standard",
+        }
+    ]
+    if fallback_depth > 0:
+        reasons.append(
+            {
+                "protocolReleaseTag": PROTOCOL_RELEASE_TAG,
+                "reasonCode": "fallback_allowed",
+                "sourceSignal": f"fallbackDepth={fallback_depth}",
+                "confidence": 1.0,
+                "humanReadableNote": "fallback route was selected by routing policy",
+                "riskLevel": "medium",
+                "costLevel": "operator_confirmed",
+            }
+        )
+    return reasons
+
+
+def provider_health_records(plane: ControlPlane) -> list[ProviderHealthRecordView]:
+    projection = plane.projection()
+    if not projection.route_decisions:
+        return [
+            ProviderHealthRecordView(
+                providerId="default-local-provider",
+                status="unknown",
+                recoveryLane="retry_same_route",
+                fallbackEligible=False,
+            )
+        ]
+
+    records: dict[str, ProviderHealthRecordView] = {}
+    for projected in projection.route_decisions.values():
+        provider_id = projected.decision.selectedExecutorClass
+        fallback_eligible = projected.decision.fallbackDepth > 0
+        records[provider_id] = ProviderHealthRecordView(
+            providerId=provider_id,
+            status="healthy" if not fallback_eligible else "degraded",
+            recoveryLane="retry_same_route" if not fallback_eligible else "cutover_fallback_route",
+            fallbackEligible=fallback_eligible,
+        )
+    return [records[key] for key in sorted(records)]
+
+
+def guardrail_decision_for(operation: str, *, trace_id: str) -> GuardrailDecisionView:
+    if operation in {"journal.delete", "journal.purge", "journal.truncate"}:
+        return GuardrailDecisionView(
+            operation=operation,
+            level="P0_dual_confirm",
+            decision="blocked",
+            reason="append-only journal cannot be deleted through preview API",
+            confirmationRequired=True,
+            traceId=trace_id,
+        )
+    return GuardrailDecisionView(
+        operation=operation,
+        level="P2_auto",
+        decision="allowed",
+        reason="low-risk read or projection operation",
+        confirmationRequired=False,
+        traceId=trace_id,
     )
 
 
@@ -733,6 +831,18 @@ def create_app(*, journal_path: Path = DEFAULT_JOURNAL_PATH, root: Path = ROOT, 
         if state.plane().get_run(run_id) is None:
             raise http_error(404, "run_not_found", f"run {run_id!r} was not found", trace_id=trace_id)
         return []
+
+    @app.get("/provider-health", response_model=list[ProviderHealthRecordView])
+    @app.get("/api/provider-health", response_model=list[ProviderHealthRecordView])
+    async def get_provider_health() -> list[ProviderHealthRecordView]:
+        return provider_health_records(state.plane())
+
+    @app.delete("/journal")
+    @app.delete("/api/journal")
+    async def delete_journal(request: Request) -> JSONResponse:
+        trace_id = request_trace_id(request)
+        decision = guardrail_decision_for("journal.delete", trace_id=trace_id)
+        return JSONResponse(status_code=403, content=decision.model_dump())
 
     @app.get("/external-runs/{run_id}/repair-attempts", response_model=list[RepairAttemptView])
     @app.get("/api/external-runs/{run_id}/repair-attempts", response_model=list[RepairAttemptView])

@@ -90,6 +90,13 @@ enums:
     - context_length_exceeded
     - response_contract_invalid
     - provider_unreachable
+  providerHealthState:
+    - healthy
+    - degraded
+    - exhausted
+    - unreachable
+    - rate_limited
+    - unknown
   recoveryLane:
     - retry_same_route
     - cutover_fallback_route
@@ -118,6 +125,27 @@ enums:
     - cutover_performed
     - degraded
     - aborted
+  routeDecisionReasonCode:
+    - workload_class_code
+    - requires_capability_lease
+    - provider_degraded
+    - provider_exhausted
+    - manual_gate_required
+    - high_risk_write
+    - memory_injection_required
+    - repair_lane_required
+    - fallback_allowed
+    - fallback_blocked_by_policy
+  riskLevel:
+    - low
+    - medium
+    - high
+    - critical
+  costLevel:
+    - low_cost
+    - standard
+    - expensive
+    - operator_confirmed
   runState:
     - requested
     - validating
@@ -149,6 +177,14 @@ enums:
     - medium
     - high
     - irreversible
+  approvalLevel:
+    - P0_dual_confirm
+    - P1_single_confirm
+    - P2_auto
+  guardrailDecision:
+    - allowed
+    - review_required
+    - blocked
   timingBucketShift:
     - "0"
     - "1"
@@ -165,6 +201,10 @@ enums:
     - schema.write_fence.rejected
     - route.decision.recorded
     - provider.failure.recorded
+    - provider.health.observed
+    - provider.fallback.activated
+    - provider.recovered
+    - guardrail.decision.recorded
     - route.cutover.performed
     - memory.artifact.created
     - memory.artifact.corrected

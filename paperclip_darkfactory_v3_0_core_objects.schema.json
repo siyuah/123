@@ -10,12 +10,15 @@
     { "$ref": "#/$defs/ConsumptionWaiver" },
     { "$ref": "#/$defs/ShadowCompareRecord" },
     { "$ref": "#/$defs/RouteDecision" },
+    { "$ref": "#/$defs/RouteDecisionReason" },
     { "$ref": "#/$defs/ProviderFailureRecord" },
+    { "$ref": "#/$defs/ProviderHealthRecord" },
     { "$ref": "#/$defs/ParkRecord" },
     { "$ref": "#/$defs/RehydrationToken" },
     { "$ref": "#/$defs/MemoryArtifact" },
     { "$ref": "#/$defs/PromptInjectionReceipt" },
-    { "$ref": "#/$defs/RepairAttempt" }
+    { "$ref": "#/$defs/RepairAttempt" },
+    { "$ref": "#/$defs/GuardrailDecision" }
   ],
   "$defs": {
     "IsoDateTime": {
@@ -95,9 +98,36 @@
         "provider_unreachable"
       ]
     },
+    "ProviderHealthState": {
+      "type": "string",
+      "enum": ["healthy", "degraded", "exhausted", "unreachable", "rate_limited", "unknown"]
+    },
     "RecoveryLane": {
       "type": "string",
       "enum": ["retry_same_route", "cutover_fallback_route", "degrade_low_risk_only", "enter_repair_lane", "park_manual", "fail_terminal"]
+    },
+    "RouteDecisionReasonCode": {
+      "type": "string",
+      "enum": [
+        "workload_class_code",
+        "requires_capability_lease",
+        "provider_degraded",
+        "provider_exhausted",
+        "manual_gate_required",
+        "high_risk_write",
+        "memory_injection_required",
+        "repair_lane_required",
+        "fallback_allowed",
+        "fallback_blocked_by_policy"
+      ]
+    },
+    "RiskLevel": {
+      "type": "string",
+      "enum": ["low", "medium", "high", "critical"]
+    },
+    "CostLevel": {
+      "type": "string",
+      "enum": ["low_cost", "standard", "expensive", "operator_confirmed"]
     },
     "MemoryArtifactType": {
       "type": "string",
@@ -118,6 +148,14 @@
     "BlastRadiusClass": {
       "type": "string",
       "enum": ["low", "medium", "high", "irreversible"]
+    },
+    "ApprovalLevel": {
+      "type": "string",
+      "enum": ["P0_dual_confirm", "P1_single_confirm", "P2_auto"]
+    },
+    "GuardrailDecisionValue": {
+      "type": "string",
+      "enum": ["allowed", "review_required", "blocked"]
     },
     "TimingBucketShift": {
       "type": "string",
@@ -313,8 +351,32 @@
         "selectedExecutorClass": { "type": "string" },
         "fallbackDepth": { "type": "integer", "minimum": 0 },
         "decisionReason": { "type": "string" },
+        "routeDecisionReasons": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/RouteDecisionReason" }
+        },
         "routeDecisionState": { "$ref": "#/$defs/RouteDecisionState" },
         "recordedAt": { "$ref": "#/$defs/IsoDateTime" }
+      }
+    },
+    "RouteDecisionReason": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "protocolReleaseTag",
+        "reasonCode",
+        "sourceSignal",
+        "confidence",
+        "humanReadableNote"
+      ],
+      "properties": {
+        "protocolReleaseTag": { "const": "v3.0-agent-control-r1" },
+        "reasonCode": { "$ref": "#/$defs/RouteDecisionReasonCode" },
+        "sourceSignal": { "type": "string" },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+        "humanReadableNote": { "type": "string" },
+        "riskLevel": { "$ref": "#/$defs/RiskLevel" },
+        "costLevel": { "$ref": "#/$defs/CostLevel" }
       }
     },
     "ProviderFailureRecord": {
@@ -345,6 +407,26 @@
         "cutoverPerformed": { "type": "boolean" },
         "evidenceRef": { "type": "string" },
         "recordedAt": { "$ref": "#/$defs/IsoDateTime" }
+      }
+    },
+    "ProviderHealthRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "protocolReleaseTag",
+        "providerId",
+        "status",
+        "recoveryLane",
+        "fallbackEligible"
+      ],
+      "properties": {
+        "protocolReleaseTag": { "const": "v3.0-agent-control-r1" },
+        "providerId": { "type": "string" },
+        "status": { "$ref": "#/$defs/ProviderHealthState" },
+        "faultClass": { "$ref": "#/$defs/ProviderFaultClass" },
+        "lastFailureAt": { "$ref": "#/$defs/IsoDateTime" },
+        "recoveryLane": { "$ref": "#/$defs/RecoveryLane" },
+        "fallbackEligible": { "type": "boolean" }
       }
     },
     "ParkRecord": {
@@ -477,6 +559,28 @@
         "antibodyPatternRef": { "type": "string" },
         "operatorApprovalRequired": { "type": "boolean" },
         "completedAt": { "$ref": "#/$defs/IsoDateTime" }
+      }
+    },
+    "GuardrailDecision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "protocolReleaseTag",
+        "operation",
+        "level",
+        "decision",
+        "reason",
+        "confirmationRequired",
+        "traceId"
+      ],
+      "properties": {
+        "protocolReleaseTag": { "const": "v3.0-agent-control-r1" },
+        "operation": { "type": "string" },
+        "level": { "$ref": "#/$defs/ApprovalLevel" },
+        "decision": { "$ref": "#/$defs/GuardrailDecisionValue" },
+        "reason": { "type": "string" },
+        "confirmationRequired": { "type": "boolean" },
+        "traceId": { "type": "string" }
       }
     }
   }
