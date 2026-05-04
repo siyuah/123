@@ -3252,3 +3252,61 @@ Repository status:
 - Paperclip fork now has Batch 1-5 plus the UI QA hardening patch uploaded.
 - 123 archive update status: this entry records the follow-up QA hardening
   and manifest classification repair.
+
+### 2026-05-05 - Full browser-harness UI audit and final polish
+
+1. **Single-tab browser audit** - Reused the existing browser-harness Chrome
+   tab and closed/ignored extra blank targets. Audited 41 Paperclip routes
+   across `#main-content` top/middle/bottom scroll positions, including
+   dashboard, issues, projects, agents, company settings, instance settings,
+   plugin manager, plugin detail, adapter manager, design guide, and Dark
+   Factory bridge surfaces. No horizontal overflow remained after fixes.
+
+2. **Root cause of stale UI** - Confirmed the visible old Dark Factory widget
+   style was caused by the plugin-hosted dashboard loading
+   `/_plugins/paperclipai.dark-factory-bridge/ui/index.css` from the built
+   `dist/ui` bundle. Source CSS had changed, but the local plugin bundle had
+   not been rebuilt. Rebuilt the bridge plugin so the browser now receives the
+   current CSS.
+
+3. **Visual polish fixes** - Completed the minimal geek visual rules:
+   `rounded-full` surfaces now converge to 6px in the main app, Markdown
+   mention chips no longer render as 999px pills, Tailwind `tracking-*` and
+   inline `letter-spacing` are normalized to 0, Dark Factory bridge badges use
+   6px radius, and the standalone smoke preview harness no longer uses 999px
+   badge pills.
+
+4. **Interaction audit** - Browser-harness clicked and verified:
+   new issue dialog, command palette, adapter install dialog, plugin install
+   dialog, plugin settings Configuration/Status tabs, dashboard bottom scroll,
+   and Dark Factory bridge widget CSS refresh. New issue dialog opens and
+   focuses `事项标题`; command palette and install dialogs open within local
+   browser-visible feedback windows; plugin tabs switch in single-digit ms.
+
+5. **Final visual rescan** - Rechecked 14 high-frequency routes after rebuild:
+   `/DAR/dashboard`, `/DAR/projects`, `/DAR/issues`, `/DAR/agents/all`,
+   company settings, company access, company invites, company import,
+   plugin manager, Dark Factory plugin settings, adapters, general settings,
+   experimental settings, and design guide. Result: zero horizontal overflow,
+   zero style-rule findings, zero stuck loading routes. Dashboard bridge badge
+   computed radius: `6px`.
+
+Validation:
+
+- `pnpm --filter @paperclipai/ui typecheck` passed.
+- UI targeted tests passed: 18/18 across `NewIssueDialog`,
+  `zhCnLocalization`, and `PluginSettings`.
+- Root `pnpm -r typecheck` passed for server, ui, cli, SDK, examples, and
+  all plugins.
+- Dark Factory bridge plugin `pnpm typecheck` passed.
+- Dark Factory bridge plugin `pnpm build` passed and refreshed local
+  `dist/ui`.
+- Dark Factory bridge plugin `pnpm test` passed: 185 tests passed, 1
+  operator-gated remote test skipped.
+
+Repository status:
+
+- Paperclip fork pending commit: full UI audit polish plus browser-harness
+  verified fixes.
+- 123 archive update status: this entry records the final browser-harness UI
+  audit and stale-plugin-bundle root cause.
