@@ -3134,3 +3134,59 @@ Repository status:
   (`b0c0373b`) at the time of this archive entry.
 - Continue development locally; retry pushing Batch 4 together with the next
   successful network window.
+
+### 2026-05-04 - UI visual overhaul Batch 5/5: Dark Factory bridge plugin
+
+1. **Bridge plugin host UI aligned** - Updated
+   `packages/plugins/integrations/dark-factory-bridge/src/ui/styles.css` so
+   plugin-hosted dashboard, issue detail, and settings surfaces match the
+   Paperclip minimal geek system: `#111111` background, translucent fine
+   borders, 6px radius, no shadows, subdued hover states, and low-contrast
+   status badges.
+
+2. **Standalone smoke preview aligned** - Updated
+   `src/ui-smoke-preview-browser-harness.ts` so the direct local WebUI
+   preview at `http://127.0.0.1:4178/` no longer uses the older dark
+   industrial palette, 10px cards, pulse dot, or card shadows. It now uses
+   the same flat deep-gray, fine-line visual treatment as the main app.
+
+3. **Boundary fields preserved** - The browser preview still renders the
+   required safety fields: `dark-factory-journal`, `authoritative: false`,
+   `terminalStateAdvanced: false`, dry-run guard decisions, receipt IDs,
+   and `shouldContactRemoteProvider` / `doesAuthorizeRemoteExecution` false.
+
+Browser-harness evidence:
+
+- Reused the existing browser-harness tab; no new tab buildup.
+- Started the plugin preview service with `pnpm dev:ui` on
+  `127.0.0.1:4178`.
+- Checked `http://127.0.0.1:4178/`.
+- Confirmed `--df-bg-primary: #111111` and
+  `--df-border: rgba(255, 255, 255, 0.08)`.
+- Confirmed the rendered preview contains 1 main card, 15 data fields, and
+  4 dry-run guard rows.
+
+Validation:
+
+- Dark Factory bridge plugin `pnpm typecheck` passed.
+- Dark Factory bridge plugin `pnpm build` passed.
+- Dark Factory bridge plugin `pnpm test` passed: 185 tests passed, 1
+  operator-gated remote test skipped.
+- `pnpm smoke:ui:browser -- --no-screenshots` passed all 4 scenarios:
+  `healthy`, `warning_latency`, `blocked_failures`, and
+  `stale_readiness`.
+
+Boundary compliance:
+
+- Only plugin UI CSS and standalone preview visual CSS were changed.
+- No provider runtime, dry-run decision, credential, journal, or boundary
+  logic changed.
+- No secrets or credential values were read, printed, stored, or committed.
+
+Repository status:
+
+- Paperclip fork local commit: `3beab234 feat: UI visual overhaul Batch 5/5 - Dark Factory bridge plugin`.
+- This commit sits on top of Batch 4 commit `b53f0c69`; both need to be
+  pushed to `fork/fork-master-product` when GitHub TLS connectivity allows.
+- UI visual overhaul plan status: **5/5 batches implemented locally and
+  verified.**
