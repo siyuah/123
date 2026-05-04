@@ -2916,3 +2916,51 @@ Repository status:
 - Paperclip fork local commit: `a5fdc06d feat: apply minimal geek theme across Paperclip UI`.
 - Paperclip fork push completed: `fork/fork-master-product` now includes
   `a5fdc06d`.
+
+### 2026-05-04 - UI visual overhaul Batch 1/5: global theme + base components
+
+1. **Global theme variables refreshed** - Updated the Paperclip host
+   `:root` and `.dark` CSS variables to the Batch 1 minimal geek palette:
+   deeper dark background `oklch(0.105 0 0)`, card surface
+   `oklch(0.135 0 0)`, muted border `oklch(0.195 0 0)`, and shared
+   `0.375rem` / 6px radius.
+
+2. **Theme switching preserved** - Restored the ThemeContext light/dark API
+   while keeping default startup in dark mode. Existing theme consumers can
+   still call `setTheme` / `toggleTheme`; no route or business logic changed.
+
+3. **Base UI components updated** - Refined button, card, badge, input,
+   skeleton, tabs, and dialog styles with softer borders, no shadows,
+   compact rounded geometry, 150ms transitions, active button feedback, and
+   shimmer skeleton loading.
+
+4. **Browser evidence recorded** - Browser-harness checked the live Paperclip
+   page at `http://127.0.0.1:3100/DAR/dashboard` in a single reused tab:
+   `.dark === true`, `--background === "oklch(0.105 0 0)"`,
+   `--card === "oklch(0.135 0 0)"`, `--border === "oklch(0.195 0 0)"`,
+   and `--radius === "0.375rem"`.
+
+Validation:
+
+- `git diff --check` passed.
+- Paperclip UI `pnpm typecheck` passed.
+- Paperclip UI `pnpm build` passed. Vite reported the existing large chunk
+  warning only.
+- Dark Factory bridge plugin `pnpm test` passed: 185 tests passed, 1
+  operator-gated remote test skipped.
+
+Boundary compliance:
+
+- Only Tailwind class names, CSS variables, and theme application behavior
+  were changed.
+- No routes, props, API contracts, provider runtime behavior, or Dark Factory
+  binding artifacts changed.
+- `authoritative: false` and `terminalStateAdvanced: false` runtime
+  boundaries remain unchanged.
+- No credential values read, printed, stored, or committed.
+
+Repository status:
+
+- Paperclip fork local commit: `eb0ce126 feat: UI visual overhaul Batch 1/5 - global theme and base components`.
+- Paperclip fork push completed: `fork/fork-master-product` now includes
+  `eb0ce126`.
