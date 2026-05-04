@@ -98,7 +98,7 @@ files:
   normativity: release-gate-report
 - path: paperclip_darkfactory_v3_0_bundle_manifest.yaml
   sha256: SELF_HASH_EXCLUDED
-  bytes: 16889
+  bytes: 16962
   normativity: release-gate-input
 - path: paperclip_darkfactory_v3_0_consistency_report.json
   sha256: SELF_HASH_EXCLUDED
@@ -382,6 +382,7 @@ informativeOutOfBundle:
 - AGENTS.md
 - docs/ai_workflows.md
 - docs/progress/README.md
+- docs/progress/AI_WORKFLOW_AND_REVIEW_READINESS_BATCH_1_2_2026-05-05.md
 - docs/generated/README.md
 - docs/runbooks/README.md
 - linghucall_provider_shim.py
