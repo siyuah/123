@@ -398,6 +398,7 @@ informativeOutOfBundle:
 - docs/ai_workflows.md
 - docs/progress/README.md
 - docs/progress/AI_WORKFLOW_AND_REVIEW_READINESS_BATCH_1_2_2026-05-05.md
+- docs/progress/PROVIDER_HEALTH_ROUTE_GUARDRAIL_BATCH_3_2026-05-05.md
 - docs/generated/README.md
 - docs/runbooks/README.md
 - linghucall_provider_shim.py
