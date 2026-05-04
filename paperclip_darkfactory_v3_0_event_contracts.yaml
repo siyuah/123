@@ -325,6 +325,45 @@ events:
       - antibodyPatternRef
       - triggerFaultClass
       - matchThreshold
+  - name: fault.playbook.registered
+    version: v1
+    canonicalName: fault.playbook.registered
+    fullName: fault.playbook.registered.v1
+    replaySafe: true
+    partitionKey: playbookId
+    orderingScope: faultPlaybook
+    idempotencyKey: playbookId
+    requiredPayload:
+      - playbookId
+      - triggerFaultClasses
+      - recoveryLane
+      - autoRecoveryAllowed
+  - name: journal.fact.extracted
+    version: v1
+    canonicalName: journal.fact.extracted
+    fullName: journal.fact.extracted.v1
+    replaySafe: true
+    partitionKey: sourceEventId
+    orderingScope: journalFact
+    idempotencyKey: factId
+    requiredPayload:
+      - factId
+      - factType
+      - sourceEventId
+      - subjectRef
+      - confidence
+  - name: contract.drift.reported
+    version: v1
+    canonicalName: contract.drift.reported
+    fullName: contract.drift.reported.v1
+    replaySafe: true
+    partitionKey: reportType
+    orderingScope: contractDrift
+    idempotencyKey: reportType
+    requiredPayload:
+      - reportType
+      - status
+      - failedChecks
   - name: guardrail.decision.recorded
     version: v1
     canonicalName: guardrail.decision.recorded

@@ -185,6 +185,18 @@ enums:
     - allowed
     - review_required
     - blocked
+  structuredJournalFactType:
+    - route_decision_fact
+    - provider_failure_fact
+    - provider_health_fact
+    - guardrail_decision_fact
+    - memory_artifact_fact
+    - repair_attempt_fact
+    - run_state_fact
+    - attempt_state_fact
+  contractDriftStatus:
+    - in_sync
+    - drift_detected
   timingBucketShift:
     - "0"
     - "1"
@@ -212,6 +224,9 @@ enums:
     - repair.attempt.started
     - repair.attempt.completed
     - antibody.pattern.learned
+    - fault.playbook.registered
+    - journal.fact.extracted
+    - contract.drift.reported
   errorCode:
     - invalid_protocol_release_tag
     - run_not_found

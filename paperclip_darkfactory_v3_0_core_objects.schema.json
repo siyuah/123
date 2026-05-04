@@ -18,7 +18,10 @@
     { "$ref": "#/$defs/MemoryArtifact" },
     { "$ref": "#/$defs/PromptInjectionReceipt" },
     { "$ref": "#/$defs/RepairAttempt" },
-    { "$ref": "#/$defs/GuardrailDecision" }
+    { "$ref": "#/$defs/GuardrailDecision" },
+    { "$ref": "#/$defs/FaultPlaybook" },
+    { "$ref": "#/$defs/StructuredJournalFact" },
+    { "$ref": "#/$defs/ContractDriftReport" }
   ],
   "$defs": {
     "IsoDateTime": {
@@ -156,6 +159,23 @@
     "GuardrailDecisionValue": {
       "type": "string",
       "enum": ["allowed", "review_required", "blocked"]
+    },
+    "StructuredJournalFactType": {
+      "type": "string",
+      "enum": [
+        "route_decision_fact",
+        "provider_failure_fact",
+        "provider_health_fact",
+        "guardrail_decision_fact",
+        "memory_artifact_fact",
+        "repair_attempt_fact",
+        "run_state_fact",
+        "attempt_state_fact"
+      ]
+    },
+    "ContractDriftStatus": {
+      "type": "string",
+      "enum": ["in_sync", "drift_detected"]
     },
     "TimingBucketShift": {
       "type": "string",
@@ -581,6 +601,97 @@
         "reason": { "type": "string" },
         "confirmationRequired": { "type": "boolean" },
         "traceId": { "type": "string" }
+      }
+    },
+    "FaultPlaybook": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "protocolReleaseTag",
+        "playbookId",
+        "title",
+        "triggerFaultClasses",
+        "recoveryLane",
+        "riskLevel",
+        "approvalLevel",
+        "autoRecoveryAllowed",
+        "steps",
+        "verificationSignals",
+        "authoritative",
+        "truthSource"
+      ],
+      "properties": {
+        "protocolReleaseTag": { "const": "v3.0-agent-control-r1" },
+        "playbookId": { "type": "string" },
+        "title": { "type": "string" },
+        "triggerFaultClasses": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/ProviderFaultClass" },
+          "uniqueItems": true
+        },
+        "recoveryLane": { "$ref": "#/$defs/RecoveryLane" },
+        "riskLevel": { "$ref": "#/$defs/RiskLevel" },
+        "approvalLevel": { "$ref": "#/$defs/ApprovalLevel" },
+        "autoRecoveryAllowed": { "type": "boolean" },
+        "steps": { "$ref": "#/$defs/StringArray" },
+        "verificationSignals": { "$ref": "#/$defs/StringArray" },
+        "operatorNote": { "type": "string" },
+        "authoritative": { "const": false },
+        "truthSource": { "const": "dark-factory-journal" }
+      }
+    },
+    "StructuredJournalFact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "protocolReleaseTag",
+        "factId",
+        "factType",
+        "subjectRef",
+        "sourceEventId",
+        "sourceEventName",
+        "sourceCorrelationId",
+        "confidence",
+        "extractedAt",
+        "factPayload",
+        "authoritative",
+        "truthSource"
+      ],
+      "properties": {
+        "protocolReleaseTag": { "const": "v3.0-agent-control-r1" },
+        "factId": { "type": "string" },
+        "factType": { "$ref": "#/$defs/StructuredJournalFactType" },
+        "subjectRef": { "type": "string" },
+        "sourceEventId": { "type": "string" },
+        "sourceEventName": { "type": "string" },
+        "sourceCorrelationId": { "type": "string" },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+        "extractedAt": { "$ref": "#/$defs/IsoDateTime" },
+        "factPayload": { "type": "object" },
+        "authoritative": { "const": false },
+        "truthSource": { "const": "dark-factory-journal" }
+      }
+    },
+    "ContractDriftReport": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "protocolReleaseTag",
+        "reportType",
+        "status",
+        "checks",
+        "summary"
+      ],
+      "properties": {
+        "protocolReleaseTag": { "const": "v3.0-agent-control-r1" },
+        "reportType": { "const": "dark-factory-v3-contract-drift-report" },
+        "status": { "$ref": "#/$defs/ContractDriftStatus" },
+        "checks": {
+          "type": "array",
+          "items": { "type": "object" }
+        },
+        "summary": { "type": "object" },
+        "ok": { "type": "boolean" }
       }
     }
   }

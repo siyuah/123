@@ -37,16 +37,16 @@ files:
   bytes: 8473
   normativity: normative
 - path: paperclip_darkfactory_v3_0_core_enums.yaml
-  sha256: 485c46a7aa7dc2c9e4542b10ed6b053bef67da668b26b1a899428b07f0a17035
-  bytes: 5420
+  sha256: 0ac51521c3f04e992f3201bd00d552e1189da5a354f3faf9f92b571462ddefbf
+  bytes: 5808
   normativity: binding
 - path: paperclip_darkfactory_v3_0_core_objects.schema.json
-  sha256: ca53568c76bd8b0df640e0c4d09b517b31f7c78e55d8103436453fad2094fbe3
-  bytes: 19784
+  sha256: 832ee119c3909cd4070f036411109977f2f1ac618432fd2488b6f1b1983afa7d
+  bytes: 23358
   normativity: binding
 - path: paperclip_darkfactory_v3_0_event_contracts.yaml
-  sha256: d951a8d17caf842a39cf4dad117fa180935d7afe34e9352de26bd64f42b7529b
-  bytes: 9158
+  sha256: b8a6ec81c6a1935fdfb2cfd55d0b0e4bb3f6b6d6ba195bc527c9084472a87899
+  bytes: 10208
   normativity: binding
 - path: paperclip_darkfactory_v3_0_state_transition_matrix.csv
   sha256: 2ff614e07d573ba5097862025e23bebb8cb5a59ea46a887bd6b963770a1e2eec
@@ -98,7 +98,7 @@ files:
   normativity: release-gate-report
 - path: paperclip_darkfactory_v3_0_bundle_manifest.yaml
   sha256: SELF_HASH_EXCLUDED
-  bytes: 17638
+  bytes: 19209
   normativity: release-gate-input
 - path: paperclip_darkfactory_v3_0_consistency_report.json
   sha256: SELF_HASH_EXCLUDED
@@ -136,6 +136,16 @@ files:
   role: read-only post-release verifier
   sha256: 6612d286fc352df5ef318dcc1b6fc7419521dbf5bfd75d01750eb438d7ed7811
   bytes: 13692
+  normativity: release-gate-tool
+- path: tools/v3_contract_drift_report.py
+  role: V3 contract drift report tool
+  sha256: f533482670907089697461b7e5d402bd5ec6eff9966f0edd4b565de7cf6becf0
+  bytes: 8508
+  normativity: release-gate-tool
+- path: tools/generate_v3_contract_summary.py
+  role: V3 contract summary generator
+  sha256: 2edbb53952dfb73760dcb7953924caacf2379f7f7e2439a4e0f2a63a05135748
+  bytes: 4574
   normativity: release-gate-tool
 - path: tools/journal_admin.py
   role: JSONL journal backup, restore, and retention helper
@@ -183,6 +193,16 @@ files:
   role: runtime implementation
   sha256: 57dc19ca9171b8a93b6197fc2e6e04dc46e9cff419670cdbfb5ef9691d2418c4
   bytes: 10851
+  normativity: minimal-runtime-skeleton
+- path: dark_factory_v3/fault_playbooks.py
+  role: fault playbook registry
+  sha256: 6167f2a6156dbd9741468df433900834a12045074ab2e8a4bd4a29bcf58e5d92
+  bytes: 8046
+  normativity: minimal-runtime-skeleton
+- path: dark_factory_v3/structured_facts.py
+  role: structured journal fact extractor
+  sha256: 1fd5b9476c816b69ac4b57bdde507a43b0638087ade6663ec086fb761f26b864
+  bytes: 5924
   normativity: minimal-runtime-skeleton
 - path: tools/v3_control_plane.py
   role: runtime CLI
@@ -272,6 +292,21 @@ files:
   role: guardrail decision contract and journal delete precheck tests
   sha256: 2e5b4f28ec413b037756040dbb2404a062805060f9242b6c2c5317f8413871fc
   bytes: 2599
+  normativity: release-gate-test
+- path: tests/test_v3_fault_playbooks.py
+  role: fault playbook registry tests
+  sha256: afe2a97a21cbeb5bc0c9b50a06427437713aba3e0c0d4590a0cb3bfd499af71f
+  bytes: 2508
+  normativity: release-gate-test
+- path: tests/test_v3_structured_facts.py
+  role: structured journal fact extractor tests
+  sha256: 083cc809942becfaea1dbb487d93a8bc532f745226e25a4ff71dea45abbf8b87
+  bytes: 4533
+  normativity: release-gate-test
+- path: tests/test_v3_contract_drift_report.py
+  role: contract drift and summary generator tests
+  sha256: bb8dc1c6fbaa0b0d206b07fcc8c6a200b7334cefa3d0b4db6237fe5ba22a2f07
+  bytes: 2238
   normativity: release-gate-test
 - path: tests/golden_timelines/v3_0/GL-V30-routing-chat.jsonl
   sha256: 06909dfbe69534a7177d3494c7f4f0443b22358ddb696e0f023789dbc49358be
@@ -400,6 +435,7 @@ informativeOutOfBundle:
 - docs/progress/AI_WORKFLOW_AND_REVIEW_READINESS_BATCH_1_2_2026-05-05.md
 - docs/progress/PROVIDER_HEALTH_ROUTE_GUARDRAIL_BATCH_3_2026-05-05.md
 - docs/generated/README.md
+- docs/generated/V3_CONTRACT_SUMMARY.md
 - docs/runbooks/README.md
 - linghucall_provider_shim.py
 - ops/linghucall-provider-shim/README.md
