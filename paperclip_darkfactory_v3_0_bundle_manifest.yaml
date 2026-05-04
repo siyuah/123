@@ -98,7 +98,7 @@ files:
   normativity: release-gate-report
 - path: paperclip_darkfactory_v3_0_bundle_manifest.yaml
   sha256: SELF_HASH_EXCLUDED
-  bytes: 19209
+  bytes: 19913
   normativity: release-gate-input
 - path: paperclip_darkfactory_v3_0_consistency_report.json
   sha256: SELF_HASH_EXCLUDED
@@ -376,6 +376,11 @@ files:
   sha256: 37b5222ccbbe93c09043494802523715edc57b5cc280737b572e7dcc367765a5
   bytes: 2004
   normativity: informative
+- path: docs/security_boundaries.md
+  role: API security boundary and scoped token design preview
+  sha256: c2f30c2a8b88f8a8d88fa784279e31d9d5bb4b7519d92e5a877edcf176ae9998
+  bytes: 7048
+  normativity: informative
 - path: tools/df_review_readiness.py
   role: review readiness dashboard aggregator
   sha256: 63dca69926818745eb85ed9eabcece5ed4663514e0462ca7f274777ec31759cc
@@ -385,6 +390,16 @@ files:
   role: review readiness dashboard unit tests
   sha256: e6fe3c8446f360f85610952d72910faef30f88a94359b8769b184ce8af483383
   bytes: 5620
+  normativity: review-gate-test
+- path: tools/df_handoff_packet.py
+  role: non-authoritative handoff packet generator
+  sha256: 50e3c0ef27989068b9ae26d5eec1106411411cae0026567d877c79ed73146475
+  bytes: 17628
+  normativity: review-gate-tool
+- path: tests/test_df_handoff_packet.py
+  role: handoff packet and security boundary unit tests
+  sha256: b548d891f86290ef95042c52d401113a1fda8805064edc4d1cf5c77a4115f747
+  bytes: 3693
   normativity: review-gate-test
 informativeOutOfBundle:
 - 3.0/DEVELOPMENT_SPEC.md
