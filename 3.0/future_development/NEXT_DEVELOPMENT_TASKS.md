@@ -2964,3 +2964,54 @@ Repository status:
 - Paperclip fork local commit: `eb0ce126 feat: UI visual overhaul Batch 1/5 - global theme and base components`.
 - Paperclip fork push completed: `fork/fork-master-product` now includes
   `eb0ce126`.
+
+### 2026-05-04 - UI visual overhaul Batch 2/5: layout shell + navigation
+
+1. **Layout shell refined** - Updated the Paperclip host layout shell with
+   subtler selection color, flat skip-link focus treatment, softer mobile
+   sidebar overlay, narrower border emphasis, and wider desktop content
+   breathing room.
+
+2. **Sidebar and company rail simplified** - Aligned the main sidebar and
+   company rail to the minimal geek visual language: `bg-sidebar`, muted
+   `border-border/60`, compact 6px icon geometry, low-noise active/hover
+   states, and no drag shadow treatment.
+
+3. **Breadcrumb bar tightened** - Reworked the top navigation bar into a
+   translucent fine-line toolbar with smaller uppercase title text, more
+   consistent horizontal spacing, and muted mobile menu affordance.
+
+4. **Command palette polished** - Added a flatter command dialog surface,
+   muted border, backdrop blur, monospace search input, compact item spacing,
+   and lower-contrast selected states while preserving all command behavior.
+
+Browser-harness evidence:
+
+- Live page: `http://127.0.0.1:3100/DAR/dashboard`
+- Checked in a single reused browser tab.
+- Dashboard shell visually showed the refined left rail, sidebar, top bar,
+  and content spacing.
+- Opened the command palette with keyboard input and captured the updated
+  flat, fine-line modal styling.
+
+Validation:
+
+- `git diff --check` passed.
+- Paperclip UI `pnpm typecheck` passed.
+- Paperclip UI `pnpm build` passed. Vite reported the existing large chunk
+  warning only.
+- Dark Factory bridge plugin `pnpm test` passed: 185 tests passed, 1
+  operator-gated remote test skipped.
+
+Boundary compliance:
+
+- Only layout/navigation class names and visual styling were changed.
+- No routes, props, API contracts, provider runtime behavior, or Dark Factory
+  binding artifacts changed.
+- No credential values read, printed, stored, or committed.
+
+Repository status:
+
+- Paperclip fork local commit: `f6d93abf feat: UI visual overhaul Batch 2/5 - layout shell and navigation`.
+- Paperclip fork push completed: `fork/fork-master-product` now includes
+  `f6d93abf`.
