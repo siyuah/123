@@ -36,6 +36,10 @@ IGNORED_GENERATED_STATUS_PREFIXES = (
     "?? dark_factory_v3/__pycache__/",
     "?? tests/__pycache__/",
     "?? tools/__pycache__/",
+    "!! __pycache__/",
+    "!! dark_factory_v3/__pycache__/",
+    "!! tests/__pycache__/",
+    "!! tools/__pycache__/",
 )
 IGNORED_DEVELOPMENT_STATUS_PREFIXES = (
     " M Makefile",
@@ -157,6 +161,12 @@ def git_head(root: Path) -> dict[str, Any]:
     full = run_command(["git", "rev-parse", "HEAD"], cwd=root)
     porcelain = run_command(["git", "status", "--porcelain"], cwd=root)
     status_lines = porcelain.stdout.splitlines() if porcelain.returncode == 0 else []
+    ignored_porcelain = run_command(["git", "status", "--porcelain", "--ignored=matching"], cwd=root)
+    ignored_status_lines = [
+        line
+        for line in (ignored_porcelain.stdout.splitlines() if ignored_porcelain.returncode == 0 else [])
+        if line.startswith("!! ") and line.startswith(IGNORED_GENERATED_STATUS_PREFIXES)
+    ]
     releasable_status = [
         line
         for line in status_lines
@@ -169,7 +179,7 @@ def git_head(root: Path) -> dict[str, Any]:
         "clean": porcelain.returncode == 0 and status_lines == [],
         "releaseEvidenceClean": porcelain.returncode == 0 and releasable_status == [],
         "statusPorcelain": status_lines,
-        "ignoredStatusPorcelain": [line for line in status_lines if line not in releasable_status],
+        "ignoredStatusPorcelain": [line for line in status_lines if line not in releasable_status] + ignored_status_lines,
         "releasableStatusPorcelain": releasable_status,
     }
 

@@ -38,6 +38,10 @@ IGNORED_GENERATED_STATUS_PREFIXES = (
     "?? dark_factory_v3/__pycache__/",
     "?? tests/__pycache__/",
     "?? tools/__pycache__/",
+    "!! __pycache__/",
+    "!! dark_factory_v3/__pycache__/",
+    "!! tests/__pycache__/",
+    "!! tools/__pycache__/",
 )
 
 IGNORED_DEVELOPMENT_STATUS_PREFIXES = (
@@ -67,6 +71,18 @@ def split_release_status(status_lines: list[str], *, include_development: bool =
     releasable = [line for line in status_lines if not line.startswith(ignored_prefixes)]
     ignored = [line for line in status_lines if line not in releasable]
     return releasable, ignored
+
+
+def ignored_generated_status(root: Path) -> list[str]:
+    """Return ignored generated cache entries without exposing unrelated ignored paths."""
+    result = run_command(["git", "status", "--porcelain", "--ignored=matching"], cwd=root)
+    if result.returncode != 0:
+        return []
+    return [
+        line
+        for line in result.stdout.splitlines()
+        if line.startswith("!! ") and line.startswith(IGNORED_GENERATED_STATUS_PREFIXES)
+    ]
 
 
 def stable_json(payload: dict[str, Any]) -> str:
@@ -111,6 +127,7 @@ def git_info(root: Path, *, include_development: bool = False) -> dict[str, Any]
     porcelain = run_command(["git", "status", "--porcelain"], cwd=root)
     status_lines = porcelain.stdout.splitlines() if porcelain.returncode == 0 else []
     releasable_status, ignored_status = split_release_status(status_lines, include_development=include_development)
+    ignored_status = ignored_status + ignored_generated_status(root)
     clean = porcelain.returncode == 0 and status_lines == []
     info: dict[str, Any] = {
         "branch": branch_result.stdout.strip() if branch_result.returncode == 0 else None,
